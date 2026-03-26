@@ -18,6 +18,7 @@ BROWSER_RIGHT_X=870
 INSPECT_LEFT_X=457
 INSPECT_TOP_Y=555
 INSPECT_ELEMENTS_TAB_XY=548,100
+SCROLLBAR_REGION=(405,142,1,586)
 
 PLACE_TYPE_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button"
 PLACE_NAME_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[1]/h1/text()"
@@ -42,6 +43,12 @@ def is_no_change(img1, img2):
     diff = ImageChops.difference(img1, img2)
     return diff.getbbox() is None
 
+def py_paste(text):
+    """Util to paste text instead of typing (typing may fail if current locale is different from target language)"""
+    pyperclip.copy(text)
+    time.sleep(0.01)
+    pyautogui.hotkey('ctrl', 'v')
+    time.sleep(0.3)
 
 @contextmanager
 def wait_for_screen_change(region, timeout=10, interval=0.3, timeout_msg="Screen did not change in time"):
@@ -60,12 +67,12 @@ def wait_for_screen_change(region, timeout=10, interval=0.3, timeout_msg="Screen
 
 
 @contextmanager
-def wait_for_screen_image(region, image_path: str, timeout=10, interval=0.3, timeout_msg="The image did not appear in time"):
+def wait_for_screen_image(region, image: str| Image.Image, timeout=10, interval=0.3, timeout_msg="The image did not appear in time"):
     yield
     start = time.time()
     while True:
         try:
-            pyautogui.locateOnScreen(image_path, region=region)
+            pyautogui.locateOnScreen(image, region=region)
             time.sleep(0.3)
             break
         except pyautogui.ImageNotFoundException:
@@ -196,9 +203,7 @@ class PreparationFrame:
         # TODO each time.sleep can be changed to `wait_...`, but then highly specific regions need to be set
         time.sleep(0.3)
         pyautogui.hotkey('ctrl', 'a')
-        pyperclip.copy(find_query)
-        pyautogui.hotkey('ctrl', 'v')
-        time.sleep(0.3)
+        py_paste(find_query)
         try:
             pyautogui.locateOnScreen("inspect_prevbtn.png", region=INSPECT_PREVBTN_REGION)
             self.label.config(text="False")
@@ -234,11 +239,10 @@ class PreparationFrame:
         
         # when the last two cards are reached, the card can't move toward the cursor because the scroll is at its edge.
         # thus, the cursor should move toward the card.
-        SCROLLBAR_TOP_PIXEL_XY=(405,142)
         SCROLLBAR_COLOR=(94,94,94)
         # TODO consider switching to checking the Y coordinate (for cards with smaller height)
         # if pyautogui.screenshot(region=changing_region)):
-        if pyautogui.pixelMatchesColor(*SCROLLBAR_TOP_PIXEL_XY, SCROLLBAR_COLOR):
+        if pyautogui.pixelMatchesColor(*SCROLLBAR_REGION[:2], SCROLLBAR_COLOR):
             distance = self.distance_to_white(left_x, left_y, from_down=scroll_up)
             distance = distance + math.copysign(10, distance)
             new_y = left_y + distance
@@ -305,9 +309,7 @@ class PreparationFrame:
         
         pyautogui.hotkey('ctrl', 'a')
         time.sleep(0.3)
-        pyperclip.copy(stop_text)
-        pyautogui.hotkey('ctrl','v')
-        time.sleep(0.3)
+        py_paste(stop_text)
         while True:
             # TODO maybe change to holding a click at the bottom of search result scrollbar
             pyautogui.scroll(-1000)
@@ -383,26 +385,30 @@ class PreparationFrame:
                     writer.writerow((i, None, None, None, pyperclip.paste()))
                 pyautogui.shortcut('ctrl', 'w')  # close current tab to be replaced with tab to the right
 
-    def write_results_to_csv(self):
+    def extract_place_info_safe(self):
+        """Wrap extract_place_info in some retry and errorcatch logic"""
         time.sleep(5)
-        with open("output.csv", "a", newline="", encoding='utf-8') as f:
-            writer = csv.writer(f)
+        try:
             try:
-                try:
-                    place_info = self.extract_place_info()
-                except TimeoutError:
-                    # one additional chance to work
-                    pyautogui.hotkey('ctrl', 'f5')
-                    time.sleep(5)
-                    place_info = self.extract_place_info()
-                writer.writerow(place_info)
-            except Exception as e:
-                # remember address of this page as problematic
-                pyautogui.hotkey('alt', 'd')
-                time.sleep(0.3)
-                pyautogui.hotkey('ctrl', 'c')
-                time.sleep(0.1)
-                writer.writerow((str(e).replace(',',';'),type(e), None, pyperclip.paste()))
+                place_info = self.extract_place_info()
+            except TimeoutError:
+                # one more chance to work if something took too long
+                pyautogui.hotkey('ctrl', 'f5')
+                time.sleep(5)
+                place_info = self.extract_place_info()
+            return place_info
+        except Exception as e:
+            # remember address of this page as problematic
+            pyautogui.hotkey('alt', 'd')
+            time.sleep(0.3)
+            pyautogui.hotkey('ctrl', 'c')
+            time.sleep(0.3)
+            return((str(e).replace(',',';'),type(e), None, pyperclip.paste()))
+
+    def write_to_csv(self, info_tuple, filepath="output.csv", mode="a"):
+         with open(filepath, mode, newline="", encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(info_tuple)
 
     def process_search_results(self):
         """
@@ -413,16 +419,22 @@ class PreparationFrame:
           each card from the search results should be opened, processed, and then search list should be opened back.
         """
         if self.inspect_find(PLACE_NAME_HTML):
-            self.write_results_to_csv()
+            self.write_to_csv(self.extract_place_info_safe())
         else:
-            self.total_scroll_down()
+            # self.total_scroll_down()
             pyautogui.moveTo(PLACE_CARD_XY)
             last_card = False
             while True:
+                scrollbar_snapshot = pyautogui.screenshot(region=SCROLLBAR_REGION)
                 pyautogui.click()
-                self.write_results_to_csv()
-                pyautogui.click(SEARCH_BACK_X, SEARCH_Y)
-                time.sleep(5)
+                self.write_to_csv(self.extract_place_info_safe())
+                # press 'back' and wait for page to load before scrolling to next card
+                # check if page is loaded using SCROLLBAR_REGION
+                try:
+                    with wait_for_screen_image(SCROLLBAR_REGION, scrollbar_snapshot, 5):
+                        pyautogui.click(SEARCH_BACK_X, SEARCH_Y)
+                except:
+                    pass
                 if last_card:
                     break
                 last_card = self.scroll_to_next_card()
@@ -431,7 +443,7 @@ class PreparationFrame:
     def inspect_find_and_copy_first(self, find_query):
         """
         When using inspect find, `$0` args can be used to access what's found in the console.
-        Use `$0.textContent` and click on `copy string content`.
+        Use `$0.textContent` and click on `copy string content` in the context menu.
         `find_query` goes directly into inspect find, and as such can be an html selector.
         """
         # INSPECT_FINDBTN_XY = (760,525)
@@ -440,11 +452,11 @@ class PreparationFrame:
         INSPECT_CLEAR_SUCCESS_REGION=(482-5, 202-2, 70+10, 20+5)  
 
         pyautogui.click(INSPECT_ELEMENTS_TAB_XY)
-        for _ in range(4):
+        for _ in range(20):
             find_success = self.inspect_find(find_query=find_query)
             if find_success:
                 break
-            time.sleep(5)
+            time.sleep(1)
         if not find_success:
             return None
         
@@ -452,9 +464,9 @@ class PreparationFrame:
         time.sleep(0.1)
         # successful `clear()` command should give a purely white region here
         with wait_for_screen_image(INSPECT_CLEAR_SUCCESS_REGION, "inspect_clear_success.png"):
-            pyautogui.write("clear()", 0.01)
+            py_paste("clear()")
             pyautogui.press('enter')
-        pyautogui.write("$0.textContent", 0.01)
+        py_paste("$0.textContent")
         inspect_console_output_region = *INSPECT_CONSOLE_OUTPUT_XY, 20, 20
         with wait_for_screen_change(inspect_console_output_region):
             pyautogui.press('enter')
@@ -492,7 +504,6 @@ class PreparationFrame:
         with wait_for_screen_change(PLACE_LINKBTN_REGION):
             pyautogui.click(PLACE_LINKBTN_REGION[0], SEARCH_Y)
 
-        # refocus_page()
         pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])
 
         linkbtn_to_search_distance = SEARCH_Y - y - h
