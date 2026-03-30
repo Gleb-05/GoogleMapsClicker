@@ -21,7 +21,7 @@ def inspect_find(find_query):
     pyautogui.hotkey('ctrl', 'a')
     py_paste(find_query)
     try:
-        pyautogui.locateOnScreen("inspect_prevbtn.png", region=INSPECT_PREVBTN_REGION)
+        pyautogui.locateOnScreen("img/inspect_prevbtn.png", region=INSPECT_PREVBTN_REGION)
         return False
     except pyautogui.ImageNotFoundException:
         return True
@@ -50,7 +50,7 @@ def inspect_find_and_copy_first(find_query):
     pyautogui.click(INSPECT_CONSOLE_TAB_XY)
     time.sleep(0.1)
     # successful `clear()` command should give a purely white region here
-    with wait_for_screen_image(INSPECT_CLEAR_SUCCESS_REGION, "inspect_clear_success.png"):
+    with wait_for_screen_image(INSPECT_CLEAR_SUCCESS_REGION, "img/inspect_clear_success.png"):
         py_paste("clear()")
         pyautogui.press('enter')
     py_paste("$0.textContent")

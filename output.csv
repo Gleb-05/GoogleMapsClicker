@@ -16,7 +16,7 @@ Puffy,Cookie shop,V8G9+3J Paris,https://maps.app.goo.gl/9JvodspGtZZqBc91A
 Puffy Cookies Legendre,Cookie shop,V8M7+GJ Paris,https://maps.app.goo.gl/BdV37VBcgBDbkGvt9
 Puffy Cookies Bretagne,Cookie shop,V977+46 Paris,https://maps.app.goo.gl/VZTEvovaqqT8AmfJ6
 
-16 entires in 10 minutes
+26 entires in 10 minutes
 Ladurée Saint Lazare,Pastry shop,V8GG+G4 Paris,https://maps.app.goo.gl/8DoknmosyFhWZpfa6
 LADURÉE,Pastry shop,VQ3M+PH Serris,https://maps.app.goo.gl/eJejYnm5uhyxRpnE7
 LADURÉE Château de Versailles,Cake shop,R43C+R8 Versailles,https://maps.app.goo.gl/7kwnJ24XtMaLEn5N7
@@ -74,31 +74,27 @@ Ladurée,Pastry shop,V8C3+87 Paris,https://maps.app.goo.gl/78c8VknEUStMwS686
 LADURÉE Pavillon Gravelle,French restaurant,RCCV+2P Paris,https://maps.app.goo.gl/wRNQNvf1UoodBqrw8
 Ladurée,Cake shop,RCCV+2P Paris,https://maps.app.goo.gl/SJmgoABzMfnx24Zm7
 
-after refactor
-Ladurée Saint Lazare,Pastry shop,V8GG+G4 Paris,https://maps.app.goo.gl/TxuswNLGEqq4iyiB8
-Ladurée Gare de Lyon,Pastry shop,R9VG+R2 Paris,https://maps.app.goo.gl/sbz7nFrrgEyVyWVg7
-Ladurée Corporate Office,Corporate office,V7CW+G7 Paris,https://maps.app.goo.gl/nsbVtvHWPdA7Qzwc6
-Ladurée Bretagne,Pastry shop,V977+45 Paris,https://maps.app.goo.gl/FKjBoUFbB89NEZvk7
-Ladurée Galeries Lafayette Gourmet,Cake shop,V8FJ+73 Paris,https://maps.app.goo.gl/mHb8opHxz3qV8Xks8
-LADURÉE Paris Galeries Lafayette Haussmann,Tea house,V8FJ+FR Paris,https://maps.app.goo.gl/rczYFUuYmNekxYmr7
-Ladurée Marais,Cake shop,V955+55 Paris,https://maps.app.goo.gl/t7jUb1ZsiJtHWBbQ7
-laduree,Pastry shop,P9J6+3R Orly,https://maps.app.goo.gl/Su3Mp8Q1GPJMmmeu8
-LADUREE Orly 4,Pastry shop,P9H9+7J Paray-Vieille-Poste,https://maps.app.goo.gl/EPN9W9TsYdLnCsP58
-Ladurée,Pastry shop,V88H+44 Paris,https://maps.app.goo.gl/CtNgeXAgAtvLoZqC6
-Ladurée,Pastry shop,P9H5+MG Orly,https://maps.app.goo.gl/ZgZCeaG7ufJxT7ZN9
-Ladurée,Pastry shop,R8XR+35 Paris,https://maps.app.goo.gl/2TVWrwqbLqcx5N8w5
-Ladurée,Pastry shop,P9G7+P5 Orly,Pastry shop
-LADURÉE Paris Publicisdrugstore,Pastry shop,V7FW+2R Paris,https://maps.app.goo.gl/nrMcyZsBaL2w2ecU8
-Pâtisserie Ladurée,Patisserie,P84V+MM Morangis,https://maps.app.goo.gl/zmySXTuEwtjQw4pd9
-LADURÉE Château de Versailles,Cake shop,R43C+R8 Versailles,https://maps.app.goo.gl/H5koBajwqv6mPHHYA
-Ladurée Carrousel du Louvre,Pastry shop,V86M+PP Paris,https://maps.app.goo.gl/eJG4kZxXxnTUXaji6
-Ladurée Bonaparte,Pastry shop,V84M+6J Paris,https://maps.app.goo.gl/Er4A2APbBXdGCpnp8
-Ladurée Victor Hugo,Cake shop,V7CP+25 Paris,https://maps.app.goo.gl/dyp3F9oUtddY7uJL7
-Ladurée Café Victor Hugo,Cake shop,V79J+9R Paris,https://maps.app.goo.gl/qKMh2C2X1zXLCfut6
-Ladurée,Pastry shop,P9G5+XV Orly,https://maps.app.goo.gl/vciMX7qVxvkNSpPN9
-Ladurée,Pastry shop,V89F+9F Paris,https://maps.app.goo.gl/YkPefv3UDYSWKtbp6
-Ladurée Montparnasse,Pastry shop,R8RC+F6 Paris,https://maps.app.goo.gl/iUoLjeVA37dRtRxXA
-Ladurée Beaugrenelle,Pastry shop,R7XM+H2 Paris,https://maps.app.goo.gl/ZXsHTKPqbyfUiqVf9
-,<class 'pyautogui.ImageNotFoundException'>,,"https://www.google.com/maps/place/Ladur%C3%A9e/@48.870839,2.2331522,12z/data=!3m1!5s0x47e66fc249cd9277:0xc29afbcb63be1c58!4m10!1m2!2m1!1zTGFkdXLDqWU!3m6!1s0x47e66fc249be485d:0x2be3a396c8fd4569!8m2!3d48.870839!4d2.30319!15sCghMYWR1csOpZSIDiAEBWgoiCGxhZHVyw6llkgELcGFzdHJ5X3Nob3DgAQA!16s%2Fg%2F1tj456d_?authuser=3&entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D"
-
-,<class 'pyautogui.ImageNotFoundException'>,,"https://www.google.com/maps/place/Ladur%C3%A9e/@48.870839,2.2331522,12z/data=!3m1!5s0x47e66fc249cd9277:0xc29afbcb63be1c58!4m10!1m2!2m1!1zTGFkdXLDqWU!3m6!1s0x47e66fc249be485d:0x2be3a396c8fd4569!8m2!3d48.870839!4d2.30319!15sCghMYWR1csOpZSIDiAEBWgoiCGxhZHVyw6llkgELcGFzdHJ5X3Nob3DgAQA!16s%2Fg%2F1tj456d_?authuser=3&entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D"
+after refactor 7m30s for 23 entries not counting the scrolldown
+Ladurée,Cake shop,RCCV+2P Paris,https://maps.app.goo.gl/8WZ649xsRfqegKBU6
+laduree,Pastry shop,P9J6+3R Orly,https://maps.app.goo.gl/p47J5QJwi4jiBpSf9
+Pâtisserie Ladurée,Patisserie,P84V+MM Morangis,https://maps.app.goo.gl/1sUBPyGJDH4ADJwj7
+Ladurée,Pastry shop,P9G7+P5 Orly,https://maps.app.goo.gl/Z32uuC8KTESCpXzX9
+Ladurée Corporate Office,Corporate office,V7CW+G7 Paris,https://maps.app.goo.gl/7bEBsoaJ7CLXdT3r9
+Ladurée,Pastry shop,P9G5+XV Orly,https://maps.app.goo.gl/hsGsGN3Eg1W3afp39
+Ladurée Saint Lazare,Pastry shop,V8GG+G4 Paris,https://maps.app.goo.gl/xivLeANRNRtAAvGk6
+Ladurée Galeries Lafayette Gourmet,Cake shop,V8FJ+73 Paris,https://maps.app.goo.gl/xSXS8EAxvnzkhTyY8
+Ladurée Café Victor Hugo,Cake shop,V79J+9R Paris,https://maps.app.goo.gl/7uGsATbNw4Zdm5567
+LADURÉE Paris Galeries Lafayette Haussmann,Tea house,V8FJ+FR Paris,https://maps.app.goo.gl/Yy8aEYwMZKh8ivH4A
+Ladurée Marais,Cake shop,V955+55 Paris,https://maps.app.goo.gl/2bTEBzQZn7rArTvE6
+LADURÉE Paris Publicisdrugstore,Pastry shop,V7FW+2R Paris,https://maps.app.goo.gl/XGcE4BWaxDzih3VU7
+Ladurée Bretagne,Pastry shop,V977+45 Paris,https://maps.app.goo.gl/E7FmkyeuP3X6pJnb7
+Ladurée Gare de Lyon,Pastry shop,R9VG+R2 Paris,https://maps.app.goo.gl/ZCpQG8Uig95aLWYk6
+Ladurée,Pastry shop,R8XR+35 Paris,https://maps.app.goo.gl/ic1tRSNjvuSkoeHx6
+Ladurée Victor Hugo,Cake shop,V7CP+25 Paris,https://maps.app.goo.gl/sZczdD36QSBTKTDi6
+Ladurée Carrousel du Louvre,Pastry shop,V86M+PP Paris,https://maps.app.goo.gl/V7HtjNQi6jFaZmU88
+Ladurée,Pastry shop,V88H+44 Paris,https://maps.app.goo.gl/LpjbLn1bgG3d6mwDA
+Ladurée Montparnasse,Pastry shop,R8RC+F6 Paris,https://maps.app.goo.gl/gYCnpRUhHM6k3sgP6
+Ladurée Beaugrenelle,Pastry shop,R7XM+H2 Paris,https://maps.app.goo.gl/iKewAsf1jExcDPNh6
+Ladurée,Pastry shop,V89F+9F Paris,https://maps.app.goo.gl/q6GRJssc2DkUsosr6
+Ladurée Bonaparte,Pastry shop,V84M+6J Paris,https://maps.app.goo.gl/TsH5Wio9S2esDjMW6
+Ladurée,Pastry shop,V8C3+87 Paris,https://maps.app.goo.gl/4h52NGqu69LcPnsX7

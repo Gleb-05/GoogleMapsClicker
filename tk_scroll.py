@@ -106,7 +106,7 @@ def total_scroll_down(stop_text_lang='eng'):
         time.sleep(0.4)
         pyautogui.press('f3')
         try:
-            pyautogui.locateOnScreen('f3find_count.png', region=F3FIND_COUNT_REGION)
+            pyautogui.locateOnScreen('img/f3find_count.png', region=F3FIND_COUNT_REGION)
             pyautogui.click(x=F3FIND_CLOSE_X, y=SEARCH_Y)
             break
         except pyautogui.ImageNotFoundException:

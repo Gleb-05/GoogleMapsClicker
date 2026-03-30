@@ -1,4 +1,5 @@
 import time
+import functools
 import pyautogui
 import pyperclip
 from PIL import ImageChops
@@ -41,3 +42,23 @@ def distance_to_white(left_x, left_y, from_down, threshold=250):
             return -y-1 if from_down else y+1
         
     return None
+
+
+def exception_to_none_decorator(func):
+    """
+    Wrap any function to return None on error.
+    For consistency it is highly recommended to do `if val = None: raise OriginalException` after wrapped function is used.
+    
+    Example: wrap `pyautogui.locateCenterOnScreen` and avoid try-catch nesting when doing search on multiple images.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            return None
+    return wrapper
+
+
+py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen)
+"""Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`"""

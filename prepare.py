@@ -8,6 +8,7 @@ import keyboard
 
 from constants import *
 from wait_contexts import *
+from utils import py_locateCenter
 from tk_inspect import inspect_find, inspect_find_and_copy_first
 from tk_scroll import py_scroll, total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
 
@@ -24,10 +25,12 @@ SEARCH_BAR_X = 122
 # SEARCH_BUTTON_X = 278
 
 
-class PreparationFrame:
+class DebugFrame:
     """
     Combine pieces of functionality necessary to navigate the google maps page
     to extract information about multiple places.
+
+    Log Label at the window's bottom allows to debug most of the present functions.
     """
 
     def __init__(self, root: tk.Tk):
@@ -63,9 +66,10 @@ class PreparationFrame:
 
     def execute_selected_step(self):
         try:
-            self.steps[self.step_var.get()]()
+            result = self.steps[self.step_var.get()]()
         except Exception as e:
-            self.label.config(text=str(e))
+            result = e
+        self.label.config(text=str(result))
 
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)
@@ -79,7 +83,7 @@ class PreparationFrame:
     @staticmethod
     def auto_advance(func):
         # @wraps(func)
-        def wrapper(self: "PreparationFrame", *args, **kwargs):
+        def wrapper(self: "DebugFrame", *args, **kwargs):
             result = func(self, *args, **kwargs)
             try:
                 idx = self.steps_names.index(self.step_var.get())
@@ -152,7 +156,7 @@ class PreparationFrame:
                 time.sleep(5)
                 INSPECT_ELEMENTS_TAB_REGION = (841-5, 90-2, 12+10, 17+5)  
                 # wait for inspect tab to be open
-                with wait_for_screen_image(INSPECT_ELEMENTS_TAB_REGION, "inspect_elements_tab.png"):
+                with wait_for_screen_image(INSPECT_ELEMENTS_TAB_REGION, "img/inspect_elements_tab.png"):
                     pyautogui.shortcut('ctrl', 'shift', 'i')  # open inspect window
                 try:
                     try:
@@ -239,11 +243,12 @@ class PreparationFrame:
         # PLACE_LINK_CLOSE_XY = (405,245) # unreliable for some reason
         PLACE_PLUSCODE_REGION = (20, SEARCH_Y, 50-20, self.H-SEARCH_Y-10)
 
-        x, y, w, h = pyautogui.locateOnScreen("place_linkbtn.png", region=PLACE_LINKBTN_REGION)
+        x, y, w, h = pyautogui.locateOnScreen("img/place_linkbtn.png", region=PLACE_LINKBTN_REGION)
         with wait_for_screen_change(PLACE_LINKBTN_REGION):
             pyautogui.click(x+w//2, y+h//2)
-        time.sleep(0.1)
-        # link_x, link_y = pyautogui.locateCenterOnScreen("place_link.png", region=PLACE_LINK_REGION)
+        with wait_for_animation_end((20,460,310,20)):  # link may not load immediately
+            time.sleep(0.1)
+        # link_x, link_y = pyautogui.locateCenterOnScreen("img/place_link.png", region=PLACE_LINK_REGION)
         pyautogui.click(10+70//2, 450+17//2)  # hopefully link text is always at the same height
         time.sleep(0.1)
         pyautogui.hotkey('ctrl', 'c')
@@ -253,14 +258,20 @@ class PreparationFrame:
             pyautogui.click(PLACE_LINKBTN_REGION[0], SEARCH_Y)
 
         pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])
-        py_scroll(SEARCH_Y - y - h)  # scroll up until `linkbtn` and `search` are aligned
+        py_scroll(SEARCH_Y - y - h)  # scroll down until `linkbtn` and `search` are aligned
         time.sleep(0.1)
-        try:
-            pluscode_x, pluscode_y = pyautogui.locateCenterOnScreen("place_pluscode.png", region=PLACE_PLUSCODE_REGION)
-        except pyautogui.ImageNotFoundException:
-            # sometimes cursor will land on pluscode row
-            pluscode_x, pluscode_y = pyautogui.locateCenterOnScreen("place_pluscode_gray.png", region=PLACE_PLUSCODE_REGION)
-        pyautogui.click(pluscode_x, pluscode_y)
+        pluscode_xy = None
+        for _ in range(2):
+            # sometimes cursor will land on pluscode row, making the background gray
+            pluscode_xy = py_locateCenter("img/place_pluscode.png", region=PLACE_PLUSCODE_REGION) \
+                or py_locateCenter("img/place_pluscode_gray.png", region=PLACE_PLUSCODE_REGION)
+            if pluscode_xy is not None:
+                break
+            # sometimes pluscode row will be further down, requiring an additional scroll down
+            py_scroll(300 - self.H)
+        if pluscode_xy is None:
+            raise pyautogui.ImageNotFoundException
+        pyautogui.click(pluscode_xy)
         time.sleep(0.3)
         place_pluscode = pyperclip.paste()
 
@@ -274,5 +285,5 @@ class PreparationFrame:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = PreparationFrame(root)
+    app = DebugFrame(root)
     root.mainloop()
