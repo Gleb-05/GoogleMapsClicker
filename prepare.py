@@ -3,14 +3,14 @@ import time
 import csv
 import tkinter as tk
 import pyautogui
-import pyperclip
 import keyboard
 
-from constants import *
-from wait_contexts import *
-from utils import py_locateCenter
-from tk_inspect import inspect_find, inspect_find_and_copy_first
-from tk_scroll import py_scroll, total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
+from constants import PLACE_NAME_HTML, SEARCH_Y
+from utils import py_paste
+from wait_contexts import wait_for_screen_change, wait_for_screen_image
+from gui_inspect import inspect_find
+from gui_scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
+from usr_extract_place_info import extract_place_info_safe
 
 SAFE_Y=250  # safely below browser ui edge
 # INSPECT_SCREEN_CHANGE_REGION = (460,) + SEARCH_SCREEN_CHANGE_REGION[1:]
@@ -49,8 +49,8 @@ class DebugFrame:
             "inspect_find": lambda: inspect_find(PLACE_NAME_HTML),
             "total_scroll_down": total_scroll_down,
             "scroll_to_next_card": scroll_to_next_card,
-            "extract_place_info": self.extract_place_info,
-            "process_search_results": self.process_search_results,
+            "extract_place_info_safe": extract_place_info_safe,
+            "process_search_queries": self.process_search_queries,
         }
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
@@ -113,111 +113,34 @@ class DebugFrame:
     @auto_advance
     def set_inspect_y(self):
         pyautogui.dragRel(0, self.H - 1, duration=0.3)
-       
 
-    def process_search_results_newtab(self):
-        """
-        Multiple places - TOO COMPUTATIONALLY EXPENSIVE with new tabs
-        
-        After using the search, it is possible that:
-        - there is one place: the inspect find has PLACE_NAME_HTML.
-          the card is already opened, the tab should be duplicated.
-          processing should begin with count=1.
-        - there are multiple places: the inspect find does NOT have a PLACE_NAME_HTML.
-          each card from the search results should be opened in a new tab.
-          processing should begin with count acquired during the iteration over search results.
-        """
-
-        place_count = 0
-
-        if inspect_find(PLACE_NAME_HTML):
-            print("to implement")
-            place_count = 1
-        else:
-            total_scroll_down()
-            last_card = False
-            while True:
-                place_count += 1
-                pyautogui.rightClick()
-                pyautogui.moveRel(RMB_FIRST_OPTION_BELOW_RELATIVE_XY if last_card else RMB_FIRST_OPTION_ABOVE_RELATIVE_XY)
-                pyautogui.click()
-                if last_card:
-                    break
-                time.sleep(0.1)
-                last_card = scroll_to_next_card()
-
-        # move to the newly opened tab to the right
-        pyautogui.shortcut('ctrl', 'tab')  
-
-        with open("output.csv", "a", newline="", encoding='utf-8') as f:
-            writer = csv.writer(f)
-            for i in range(place_count):
-                print(i)
-                time.sleep(5)
-                INSPECT_ELEMENTS_TAB_REGION = (841-5, 90-2, 12+10, 17+5)  
-                # wait for inspect tab to be open
-                with wait_for_screen_image(INSPECT_ELEMENTS_TAB_REGION, "img/inspect_elements_tab.png"):
-                    pyautogui.shortcut('ctrl', 'shift', 'i')  # open inspect window
-                try:
-                    try:
-                        place_info = self.extract_place_info()
-                    except TimeoutError:
-                        # one additional chance to work
-                        pyautogui.hotkey('ctrl', 'f5')
-                        time.sleep(5)
-                        place_info = self.extract_place_info()
-                    writer.writerow((i,) + place_info)
-                except Exception:
-                    # remember address of this page as problematic
-                    pyautogui.hotkey('alt', 'd')
-                    time.sleep(0.3)
-                    pyautogui.hotkey('ctrl', 'c')
-                    time.sleep(0.1)
-                    writer.writerow((i, None, None, None, pyperclip.paste()))
-                pyautogui.shortcut('ctrl', 'w')  # close current tab to be replaced with tab to the right
-
-    def extract_place_info_safe(self):
-        """Wrap extract_place_info in some retry and errorcatch logic"""
-        time.sleep(5)
-        try:
-            try:
-                place_info = self.extract_place_info()
-            except (TimeoutError, pyautogui.ImageNotFoundException):
-                # one more chance to work if something took too long
-                pyautogui.hotkey('ctrl', 'f5')
-                time.sleep(5)
-                place_info = self.extract_place_info()
-            return place_info
-        except Exception as e:
-            # remember address of this page as problematic
-            pyautogui.hotkey('alt', 'd')
-            time.sleep(0.3)
-            pyautogui.hotkey('ctrl', 'c')
-            time.sleep(0.3)
-            return((str(e).replace(',',';'),type(e), None, pyperclip.paste()))
 
     def write_to_csv(self, info_tuple, filepath="output.csv", mode="a"):
         with open(filepath, mode, newline="", encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(info_tuple)
 
-    def process_search_results(self):
+
+    def iter_search_results(self):
         """
-        After using the search, it is possible that:
+        Yield search results.
+
+        Possible search results:
         - there is one place: the inspect find has PLACE_NAME_HTML.
-          the card is already opened, the tab should be processed immediately.
+          the place webpage is already opened, yield immediately.
         - there are multiple places: the inspect find does NOT have a PLACE_NAME_HTML.
-          each card from the search results should be opened, processed, and then search list should be opened back.
+          each place card from the search results should be opened, yield, and then search page should be opened back.
         """
         if inspect_find(PLACE_NAME_HTML):
-            self.write_to_csv(self.extract_place_info_safe())
+            yield
+            # going back to search page is unnecessary, since search bar is still displayed
         else:
             total_scroll_down()
             last_card = False
             while True:
                 scrollbar_snapshot = pyautogui.screenshot(region=SCROLLBAR_REGION)
                 pyautogui.click()
-                self.write_to_csv(self.extract_place_info_safe())
+                yield
                 # press 'back' and wait for page to load before scrolling to next card
                 # check if page is loaded using SCROLLBAR_REGION
                 try:
@@ -229,59 +152,27 @@ class DebugFrame:
                     break
                 last_card = scroll_to_next_card()
 
+    def search_queries_naive(self):
+        """Return hard-coded list of locations"""
+        naive_list = ['puffy cookies']
+        return [q + ' paris' for q in naive_list]
 
-    def extract_place_info(self):
+    def process_search_queries(self):
         """
-        When place page is opened, get:
-        - place_name
-        - place_type
-        - place_pluscode
-        - place_link (google maps shortened link to the place)
+        For each query from query generator:
+        - enter query into search field
+        - if "can't find" string is present on the page, skip query
+        - if not, use chosen safe procesing on the query results
         """
-        PLACE_LINKBTN_REGION = (325, 380, 375-325, 580-380)
-        # PLACE_LINK_REGION = (10, 450-3, 70, 17+6)
-        # PLACE_LINK_CLOSE_XY = (405,245) # unreliable for some reason
-        PLACE_PLUSCODE_REGION = (20, SEARCH_Y, 50-20, self.H-SEARCH_Y-10)
-
-        x, y, w, h = pyautogui.locateOnScreen("img/place_linkbtn.png", region=PLACE_LINKBTN_REGION)
-        with wait_for_screen_change(PLACE_LINKBTN_REGION):
-            pyautogui.click(x+w//2, y+h//2)
-        with wait_for_animation_end((20,460,310,20)):  # link may not load immediately
-            time.sleep(0.1)
-        # link_x, link_y = pyautogui.locateCenterOnScreen("img/place_link.png", region=PLACE_LINK_REGION)
-        pyautogui.click(10+70//2, 450+17//2)  # hopefully link text is always at the same height
-        time.sleep(0.1)
-        pyautogui.hotkey('ctrl', 'c')
-        time.sleep(0.3)
-        place_link = pyperclip.paste()
-        with wait_for_screen_change(PLACE_LINKBTN_REGION):
-            pyautogui.click(PLACE_LINKBTN_REGION[0], SEARCH_Y)
-
-        pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])
-        py_scroll(SEARCH_Y - y - h)  # scroll down until `linkbtn` and `search` are aligned
-        time.sleep(0.1)
-        pluscode_xy = None
-        for _ in range(2):
-            # sometimes cursor will land on pluscode row, making the background gray
-            pluscode_xy = py_locateCenter("img/place_pluscode.png", region=PLACE_PLUSCODE_REGION) \
-                or py_locateCenter("img/place_pluscode_gray.png", region=PLACE_PLUSCODE_REGION)
-            if pluscode_xy is not None:
-                break
-            # sometimes pluscode row will be further down, requiring an additional scroll down
-            py_scroll(300 - self.H)
-        if pluscode_xy is None:
-            raise pyautogui.ImageNotFoundException
-        pyautogui.click(pluscode_xy)
-        time.sleep(0.3)
-        place_pluscode = pyperclip.paste()
-
-        place_name = inspect_find_and_copy_first(PLACE_NAME_HTML)
-
-        place_type = inspect_find_and_copy_first(PLACE_TYPE_HTML)
-
-        self.label.config(text=f"{place_name}\n{place_type}\n{place_pluscode}\n{place_link}")
-        return place_name, place_type, place_pluscode, place_link
-
+        for search_query in self.search_queries_naive():
+            pyautogui.click(SEARCH_BAR_X, SEARCH_Y)
+            pyautogui.shortcut('ctrl', 'a')
+            py_paste(search_query)
+            pyautogui.press('enter')
+            time.sleep(5)
+            for _ in self.iter_search_results():
+                self.write_to_csv(extract_place_info_safe())
+        
 
 if __name__ == "__main__":
     root = tk.Tk()

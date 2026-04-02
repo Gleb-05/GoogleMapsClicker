@@ -32,7 +32,7 @@ def scroll_to_next_card(scroll_up=True):
     """
     In a list of search results with place cards, scroll (up by default) to next card.
     Return True when the last card is reached, False otherwise.
-    May stop at second to last card if more than two cards are visible at the top of the list.
+    May stop at second to last card if more than two cards are displayed at the top of the list.
     """
     FIRST_PLACE_CARD_TOP_Y = 240
     LAST_PLACE_CARD_BOTTOM_Y = 635
@@ -52,7 +52,7 @@ def scroll_to_next_card(scroll_up=True):
     # when the last two cards are reached, the card can't move toward the cursor because the scroll is at its edge.
     # thus, the cursor should move toward the card.
     SCROLLBAR_COLOR=(94,94,94)
-    # TODO consider switching to checking the Y coordinate (for cards with smaller height)
+    # TODO consider switching to checking the cursor's Y coordinate (for cards with smaller height)
     if pyautogui.pixelMatchesColor(*SCROLLBAR_REGION[:2], SCROLLBAR_COLOR):
         distance = distance_to_white(left_x, left_y, from_down=scroll_up)
         distance = distance + math.copysign(10, distance)
