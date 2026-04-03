@@ -32,6 +32,9 @@ def inspect_find_and_copy_first(find_query):
     When using inspect find, `$0` args can be used to access what's found in the console.
     Use `$0.textContent` and click on `copy string content` in the context menu.
     `find_query` goes directly into inspect find, and as such can be an html selector.
+
+    Example: when on place webpage, pass `PLACE_NAME_HTML` or `PLACE_TYPE_HTML`
+    as an argument to get name or type of the place.
     """
     # INSPECT_FINDBTN_XY = (760,525)
     INSPECT_CONSOLE_TAB_XY=606,100

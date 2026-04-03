@@ -7,7 +7,7 @@ import keyboard
 
 from constants import PLACE_NAME_HTML, SEARCH_Y
 from utils import py_paste
-from wait_contexts import wait_for_screen_change, wait_for_screen_image
+from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
 from usr_extract_place_info import extract_place_info_safe
@@ -37,7 +37,7 @@ class DebugFrame:
         self.root = root
         self.root.title("Prepare")
         self.W, self.H = root.winfo_screenwidth(), root.winfo_screenheight()
-        self.root.geometry("300x100+{}+{}".format(self.W-400, 100))
+        self.root.geometry("300x250+{}+{}".format(self.W-400, 100))
         self.root.attributes("-topmost", True)
 
         self.steps = {

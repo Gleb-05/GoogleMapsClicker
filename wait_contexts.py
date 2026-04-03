@@ -1,7 +1,6 @@
-import pyautogui
-import pyperclip
-import time
 from contextlib import contextmanager
+import time
+import pyautogui
 from PIL import Image
 
 from utils import is_no_change

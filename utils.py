@@ -5,6 +5,23 @@ import pyperclip
 from PIL import ImageChops
 
 
+class CustomError(Exception):
+    """
+    Re-raise this Error after catching broad exceptions, but with custom vars attached.
+    Generally useful for safe wrappers of methods that process page content.
+    """
+
+    def __init__(self, *, original_exception, **context):
+        """Pass the original exception and key-value arguments to attach meaningful data to the Exception"""
+        self.original_e = original_exception
+        self.context = context
+        super().__init__(self._build_message())
+
+    def _build_message(self):
+        ctx = ", ".join(f"{k}={v}" for k, v in self.context.items())
+        return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
+
+
 def is_no_change(img1, img2):
     """
     Accept two PIL.Image variables [captured with pyautogui.screenshot(region=region)].
@@ -44,9 +61,9 @@ def distance_to_white(left_x, left_y, from_down, threshold=250):
     return None
 
 
-def exception_to_none_decorator(func):
+def exception_to_none_decorator(func, exception_tuple):
     """
-    Wrap any function to return None on error.
+    Wrap any function to return None on errors from `exception_tuple`.
     For consistency it is highly recommended to do `if val = None: raise OriginalException` after wrapped function is used.
     
     Example: wrap `pyautogui.locateCenterOnScreen` and avoid try-catch nesting when doing search on multiple images.
@@ -55,10 +72,13 @@ def exception_to_none_decorator(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception:
+        except exception_tuple:
             return None
     return wrapper
 
 
-py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen)
-"""Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`"""
+py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen, (pyautogui.ImageNotFoundException,))
+"""
+Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`.
+For consistency, if the return value is still None after multiple calls, raise the `...Exception`
+"""
