@@ -31,6 +31,12 @@ def is_no_change(img1, img2):
     return diff.getbbox() is None
 
 
+def py_reload(sleep_s: int = 5):
+    """Reload page via ctlr+f5 shortcut and wait for `sleep_s` seconds"""
+    pyautogui.hotkey('ctrl', 'f5')
+    time.sleep(sleep_s)
+
+
 def py_paste(text):
     """Util to paste text instead of typing (typing may fail if current locale is different from target language)"""
     pyperclip.copy(text)

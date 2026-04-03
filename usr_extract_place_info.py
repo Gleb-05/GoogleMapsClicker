@@ -3,7 +3,7 @@ import pyautogui
 import pyperclip
 
 from constants import SEARCH_Y, PLACE_NAME_HTML, PLACE_TYPE_HTML
-from utils import py_locateCenter, CustomError
+from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_find_and_copy_first
 from gui_scroll import py_scroll
@@ -85,8 +85,7 @@ def extract_place_info_safe():
             place_info = extract_place_info()
         except (TimeoutError, pyautogui.ImageNotFoundException):
             # one more chance to work if something took too long
-            pyautogui.hotkey('ctrl', 'f5')
-            time.sleep(5)
+            py_reload()
             place_info = extract_place_info()
         return place_info
     except Exception as e:

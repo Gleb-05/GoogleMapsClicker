@@ -2,7 +2,7 @@ import math
 import time
 import pyautogui
 
-from constants import SEARCH_SCREEN_CHANGE_REGION, SEARCH_Y, SCROLLBAR_REGION
+from constants import SEARCH_SCREEN_CHANGE_REGION, SEARCH_Y, SCROLLBAR_REGION, SIDEPANEL_Y, SIDEPANEL_COLLAPSE_X, SIDEPANEL_EXPAND_X
 from utils import is_no_change, py_paste, distance_to_white
 from wait_contexts import wait_for_animation_end
 
@@ -15,10 +15,11 @@ def refocus_page():
     By clicking on hide and on show, bring back focus to the page itself.
     Useful to bring shortcuts into correct context.
     """
-    with wait_for_animation_end((0, 425-10, 20, 20)):
-        pyautogui.click(420,425)
-    with wait_for_animation_end((0, 425-10, 20, 20)):
-        pyautogui.click(12,425)
+    SIDEPANEL_CHANGE_REGION = (0, SIDEPANEL_Y-10, 2*SIDEPANEL_EXPAND_X, 20)
+    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
+        pyautogui.click(SIDEPANEL_COLLAPSE_X, SIDEPANEL_Y)
+    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
+        pyautogui.click(SIDEPANEL_EXPAND_X, SIDEPANEL_Y)
 
 
 def py_scroll(distance, region=SEARCH_SCREEN_CHANGE_REGION):
