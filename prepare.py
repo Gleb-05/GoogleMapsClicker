@@ -5,24 +5,19 @@ import tkinter as tk
 import pyautogui
 import keyboard
 
-from constants import PLACE_NAME_HTML, SEARCH_Y
-from utils import py_paste
+from constants import PLACE_NAME_HTML, SCROLLBAR_REGION
 from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
-from gui_scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
+from gui_scroll import total_scroll_down, scroll_to_next_card
+from gui_search import use_search, search_back
 from usr_extract_place_info import extract_place_info_safe
+from usr_get_area_img import get_area_img
 
 SAFE_Y=250  # safely below browser ui edge
 # INSPECT_SCREEN_CHANGE_REGION = (460,) + SEARCH_SCREEN_CHANGE_REGION[1:]
 
 BROWSER_RIGHT_X=870
 INSPECT_LEFT_X=457
-
-
-
-SEARCH_BACK_X = 28
-SEARCH_BAR_X = 122
-# SEARCH_BUTTON_X = 278
 
 
 class DebugFrame:
@@ -51,6 +46,7 @@ class DebugFrame:
             "scroll_to_next_card": scroll_to_next_card,
             "extract_place_info_safe": extract_place_info_safe,
             "process_search_queries": self.process_search_queries,
+            "get_area_img": get_area_img,
         }
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
@@ -130,6 +126,8 @@ class DebugFrame:
           the place webpage is already opened, yield immediately.
         - there are multiple places: the inspect find does NOT have a PLACE_NAME_HTML.
           each place card from the search results should be opened, yield, and then search page should be opened back.
+        
+        A small width of the webpage is assumed (`search_back` only works if the place info replaces the search list visually)
         """
         if inspect_find(PLACE_NAME_HTML):
             yield
@@ -145,7 +143,7 @@ class DebugFrame:
                 # check if page is loaded using SCROLLBAR_REGION
                 try:
                     with wait_for_screen_image(SCROLLBAR_REGION, scrollbar_snapshot, 5):
-                        pyautogui.click(SEARCH_BACK_X, SEARCH_Y)
+                        search_back()
                 except TimeoutError:
                     pass
                 if last_card:
@@ -160,16 +158,14 @@ class DebugFrame:
     def process_search_queries(self):
         """
         For each query from query generator:
-        - enter query into search field
+        - enter query into search bar
         - if "can't find" string is present on the page, skip query
         - if not, use chosen safe procesing on the query results
         """
         for search_query in self.search_queries_naive():
-            pyautogui.click(SEARCH_BAR_X, SEARCH_Y)
-            pyautogui.shortcut('ctrl', 'a')
-            py_paste(search_query)
-            pyautogui.press('enter')
-            time.sleep(5)
+            if not use_search(search_query):
+                # TODO log that search_query gave zero search results
+                continue
             for _ in self.iter_search_results():
                 self.write_to_csv(extract_place_info_safe())
         

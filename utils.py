@@ -32,7 +32,7 @@ def is_no_change(img1, img2):
 
 
 def py_reload(sleep_s: int = 5):
-    """Reload page via ctlr+f5 shortcut and wait for `sleep_s` seconds"""
+    """Reload page via ctlr+f5 hotkey and wait for `sleep_s` seconds"""
     pyautogui.hotkey('ctrl', 'f5')
     time.sleep(sleep_s)
 
