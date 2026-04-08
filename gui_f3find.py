@@ -1,34 +1,22 @@
 import time
 import pyautogui
 
-from constants import SEARCH_Y, SIDEPANEL_Y, SIDEPANEL_COLLAPSE_X, SIDEPANEL_EXPAND_X
 from utils import is_no_change, py_paste
-from wait_contexts import wait_for_animation_end
+from gui_sidepanel import refocus_page
 
-
- # F3FIND_X = 410
-F3FIND_CLOSE_X = 705
-F3FIND_COUNT_REGION = (570-2, 98-2, 21+5, 14+5)  # exact search_f3_once.png coordinates, adjusted for error
-
-
-def refocus_page():
-    """
-    Bring focus back to the page itself by collapsing and expanding the side panel.
-    Useful to bring hotkeys (like ctrl+f) into correct context.
-    """
-    SIDEPANEL_CHANGE_REGION = (0, SIDEPANEL_Y-10, 2*SIDEPANEL_EXPAND_X, 20)
-    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
-        pyautogui.click(SIDEPANEL_COLLAPSE_X, SIDEPANEL_Y)
-    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
-        pyautogui.click(SIDEPANEL_EXPAND_X, SIDEPANEL_Y)
-
+# TODO crutches like this arise from differences in the interface. Find better solution.
+d = 1068-570 # difference between x of f3find_count_region in fullscreen and when set_browser_x is used
+F3FIND_COUNT_REGION = (570-2, 98-2, 21+d+5, 14+5)  # exact search_f3_once.png coordinates, adjusted for error
 
 def open_f3find(f3find_str: str):
     """
     Open the f3find bar using "ctrl+f" hotkey and paste `f3find_str` into it.
     Throw TimeoutError if "ctrl+f" hotkey doesnt work in the browser.
     """
+    # F3FIND_X = 410
     refocus_page()
+    close_f3find()
+    time.sleep(0.1)
     img_before_f3find = pyautogui.screenshot(region=F3FIND_COUNT_REGION)
     for i in range(4):
         # NOTE: special case when wait_for_screen_change wouldnt work, because leading action is repeated in the same loop
@@ -45,17 +33,26 @@ def open_f3find(f3find_str: str):
     py_paste(f3find_str)
 
 
-def f3find_once():
+def f3find_once(close_after=True):
     """
     Use "f3" hotkey to update f3find that was set up with `open_f3find`.
     Return True if 1/1 match is found on the page, otherwise return False.
-    When True is returned, the f3find bar is closed.
+    Calling `f3find_once` will close the f3find bar by default. Pass `close_after=True` to override (for example in loops)
     """
     # TODO add a method for checking for 0/0 as a more robust option compared to 1/1?
     pyautogui.press('f3')
+    match = True
     try:
         pyautogui.locateOnScreen('img/f3find_once.png', region=F3FIND_COUNT_REGION)
-        pyautogui.click(x=F3FIND_CLOSE_X, y=SEARCH_Y)
-        return True
     except pyautogui.ImageNotFoundException:
-        return False
+        match = False
+
+    if close_after:
+        close_f3find()
+    return match
+
+
+def close_f3find():
+    # F3FIND_CLOSE_X = 705
+    # pyautogui.click(x=F3FIND_CLOSE_X, y=SEARCH_Y)
+    pyautogui.press('esc')  # it seems that f3find is the first thing that consumes "esc". doesnt break context

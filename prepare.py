@@ -9,7 +9,7 @@ from constants import PLACE_NAME_HTML, SCROLLBAR_REGION
 from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card
-from gui_search import use_search, search_back
+from gui_search import use_search, search_back, center_on_search_result
 from usr_extract_place_info import extract_place_info_safe
 from usr_get_area_img import get_area_img
 
@@ -47,6 +47,7 @@ class DebugFrame:
             "extract_place_info_safe": extract_place_info_safe,
             "process_search_queries": self.process_search_queries,
             "get_area_img": get_area_img,
+            "center_on_search_result": lambda: center_on_search_result("42,2")
         }
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
@@ -74,7 +75,7 @@ class DebugFrame:
 
     def show_xy(self):
         x, y = pyautogui.position()
-        self.label.config(text=f"X: {x}, Y: {y}")
+        return f"X: {x}, Y: {y}"
 
     @staticmethod
     def auto_advance(func):

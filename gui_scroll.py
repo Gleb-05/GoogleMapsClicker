@@ -5,7 +5,7 @@ import pyautogui
 from constants import SEARCH_SCREEN_CHANGE_REGION, SCROLLBAR_REGION
 from utils import distance_to_white
 from wait_contexts import wait_for_animation_end
-from gui_f3find import open_f3find, f3find_once
+from gui_f3find import open_f3find, f3find_once, close_f3find
 
 PLACE_CARD_XY = (12,550)
 # PLACE_CARD_PAGETOP_XY = (12,255)
@@ -77,7 +77,8 @@ def total_scroll_down(lang='eng'):
         # TODO maybe change to holding a click at the bottom of search result scrollbar
         pyautogui.scroll(-1000)
         time.sleep(0.4)
-        if f3find_once():
+        if f3find_once(close_after=False):
+            close_f3find()
             break
 
     time.sleep(0.1)

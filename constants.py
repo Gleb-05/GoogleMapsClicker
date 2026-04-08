@@ -4,10 +4,6 @@ SEARCH_SCREEN_CHANGE_REGION = (30, 330, 50, 20)
 
 SCROLLBAR_REGION=(405,142,1,586)
 
-SIDEPANEL_Y = 425
-SIDEPANEL_COLLAPSE_X = 420
-SIDEPANEL_EXPAND_X = 12
-
 PLACE_TYPE_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button"
 PLACE_NAME_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[1]/h1/text()"
 
