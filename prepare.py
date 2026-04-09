@@ -1,4 +1,5 @@
 import threading
+import traceback
 import time
 import csv
 import tkinter as tk
@@ -46,8 +47,8 @@ class DebugFrame:
             "scroll_to_next_card": scroll_to_next_card,
             "extract_place_info_safe": extract_place_info_safe,
             "process_search_queries": self.process_search_queries,
-            "get_area_img": get_area_img,
-            "center_on_search_result": lambda: center_on_search_result("42,2")
+            "center_on_search_result": lambda: center_on_search_result("48,2"),
+            "get_area_img": lambda: get_area_img("48,2"),
         }
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
@@ -66,6 +67,7 @@ class DebugFrame:
             result = self.steps[self.step_var.get()]()
         except Exception as e:
             result = e
+            traceback.print_exc()
         self.label.config(text=str(result))
 
     def listen_hotkey(self):

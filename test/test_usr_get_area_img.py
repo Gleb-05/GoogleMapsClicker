@@ -21,12 +21,13 @@ def gather_coordinates(r_width: int, r_height: int):
 def plot_core_path(name, displacements):
     _, axs = plt.subplots()
     plot_path(name, displacements, axs)
-    axs.scatter(0, 0, marker="x", color="red", s=20*2**5)
     axs.figure.savefig(f'{name}.png', bbox_inches='tight')
+    plt.close(axs.figure)
 
 def plot_path(name, xy_list, ax: plt.Axes, lines_list: list = []):  # pylint: disable=dangerous-default-value
     x, y = zip(*xy_list)
     line, = ax.plot(x, y, marker="o", picker=5)
+    ax.scatter(x[0], y[0], marker="x", color="red", s=20*2**5)
     ax.set_title(f"\"{name}\" displacements path")
     ax.invert_yaxis()
     ax.set_aspect('equal', adjustable='box')
@@ -36,13 +37,13 @@ def plot_path(name, xy_list, ax: plt.Axes, lines_list: list = []):  # pylint: di
 # values were taken from `test_unyielding_eyeballing` once and examined visually
 expected_core_displacements: dict[str, list[tuple[int]]] = {
     # square
-    "1,1": [(0,-1), (-1,-1), (-1,0), (-1,1), (0,1), (1,1), (1,0), (1,-1), (0,-2)],
+    "1,1": [(0,0), (0,-1), (-1,-1), (-1,0), (-1,1), (0,1), (1,1), (1,0), (1,-1)],
     # wide
-    "2,1": [(0, -1), (-1, -1), (-2, -1), (-2, 0), (-2, 1), (-1, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (2, 0), (2, -1), (1, 0), (1, -1), (0, -2)],
-    "3,1": [(0, -1), (-1, -1), (-2, -1), (-3, -1), (-3, 0), (-3, 1), (-2, 0), (-2, 1), (-1, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1), (3, 0), (3, -1), (2, 0), (2, -1), (1, 0), (1, -1), (0, -2)],
+    "2,1": [(0,0), (0, -1), (-1, -1), (-2, -1), (-2, 0), (-2, 1), (-1, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (2, 0), (2, -1), (1, 0), (1, -1)],
+    "3,1": [(0,0), (0, -1), (-1, -1), (-2, -1), (-3, -1), (-3, 0), (-3, 1), (-2, 0), (-2, 1), (-1, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1), (3, 0), (3, -1), (2, 0), (2, -1), (1, 0), (1, -1)],
     # tall
-    "1,2": [(0, -1), (0, -2), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, 2), (1, 2), (0, 1), (1, 1), (1, 0), (1, -1), (1, -2), (0, -3)],
-    "1,3": [(0, -1), (0, -2), (0, -3), (-1, -3), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (-1, 3), (0, 3), (1, 3), (0, 2), (1, 2), (0, 1), (1, 1), (1, 0), (1, -1), (1, -2), (1, -3), (0, -4)],
+    "1,2": [(0,0), (0, -1), (0, -2), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, 2), (1, 2), (0, 1), (1, 1), (1, 0), (1, -1), (1, -2)],
+    "1,3": [(0,0), (0, -1), (0, -2), (0, -3), (-1, -3), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (-1, 3), (0, 3), (1, 3), (0, 2), (1, 2), (0, 1), (1, 1), (1, 0), (1, -1), (1, -2), (1, -3)],
 }
 
 
@@ -59,11 +60,15 @@ class TestCoreDisplacements(unittest.TestCase):
             print(displacements)
             plot_core_path(k, displacements)
 
-    def test_assert(self):
+    def test_assert_atleastone(self):
         for i in [2,3]:
             with self.subTest(i=i):
                 with self.assertRaises(AssertionError):
                     next(iter_core_drag_displacements(i,i))
+
+    def test_assert_nonneg(self):
+        with self.assertRaises(AssertionError):
+            next(iter_core_drag_displacements(-1,1))
     
     def test_square(self):
         displacements = gather_displacements(1,1)
@@ -107,7 +112,7 @@ class TestDragDisplacements(unittest.TestCase):
             fig.canvas.draw()
         fig.canvas.mpl_connect('pick_event', on_pick)
 
-    # @unittest.skip("skip after visual validation")
+    @unittest.skip("skip after visual validation")
     def test_different_sizes(self):
         test_margins = [3,2,1,0]
         fig, axs = plt.subplots(1, len(expected_core_displacements), sharey=True)

@@ -1,16 +1,45 @@
 import time
 from enum import IntEnum
 import pyautogui
+from PIL import Image
+import numpy as np
+
+from constants import SCREEN_W, SCREEN_H
+from gui_search import center_on_search_result
 
 # x: from 'Layers' button to '+ -' buttons, y: from account icon to 'Google Maps' text.
 AREA_WIDTH = 1314-100
-AREA_HEIGHT = 724-140
-AREA_REGION = (100, 140, AREA_WIDTH, AREA_HEIGHT)
+AREA_HEIGHT = 724-145  # should be safely below interactive ui elements
+AREA_REGION = (100, 145, AREA_WIDTH, AREA_HEIGHT)
 
-def get_area_img():
-    """With side pannel collapsed, make a screenshot of the map area."""
-    return "image"
+def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
+    """
+    Return an image that shows a region of the map. At the center of the region is a marker found by searching `area_query`.
 
+    `area_query` is typically a pair of decimal coordinates, like *(48.643650, 1.921213)*.
+
+    The screen visible around the marker is called an AREA.
+    AREA_WIDTH and AREA_HEIGHT constants define an area unobstructed by the elements of google maps interface.
+
+    `r_width` and `r_height` extend the area horizontally and vertically. They determine the final region to be captured.
+    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
+    """
+    center_on_search_result(area_query)   
+
+    final_img = np.zeros(((1+2*r_height)*AREA_HEIGHT, (1+2*r_width)*AREA_WIDTH, 3))
+    for x,y in iter_drag_displacements(r_width, r_height):
+        area = np.asarray(pyautogui.screenshot(region=AREA_REGION))
+        x0, y0 = x*AREA_WIDTH, y*AREA_HEIGHT
+        x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
+        final_img[y0:y1, x0:x1] = area
+
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
+    return final_img
+
+def get_area_scale():
+    """Get an image of map's scale (pixel distance to real distance)"""
+    SCALE_REGION = (SCREEN_W-224, SCREEN_H-16, 224, 16)
+    return pyautogui.screenshot(region=SCALE_REGION)
 
 class disp(IntEnum):
     """
@@ -75,7 +104,7 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
     
     Surrounding areas should be within the smallest possible core rectangle for which the difference between sides is equal to  `abs(r_width - r_height)`.
     
-    Conclude (rel_x, rel_y) generation at (0, -core_height - 1) to ensure continuous dragging by other methods.
+    Conclude (rel_x, rel_y) generation at (1, -core_height) to ensure continuous dragging by other methods.
 
     The core rectangle, if `r_width > r_height`:
         - `core_width = r_width - r_height + 1` and `core_height = 1`
@@ -92,6 +121,8 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
     # begin at reference area
     rel_x, rel_y = 0, 0
     assert r_width==1 or r_height==1, "iter_core_drag_displacements expects at least one of r_width or r_height to equal 1"
+    assert r_width>=1 and r_height>=1, "iter_core_drag_displacements expects both argument to be equal or greater than 1"
+    yield rel_x, rel_y
 
     def move(disp_x: disp, disp_y: disp, do_drag_area = do_drag_area):
         """
@@ -139,25 +170,25 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
         yield move(disp.NEG, disp.POS)
         yield move(disp.ZER, disp.NEG)
 
-    # final move to an area directly above the upper edge center
-    yield move(disp.NEG, disp.NEG)
+    # stop at relative (1, -r_height)
+    # move on to the next r_height (increase radius)
 
 
 def iter_enclose_drag_displacement(r_width: int, r_height: int = 0, do_drag_area: bool = False):
-    """Starting from an area at (cx, cy - r_height), 
+    """Starting from an area at (cx+1, cy - (r_height - 1)), 
     generate a sequence of relative displacements `(rel_x, rel_y)` 
-    to visit all areas that enclose a *r_width-by-r_height* rectangle for which the starting area is a center of the upper edge.
+    to visit all areas that enclose a ***r_width-by-r_height* rectangle for which (cx, cy - r_height) is a center of the upper edge**.
     Pass `do_drag_area = True` to do `drag_area(xd, yd)` immediately during the generation of the sequence.
     
-    `iter_enclose_drag_displacement` is assumed to be used after the `iter_core_drag_displacement`.
-    This determined the (cx, cy - r_height) starting area and the (cx, cy) reference point for the displacements.
+    `iter_enclose_drag_displacement` is used after the `iter_core_drag_displacement` or another `iter_enclose...`.
+    This determines the (cx+1, cy - (r_height-1)) starting area and the (cx, cy) reference point for the displacements.
 
-    Conclude (rel_x, rel_y) generation at (0, -r_height - 1) to ensure continuous dragging by other methods.
+    Conclude (rel_x, rel_y) generation at (1, -r_height) to ensure continuous dragging by other methods.
     
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
     """
     # begin at starting area
-    rel_x, rel_y = 0, -r_height
+    rel_x, rel_y = 1, 1 - r_height
 
     def move(disp_x: disp, disp_y: disp, do_drag_area = do_drag_area):
         """
@@ -169,6 +200,9 @@ def iter_enclose_drag_displacement(r_width: int, r_height: int = 0, do_drag_area
         if do_drag_area:
             drag_area(disp_x, disp_y)
         return rel_x, rel_y
+
+    # initial move to relative coordinates (0, -r_height)
+    yield move(disp.NEG, disp.NEG)
     
     # upper edge center, move left
     while rel_x > r_width * -1:
@@ -190,9 +224,6 @@ def iter_enclose_drag_displacement(r_width: int, r_height: int = 0, do_drag_area
     while rel_x > 1:
         yield move(disp.NEG, disp.ZER)
 
-    # final move to an area directly above the upper edge center
-    yield move(disp.NEG, disp.NEG)
-
 
 def iter_drag_displacements(r_width: int, r_height: int, do_drag_area: bool = True):
     """Starting from the reference area at the Center, yield coordinates `(x, y)` for all surrounding areas 
@@ -202,12 +233,16 @@ def iter_drag_displacements(r_width: int, r_height: int, do_drag_area: bool = Tr
     - Width:  `2 * r_width + 1`
     - Height: `2 * r_height + 1`
 
+    The coordinates are positive indices starting from 0, meaning that they can be used to arrange the yielded areas in a correct order.
+
     Pass `do_drag_area = True` to do `drag_area(xd, yd)` immediately during the generation of coordinates.
 
-    AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
+    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
     """
-    # those coordinates can be used to arrange yielded areas into one using array syntax
     x, y = r_width, r_height
+    if x == y == 0:
+        yield 0, 0
+        return
 
     core_width, core_height = core_dimensions(r_width, r_height)
     for core_rel_x, core_rel_y in iter_core_drag_displacements(core_width, core_height, do_drag_area):

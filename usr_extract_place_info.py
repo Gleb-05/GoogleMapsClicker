@@ -2,7 +2,7 @@ import time
 import pyautogui
 import pyperclip
 
-from constants import SEARCH_Y, PLACE_NAME_HTML, PLACE_TYPE_HTML
+from constants import SCREEN_H, SEARCH_Y, PLACE_NAME_HTML, PLACE_TYPE_HTML
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_find_and_copy_first
@@ -54,8 +54,7 @@ def extract_place_link():
 
 
 def extract_place_pluscode():
-    win_H = 760  # TODO inherit winfo_screenheight from tk app, don't leave constant!
-    PLACE_PLUSCODE_REGION = (20, SEARCH_Y, 50-20, win_H-SEARCH_Y-10)
+    PLACE_PLUSCODE_REGION = (20, SEARCH_Y, 50-20, SCREEN_H-SEARCH_Y-10)
 
     pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])  # for scroll to work, cursor should be in a good position
     pluscode_xy = None
@@ -66,7 +65,7 @@ def extract_place_pluscode():
         if pluscode_xy is not None:
             break
         # sometimes pluscode row will be further down, requiring an additional scroll down
-        py_scroll(300 - win_H)
+        py_scroll(300 - SCREEN_H)
     if pluscode_xy is None:
         raise pyautogui.ImageNotFoundException
     pyautogui.click(pluscode_xy)

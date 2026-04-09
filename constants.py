@@ -1,3 +1,6 @@
+SCREEN_W = 1366 # TODO inherit winfo_screenwidth from tk app, don't leave constant!
+SCREEN_H = 768  # TODO same with winfo_screenheight
+
 SEARCH_Y = 112
 # rectangle somewhere in the middle of the google maps interface, useful for scroll checks
 SEARCH_SCREEN_CHANGE_REGION = (30, 330, 50, 20)
