@@ -1,7 +1,7 @@
 import time
 import pyautogui
 
-from constants import SEARCH_Y, PLACE_NAME_HTML
+from constants import SEARCH_Y, SEARCH_BAR_X, PLACE_NAME_HTML
 from utils import py_paste, py_reload
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
@@ -14,7 +14,6 @@ def use_search(search_query: str):
     Returned `True` indicates that the search was successfull.
     5sec wait is included.
     """
-    SEARCH_BAR_X = 122
     # SEARCH_BUTTON_X = 278
     pyautogui.click(SEARCH_BAR_X, SEARCH_Y)
     pyautogui.hotkey('ctrl', 'a')
