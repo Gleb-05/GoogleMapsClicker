@@ -5,12 +5,13 @@ from PIL import Image
 import numpy as np
 
 from constants import SCREEN_W, SCREEN_H
+from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 
-# x: from 'Layers' button to '+ -' buttons, y: from account icon to 'Google Maps' text.
-AREA_WIDTH = 1314-100
-AREA_HEIGHT = 724-145  # should be safely below interactive ui elements
-AREA_REGION = (100, 145, AREA_WIDTH, AREA_HEIGHT)
+# AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text.
+AREA_WIDTH = 1314-110  # should be safely (10px) beside interactive ui elements
+AREA_HEIGHT = 724-145  # same
+AREA_REGION = (110, 145, AREA_WIDTH, AREA_HEIGHT)
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     """
@@ -34,12 +35,15 @@ def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
         final_img[y0:y1, x0:x1] = area
 
     Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
+    expand_sidepanel()
     return final_img
+
 
 def get_area_scale():
     """Get an image of map's scale (pixel distance to real distance)"""
     SCALE_REGION = (SCREEN_W-224, SCREEN_H-16, 224, 16)
     return pyautogui.screenshot(region=SCALE_REGION)
+
 
 class disp(IntEnum):
     """
@@ -55,7 +59,7 @@ class disp(IntEnum):
     ZER = 0
 
 
-def drag_area(xd=disp.ZER, yd=disp.ZER):
+def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = AREA_REGION):
     """
     For currently displayed area at (x,y), perform dragging to view area at (x+xd, y+yd).
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
@@ -63,20 +67,29 @@ def drag_area(xd=disp.ZER, yd=disp.ZER):
     If `xd == 1`, for example, then `drag_area` will show an area to the right of the current area.
     *It is already accounted for that for a positive displacement the drag should be negative.*
     """
+    area_width = area_region[2]
+    area_height = area_region[3]
+
     x_from = x_to = AREA_REGION[0]
     if xd==disp.POS:
-        x_from += AREA_WIDTH
+        x_from += area_width
     elif xd==disp.NEG:
-        x_to += AREA_WIDTH
+        x_to += area_width
 
     y_from = y_to = AREA_REGION[1]
     if yd==disp.POS:
-        y_from += AREA_HEIGHT
+        y_from += area_height
     elif yd==disp.NEG:
-        y_to += AREA_HEIGHT
+        y_to += area_height
     
-    pyautogui.moveTo(x_from, y_from)
-    pyautogui.dragTo(x_to, y_to, 1)
+    # google maps pics up dragging on 4th pixel with mousedown !!!
+    pyautogui.moveTo(x_from - 3, y_from)
+    pyautogui.mouseDown()
+    time.sleep(0.1)
+    pyautogui.moveTo(x_from, y_from, 0.1)
+    pyautogui.moveTo(x_to, y_to, 0.3)  # TODO add wait_for_animation_end
+    time.sleep(0.1)  # small stop needed to prevent inertia from moving areas further
+    pyautogui.mouseUp()
     time.sleep(0.1)
 
 

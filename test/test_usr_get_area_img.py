@@ -2,8 +2,10 @@ import unittest
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pyautogui
+from PIL import Image
 
-from usr_get_area_img import iter_core_drag_displacements, iter_drag_displacements
+from usr_get_area_img import iter_core_drag_displacements, iter_drag_displacements, drag_area, disp, AREA_REGION
 
 
 def gather_displacements(r_width: int, r_height: int):
@@ -128,6 +130,63 @@ class TestDragDisplacements(unittest.TestCase):
         plt.suptitle("Click on a line to view it")
         plt.show()   
 
-            
+
+class TestDragArea(unittest.TestCase):
+    """test `drag_area` from usr_get_area_img"""
+
+    @staticmethod
+    def drag_shift():
+        """Drag one point in a closed loop around the screen to see how drag imperfections accumulate.
+        The loop from left-upper corner:
+        - right-down, left-up, right, down, left, right-up, left-down, up
+
+        After each step a screenshot of the left-upper corner is saved.
+        All screenshots are saved into an image with margins between them, where one row corresponds to one complete loop.
+
+        Before testing, search for "laduree" in google maps and hide sidebar.
+        """
+        # right = x positive, down = y positive
+        loop_steps = [
+            (disp.POS, disp.POS),
+            (disp.NEG, disp.NEG),
+            (disp.POS, disp.ZER),
+            (disp.ZER, disp.POS),
+            (disp.NEG, disp.ZER),
+            (disp.POS, disp.NEG),
+            (disp.NEG, disp.POS),
+            (disp.ZER, disp.NEG)
+        ]
+        loop_repeat = 3
+        r_area = 10
+        area_side = 2 * r_area
+    
+        # prepare an image of a table with loop_repeat rows and len(loop_steps) columns
+        # account for black margins for cells with `+ 2` in the multiplier
+        cell_side = area_side + 2
+        test_img = np.zeros((loop_repeat*cell_side, len(loop_steps)*cell_side, 3))
+    
+        x, y, w, h = AREA_REGION
+        x = x + r_area
+        y = y + r_area
+        w = w - area_side
+        h = h - area_side
+        shrinked_region = (x, y, w, h)
+
+        x, y = x+w, y+h  # align x,y that duplicate loop displacements with the first displacement to track the same area
+        for j in range(loop_repeat):
+            for i, step in enumerate(loop_steps):
+                xd, yd = step
+                drag_area(xd, yd, shrinked_region)
+                x -= xd * w
+                y -= yd * h
+                area = np.asarray(pyautogui.screenshot(region=(x-r_area, y-r_area, area_side, area_side)))
+                x0, y0 = i*cell_side, j*cell_side
+                x1, y1 = x0 + area_side, y0 + area_side
+                test_img[y0:y1, x0:x1] = area
+
+        Image.fromarray(test_img.astype(dtype=np.uint8), mode="RGB").save("test_drag_area.png")
+
+
+
 if __name__ == '__main__':
     unittest.main()

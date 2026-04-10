@@ -2,7 +2,8 @@ import time
 import functools
 import pyautogui
 import pyperclip
-from PIL import ImageChops
+from PIL import ImageChops, Image
+import numpy as np
 
 
 class CustomError(Exception):
@@ -22,13 +23,30 @@ class CustomError(Exception):
         return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
 
 
-def is_no_change(img1, img2):
+def strict_no_change(img1, img2):
     """
     Accept two PIL.Image variables [captured with pyautogui.screenshot(region=region)].
     Return `True` if images have no differences.
     """
     diff = ImageChops.difference(img1, img2)
     return diff.getbbox() is None
+
+
+def is_no_change(img1, img2, threshold = 0.05, save_diff_img = False):
+    """
+    Accept two PIL.Image variables [captured with pyautogui.screenshot(region=region)].
+    Return `True` if mean of absolute pixel differences between images is lover than threshold.
+
+    Pass save_diff_img to save an array of absolute pixel differences in its own image.
+    """
+    arr1 = np.array(img1).astype(np.int16)
+    arr2 = np.array(img2).astype(np.int16)
+    diff = np.abs(arr1 - arr2).astype(np.uint8)
+    mean_diff = np.mean(np.abs(diff))
+    if save_diff_img:
+        Image.fromarray(diff).save(f"compare_{mean_diff}.png")
+
+    return mean_diff < threshold
 
 
 def py_reload(sleep_s: int = 5):

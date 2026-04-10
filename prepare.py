@@ -6,6 +6,8 @@ import tkinter as tk
 import pyautogui
 import keyboard
 
+from test.test_usr_get_area_img import TestDragArea
+
 from constants import PLACE_NAME_HTML, SCROLLBAR_REGION
 from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
@@ -49,6 +51,7 @@ class DebugFrame:
             "process_search_queries": self.process_search_queries,
             "center_on_search_result": lambda: center_on_search_result("48,2"),
             "get_area_img": lambda: get_area_img("48,2"),
+            "test_drag_area": TestDragArea.drag_shift
         }
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
