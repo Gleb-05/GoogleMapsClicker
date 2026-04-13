@@ -1,15 +1,20 @@
 from contextlib import contextmanager
 import time
 import pyautogui
+from typing import Any
 from PIL import Image
 
 from utils import is_no_change
 
 
 @contextmanager
-def wait_for_screen_change(region, timeout=10, interval=0.3, timeout_msg="Screen did not change in time"):
+def wait_for_screen_change(
+        region : tuple[int, int, int, int] | None, 
+        timeout : float = 10, 
+        interval : float = 0.3, 
+        timeout_msg="Screen did not change in time"):
     """
-    Compare given region of screen at regular intervals until either:
+    Compare given pyautogui region of screen at regular intervals until either:
     - region at the current moment is different from the previous moment
     - or the timeout was reached
     """
@@ -28,9 +33,14 @@ def wait_for_screen_change(region, timeout=10, interval=0.3, timeout_msg="Screen
 
 
 @contextmanager
-def wait_for_screen_image(region, image: str| Image.Image, timeout=10, interval=0.3, timeout_msg="The image did not appear in time"):
+def wait_for_screen_image(
+        region : tuple[int, int, int, int] | None, 
+        image: str| Image.Image | Any, 
+        timeout : float = 10, 
+        interval : float = 0.3, 
+        timeout_msg="The image did not appear in time"):
     """
-    Compare given region of screen at regular intervals until either:
+    Compare given pyautogui region of screen at regular intervals until either:
     - region at the current moment is same as the given image
     - or the timeout was reached
     """
@@ -50,8 +60,12 @@ def wait_for_screen_image(region, image: str| Image.Image, timeout=10, interval=
 
 
 @contextmanager
-def wait_for_animation_end(region, timeout=10, interval=0.1, timeout_msg="Animation took too long"):
-    """Wait until given region stops changing between intervaled comparisons. Example: when does scroll end"""
+def wait_for_animation_end(
+        region : tuple[int, int, int, int] | None, 
+        timeout : float = 10, 
+        interval : float = 0.1, 
+        timeout_msg="Animation took too long"):
+    """Wait until given pyautogui region stops changing between intervaled comparisons. Example: when does scroll end"""
     yield
     start = time.time()
     while True:

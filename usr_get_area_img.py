@@ -5,8 +5,10 @@ from PIL import Image
 import numpy as np
 
 from constants import SCREEN_W, SCREEN_H
+from wait_contexts import wait_for_animation_end
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
+from gui_map import drag_map
 
 # AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text.
 AREA_WIDTH = 1314-110  # should be safely (10px) beside interactive ui elements
@@ -82,15 +84,7 @@ def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = AREA_REGION):
     elif yd==disp.NEG:
         y_to += area_height
     
-    # google maps pics up dragging on 4th pixel with mousedown !!!
-    pyautogui.moveTo(x_from - 3, y_from)
-    pyautogui.mouseDown()
-    time.sleep(0.1)
-    pyautogui.moveTo(x_from, y_from, 0.1)
-    pyautogui.moveTo(x_to, y_to, 0.3)  # TODO add wait_for_animation_end
-    time.sleep(0.1)  # small stop needed to prevent inertia from moving areas further
-    pyautogui.mouseUp()
-    time.sleep(0.1)
+    drag_map(x_from, y_from, x_to, y_to)
 
 
 def core_dimensions(r_width: int, r_height: int):

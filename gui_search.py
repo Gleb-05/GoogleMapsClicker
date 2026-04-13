@@ -1,11 +1,12 @@
 import time
 import pyautogui
 
-from constants import SEARCH_Y, SEARCH_BAR_X, PLACE_NAME_HTML
-from utils import py_paste, py_reload
+from constants import SEARCH_Y, SEARCH_BAR_X, PLACE_NAME_HTML, SCROLLBAR_REGION
+from utils import py_paste
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
+from gui_map import drag_map
 
 
 def use_search(search_query: str):
@@ -52,5 +53,12 @@ def center_on_search_result(search_query: str):
     Enter query - Reload page - Hide side pannel
     """
     use_search(search_query)
-    py_reload()
+    # py_reload() # puts the marker dead in the screen center, but introduces too much delay
+    # monkey-patch with drag by EXACT distance between screen center and usual marker position after search
+    y_to = SCROLLBAR_REGION[1] + 20
+    x_to = SCROLLBAR_REGION[0] + 20
+    y_from = y_to + 1
+    x_from = x_to + 240
+    drag_map(x_from, y_from, x_to, y_to)
     collapse_sidepanel()
+    
