@@ -20,17 +20,18 @@ def gather_coordinates(r_width: int, r_height: int):
         coords.append(xy)
     return coords
 
-def plot_core_path(name, displacements):
+def plot_core_path(name: str, displacements):
     _, axs = plt.subplots()
     plot_path(name, displacements, axs)
-    axs.figure.savefig(f'{name}.png', bbox_inches='tight')
+    fname = name.replace(" ", "_")
+    axs.figure.savefig(f'{fname}.png', bbox_inches='tight')
     plt.close(axs.figure)
 
 def plot_path(name, xy_list, ax: plt.Axes, lines_list: list = []):  # pylint: disable=dangerous-default-value
     x, y = zip(*xy_list)
     line, = ax.plot(x, y, marker="o", picker=5)
-    ax.scatter(x[0], y[0], marker="x", color="red", s=20*2**5)
-    ax.set_title(f"\"{name}\" displacements path")
+    ax.scatter(x[0], y[0], marker="x", color="red", s=20*2**3)
+    ax.set_title(name)
     ax.invert_yaxis()
     ax.set_aspect('equal', adjustable='box')
     lines_list.append(line)
@@ -60,7 +61,7 @@ class TestCoreDisplacements(unittest.TestCase):
             w, h = int(w), int(h)
             displacements = gather_displacements(w, h)
             print(displacements)
-            plot_core_path(k, displacements)
+            plot_core_path(f"{w},{h} displacement path", displacements)
 
     def test_assert_atleastone(self):
         for i in [2,3]:
@@ -94,7 +95,9 @@ class TestDragDisplacements(unittest.TestCase):
 
     def connect_pick_interactivity(self, fig: plt.Figure, lines: plt.Line2D):
         """
-        Connects click events to bring a line to top temporarily.
+        Connects click events to bring one line of the graph to top temporarily.
+        
+        I have no idea how this works.
         """
         lines_z = [l.get_zorder() for l in lines]
         def on_pick(event: matplotlib.backend_bases.PickEvent):
@@ -130,17 +133,29 @@ class TestDragDisplacements(unittest.TestCase):
         plt.suptitle("Click on a line to view it")
         plt.show()   
 
+    @unittest.skip("skip after plotting")
+    def test_unyielding_eyeballing(self):
+        margin = 2
+        for k in expected_core_displacements:
+            w, h = k.split(",")
+            w, h = int(w)+margin, int(h)+margin
+            displacements = gather_coordinates(w, h)
+            plot_core_path(f"{2*w+1}x{2*h+1} nodes path", displacements)
+
 
 class TestDragArea(unittest.TestCase):
     """test `drag_area` from usr_get_area_img"""
 
     @staticmethod
     def drag_shift():
-        """Drag one point in a closed loop around the screen to see how drag imperfections accumulate.
-        The loop from left-upper corner:
-        - right-down, left-up, right, down, left, right-up, left-down, up
+        """Drag the viewable area in a closed loop around the screen to see how drag imperfections accumulate.
+        
+        The loop happens in a 2x2 grid of viewable areas.
+        The loop starts in the left-upper area of this grid and goes through the following displacements:
+        `[ right-down, left-up, right, down, left, right-up, left-down, up ]`
 
-        After each step a screenshot of the left-upper corner is saved.
+        All viewable areas share one corner at the center of the grid, which is the only place shared across all steps of the loop.
+        After each step a screenshot of the center of the grid is saved.
         All screenshots are saved into an image with margins between them, where one row corresponds to one complete loop.
 
         Before testing, search for "laduree" in google maps and hide sidebar.
@@ -160,11 +175,12 @@ class TestDragArea(unittest.TestCase):
         r_area = 10
         area_side = 2 * r_area
     
-        # prepare an image of a table with loop_repeat rows and len(loop_steps) columns
-        # account for black margins for cells with `+ 2` in the multiplier
+        # prepare an image of a table with `loop_repeat` rows and `len(loop_steps)` columns
+        # account for a black border around cells with `+2` margin
         cell_side = area_side + 2
         test_img = np.zeros((loop_repeat*cell_side, len(loop_steps)*cell_side, 3))
     
+        # x, y of the AREA_REGION are at the left-upper corner
         x, y, w, h = AREA_REGION
         x = x + r_area
         y = y + r_area
@@ -172,7 +188,11 @@ class TestDragArea(unittest.TestCase):
         h = h - area_side
         shrinked_region = (x, y, w, h)
 
-        x, y = x+w, y+h  # align x,y that duplicate loop displacements with the first displacement to track the same area
+        # Select a corner of the starting area which is the center of the 2x2 grid.
+        # In this case, the left-upper area of the grid is the starting area, 
+        #   so its right-lower corner is the center of the grid.
+        x, y = x+w, y+h
+
         for j in range(loop_repeat):
             for i, step in enumerate(loop_steps):
                 xd, yd = step
