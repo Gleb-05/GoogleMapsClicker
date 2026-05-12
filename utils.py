@@ -23,6 +23,12 @@ class CustomError(Exception):
         return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
 
 
+def select_addressbar():
+    """Move focus to the address bar of the browser, highlighting the entire webpage address"""
+    pyautogui.hotkey('alt', 'd')
+    time.sleep(0.3)
+
+
 def strict_no_change(img1, img2):
     """
     Accept two PIL.Image variables [captured with pyautogui.screenshot(region=region)].
