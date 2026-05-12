@@ -1,11 +1,9 @@
-import time
 from enum import IntEnum
 import pyautogui
 from PIL import Image
 import numpy as np
 
 from constants import SCREEN_W, SCREEN_H
-from wait_contexts import wait_for_animation_end
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map
@@ -89,16 +87,14 @@ def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = AREA_REGION):
 
 def core_dimensions(r_width: int, r_height: int):
     """
-    Derive smallest possible "core dimensions" for which the difference is equal to `abs(r_width - r_height)`.
+    Derive smallest possible "core dimensions" for which the difference is equal to `r_width - r_height`.
     For example
     - core_dimensions(7, 5) => (3,1)
     - core_dimensions(4, 9) => (1,6)
     - core_dimensions(1, 1) => (1,1)
     """
-    diff = abs(r_width - r_height)
-    core_width, core_height = diff + 1, 1
-    if r_height > r_width:
-        core_width, core_height = core_height, core_width
+    diff = min(r_width, r_height)
+    core_width, core_height = 1 + r_width - diff, 1 + r_height - diff
     return core_width, core_height
 
 
@@ -109,8 +105,9 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
     to visit all surrounding areas EXACTLY once.
     Pass `do_drag_area = True` to do `drag_area(xd, yd)` immediately during the generation of the sequence.
     
-    Surrounding areas should be within the smallest possible core rectangle for which the difference between sides is equal to  `abs(r_width - r_height)`.
-    
+    Surrounding areas should be within the smallest possible core rectangle for which the difference between sides is equal to  `r_width - r_height`.
+    At least one of `r_height` or `r_width` should be equal to 1.
+
     Conclude (rel_x, rel_y) generation at (1, -core_height) to ensure continuous dragging by other methods.
 
     The core rectangle, if `r_width > r_height`:
@@ -120,8 +117,6 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
         - Height: `3`
     
     For `r_height > r_width`, similar reasoning applies.
-
-    At least one of `r_height` or `r_width` should be equal to 1.
 
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
     """

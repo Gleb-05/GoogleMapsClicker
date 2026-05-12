@@ -49,8 +49,11 @@ def zero_search_results(lang='eng'):
 
 def center_on_search_result(search_query: str):
     """
-    Align the center of the viewable area with the place marker by performing the following sequence:
-    Enter query - Reload page - Hide side pannel
+    Align the center of the viewable area with the place marker by performing the following sequence: <br>
+    Enter query - Drag the map (currently hardcoded) - Hide side panel
+
+    *Previously Enter query - Reload page - Hide side pannel, 
+    which is less dependent on gui (+) but considerably increases the execution time (-)*
     """
     use_search(search_query)
     # py_reload() # puts the marker dead in the screen center, but introduces too much delay
@@ -61,4 +64,3 @@ def center_on_search_result(search_query: str):
     x_from = x_to + 240
     drag_map(x_from, y_from, x_to, y_to)
     collapse_sidepanel()
-    
