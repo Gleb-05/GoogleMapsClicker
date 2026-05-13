@@ -11,5 +11,17 @@ SCROLLBAR_REGION=(405,142,1,586)
 PLACE_TYPE_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button"
 PLACE_NAME_HTML="/html/body/div[1]/div[2]/div[9]/div[8]/div/div/div[1]/div[2]/div/div[1]/div/div/div[2]/div/div[1]/div[1]/h1/text()"
 
-RMB_FIRST_OPTION_BELOW_RELATIVE_XY = (90, 30)
-RMB_FIRST_OPTION_ABOVE_RELATIVE_XY = (90,-230)  # rmb menu appears above mouse cursor when closer to page bottom
+RMB_FIRST_OPTION_BELOW_RELATIVE_XY = (60, 25)
+"""
+It's important to know that when the cursor is too close to screen bottom, two behaviors are possible:
+- Context menu snaps to the screen bottom.
+  Its first option maintains constant distance from the screen bottom - `y_cutoff`. <br>
+  Opening the context menu with a `(x,y)` click where `y > y_cutoff`
+  is guaranteed to make the first option clickable at `y_cutoff + 10`
+- After falling below a certain `y_cutoff`, context menu reorients itself and appears above the cursor.
+  Its first option maintains constant distance from the cursor - `context_height`. <br>
+  Opening the context menu with a `(x,y)` click where `y > y_cutoff`
+  is guaranteed to make the first option clickable at `y - context_height + 10`.
+
+Be mindful of those cases when writing code.
+"""

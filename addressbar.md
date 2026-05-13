@@ -49,6 +49,8 @@ Alt google account, sat | place/Ladur%C3%A9e+Bretagne/ <br>@48.8628084,2.3604114
 
 Things after `?` can be preserved from an initial query in case they are critical. It seems like they remain the same within successful and unsuccessful links. They don't seem to store identifiers. Here `authuser` helps choose between multiple authenticated google users, `entry=ttu` hints that the link was typed out rather than clicked, and `g_ep` most likely relates to google analytics. All those things can be dropped without harming the loading time or content of the webpage that follows the link.
 
+After trying google maps on other devices, it was determined that `g_ep` is definitely not an identifier and simply describes properties of the page and what happened on it.
+
 Things relating to `data=` certainly store everything about a place, because if removed from the link, the webpage that follows stops displaying all place details, although still aligned with correct coordinates.
 
 Codes between `!` after `data=` seem to relate to the parameters of the page. Some of them certainly determine what is shown - a map or a satellite image. Attempts to manipulate them to switch between a map and a satellite image were not successful.
