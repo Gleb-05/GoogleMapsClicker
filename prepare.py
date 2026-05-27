@@ -14,7 +14,7 @@ from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card
 from gui_search import use_search, search_back, center_on_search_result
 from usr_extract_place_info import extract_place_info_safe
-from usr_get_area_img import get_area_img, get_area_dd_wh, get_dd_rect_img
+from usr_get_area_img import get_area_img, get_area_dd_wh, get_dd_rect_img, get_area_stats
 from gui_map import map_get_coords_at_cursor, map_toggle_sat_labels
 
 SAFE_Y=250  # safely below browser ui edge
@@ -58,6 +58,8 @@ class DebugFrame:
             "get_dd_rect_img_map": lambda: get_dd_rect_img("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543"),
             "get_dd_rect_img_sat": lambda: get_dd_rect_img("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543", satellite=True),
             "test_drag_area": TestDragArea.drag_shift,
+            "get_area_stats": get_area_stats,
+            "test_area_deforms": TestDragArea.area_deforms,
             "map_get_coords_at_cursor": map_get_coords_at_cursor,
             "map_toggle_sat_labels": map_toggle_sat_labels
         }

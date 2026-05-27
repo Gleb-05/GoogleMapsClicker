@@ -1,11 +1,19 @@
 import unittest
+import time
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pyautogui
 from PIL import Image
 
-from usr_get_area_img import iter_core_drag_displacements, iter_drag_displacements, drag_area, disp, AREA_REGION
+from usr_get_area_img import (
+    iter_core_drag_displacements, 
+    iter_drag_displacements, 
+    drag_area, 
+    addressbar_center_at_dd, 
+    get_area_stats,
+    disp, AREA_REGION
+    )
 
 
 def gather_displacements(r_width: int, r_height: int):
@@ -207,6 +215,19 @@ class TestDragArea(unittest.TestCase):
         Image.fromarray(test_img.astype(dtype=np.uint8), mode="RGB").save("test_drag_area.png")
 
 
+    @staticmethod
+    def area_deforms():
+        """Drag from top of France downward and record area deformities caused by map projection into one file"""
+        TOP = "51.019308981766414,2.1669934760145924"
+        addressbar_center_at_dd(TOP)
+        with open("map_projection_deforms.txt", mode="wt", encoding="utf-8") as f:
+            for _ in range(50):
+                stats = get_area_stats()
+                print(stats)
+                f.write(stats)
+                time.sleep(1)
+                for _ in range(5):
+                    drag_area(yd = disp.POS)
 
 if __name__ == '__main__':
     unittest.main()

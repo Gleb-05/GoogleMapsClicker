@@ -36,7 +36,7 @@ def map_switch_view():
 
 
 def map_get_coords_at_cursor():
-    """Get pair of decimal degree coordinates of map point at current cursor position from leftclick context menu"""
+    """Get x(long)-y(lat) decimal degree coordinates of map point at current cursor position from leftclick context menu (lat-long)"""
     CONTEXT_Y_CUTOFF = 384  # when clicking on y below the cutoff, the context menu stays at the cutoff
     CONTEXT_CLOSE_XY = 796,744
 
@@ -55,5 +55,5 @@ def map_get_coords_at_cursor():
     pyautogui.click(CONTEXT_CLOSE_XY)
     time.sleep(0.01)
 
-    x_dd, y_dd = pyperclip.paste().split(",")
+    y_dd, x_dd = pyperclip.paste().split(",")  # lat-long!
     return float(x_dd), float(y_dd)
