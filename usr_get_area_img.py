@@ -6,6 +6,7 @@ from PIL import Image
 import numpy as np
 
 from constants import SCREEN_W, SCREEN_H
+from utils import switch_tab
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
@@ -44,7 +45,7 @@ def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     return final_img
 
 
-def construct_region(r_width: int = 1, r_height: int = 1):
+def construct_region(r_width: int = 1, r_height: int = 1, area_edges=False):
     """
     Construct a rectangular region by screenshotting visible areas in a hamilton path and combining the screenshots.
     The path covers everything from area at `(-r_width, -r_height)` to area at `(r_width, r_height)`, relative to a center area.
@@ -60,6 +61,9 @@ def construct_region(r_width: int = 1, r_height: int = 1):
         x0, y0 = x*AREA_WIDTH, y*AREA_HEIGHT
         x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
+        fir = final_img[y0:y1, x0:x1]  # final image region
+        if area_edges:
+            fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
     expand_sidepanel()
     return final_img
 
@@ -87,9 +91,14 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
         map_toggle_sat_labels()
 
     area_width_dd, area_height_dd = get_area_dd_wh()
-    r_width = math.floor((abs(w) + area_width_dd / 2) / area_width_dd)
-    r_height = math.floor((abs(h) + area_height_dd / 2) / area_height_dd)
-    print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*AREA_TIME_SEC//60}m")
+    r_width = math.ceil((abs(w) - area_width_dd) / (2*area_width_dd))
+    r_height = math.ceil((abs(h) - area_height_dd) / (2*area_height_dd))
+    print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*AREA_TIME_SEC/60:.2f}m")
+    
+    # TODO i have no idea why, but google maps now often freezes,
+    # switching the tab forward and back seems to break the freeze.
+    switch_tab()
+    switch_tab(to_left=True)
 
     final_img = construct_region(r_width, r_height)
 
@@ -130,6 +139,7 @@ def get_area_dd_wh():
     area_width_dd = abs(rightdown_xy_dd[0] - leftup_xy_dd[0])
     area_height_dd = abs(rightdown_xy_dd[1] - leftup_xy_dd[1])
     area_width_dd, area_heigh_dd = round(area_width_dd, 6), round(area_height_dd, 6)
+    time.sleep(0.3)
     return area_width_dd, area_heigh_dd
 
 

@@ -36,7 +36,11 @@ def map_switch_view():
 
 
 def map_get_coords_at_cursor():
-    """Get x(long)-y(lat) decimal degree coordinates of map point at current cursor position from leftclick context menu (lat-long)"""
+    """
+    Get x(long)-y(lat) decimal degree coordinates of map point at current cursor position from leftclick context menu (lat-long).
+    
+    Might cause freezing of the visible area which can be broken by tab switching.
+    """
     CONTEXT_Y_CUTOFF = 384  # when clicking on y below the cutoff, the context menu stays at the cutoff
     CONTEXT_CLOSE_XY = 796,744
 
