@@ -9,7 +9,7 @@ from constants import SCREEN_W, SCREEN_H
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
-from addressbar import addressbar_decimal_degrees
+from addressbar import addressbar_center_at_dd
 
 # In pixels
 # AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text.
@@ -82,7 +82,7 @@ def get_dd_rect_img(leftup_xy_dd: str, rightdown_xy_dd: str, satellite=False):
 
     cx = lu_x+w/2
     cy = lu_y+h/2
-    addressbar_decimal_degrees(f"{cx},{cy}", satellite=satellite)
+    addressbar_center_at_dd(f"{cx},{cy}", satellite=satellite)
     if satellite:
         map_toggle_sat_labels()
 
@@ -92,7 +92,11 @@ def get_dd_rect_img(leftup_xy_dd: str, rightdown_xy_dd: str, satellite=False):
 
     final_img = construct_region(r_width, r_height)
 
-    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(f"region_{cx}x{cy}+{w}+{h}_{time.strftime(f'%d.%m.%Y_%H.%M.%S')}.png")
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(
+        f"region_{leftup_xy_dd}_{rightdown_xy_dd}_" +
+        f"{'sat' if satellite else 'map'}_" +
+        time.strftime(f'%d.%m.%Y_%H.%M.%S') +
+        ".png")
 
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")

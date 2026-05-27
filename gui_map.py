@@ -29,6 +29,12 @@ def map_toggle_sat_labels():
     inspect_use_console(f"$('{labels_button_selector}').click()")
 
 
+def map_switch_view():
+    """Switch from map to sat view or from sat to map view using the inspect console"""
+    switchview_button_selector = "body > div:nth-child(5) > div.lbMcOd > div.UL7Qtf > div.jsXHHe.i2s2Oe > div.t090lc.pEO5hf > div > div > button"
+    inspect_use_console(f"$('{switchview_button_selector}').click()")
+
+
 def map_get_coords_at_cursor():
     """Get pair of decimal degree coordinates of map point at current cursor position from leftclick context menu"""
     CONTEXT_Y_CUTOFF = 384  # when clicking on y below the cutoff, the context menu stays at the cutoff

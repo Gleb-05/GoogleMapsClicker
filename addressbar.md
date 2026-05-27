@@ -13,10 +13,14 @@ A choice:
 ## Decimal coordinates
 
 In the current version of google maps, lefclicking in any part of the map brings up a context menu with decimal coordinates. Fortunately, the links also work on decimal coordinates. Which allows to do the following:
-- Map: `www.google.com/maps/place//@{coords from leftclick here},17z`
 - Sat: `www.google.com/maps/place//@{coords from leftclick here},542m/data=!3m2!1e3!4b1`
 
-Manual testing shows that everything works!
+But there is a bug - map view reverts to satellite view. None of the following worked:
+- Map: `www.google.com/maps/place//@{coords from leftclick here},17z/data={ !3m1!4b1 | !3m1!1e0 | !5m1!1e0 }`
+
+It suggests that views are assymetric. Satellite view is explicit, set from the addressbar and persisted through cookies. Map view is default unless something else overrides it. Once the cookies are explicitly set to use the satellite view, there is nothing to use in the addressbar to explicitly return to map view.
+
+There is a workaround: visiting `www.google.com/maps/@?api=1&basemap=satellite` and then `www.google.com/maps/place//@{coords from leftclick here},17z`. Alternatively, use `gui_map.map_switch_view`.
 
 ## Degree coordinates
 
@@ -82,5 +86,21 @@ The `data=` only stores the page parameters (an arbitrary coordinate has no plac
 Thins after `?` remain unchanged, hinting at the fact that they are session-related and solidifying that ignoring them will most likely work.
 
 It is obvious that degrees after `/place/` cannot be fabricated easily. It seems working with decimal coordiates after the `@` sign is easier. This motivates the solution provided at the start of this .md document.
+
+</details>
+
+<details>
+<summary>Searching for `Laduree`</summary>
+
+By searching for a place with multiple locations, we obtain the minimal working `data` value that could help differentiate between map and satellite view. Unfortunately, it doesn't.
+
+Both links were obtained in incognito:
+
+- Map: \
+  search/laduree/@48.7902666,2.0801006,11z/data=!3m1!4b1?entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D
+- Satellite: \
+  search/laduree/@48.7902666,2.0801006,34155m/data=!3m2!1e3!4b1?entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D
+
+Which leads to `data=!3m1!4b1` for map view and to `data=!3m2!1e3!4b1` for satellite view.
 
 </details>
