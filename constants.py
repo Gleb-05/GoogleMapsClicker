@@ -17,11 +17,13 @@ It's important to know that when the cursor is too close to screen bottom, two b
 - Context menu snaps to the screen bottom.
   Its first option maintains constant distance from the screen bottom - `y_cutoff`. <br>
   Opening the context menu with a `(x,y)` click where `y > y_cutoff`
-  is guaranteed to make the first option clickable at `y_cutoff + 10`
+  is guaranteed to make the first option clickable at `y_cutoff + rel_y`
 - After falling below a certain `y_cutoff`, context menu reorients itself and appears above the cursor.
   Its first option maintains constant distance from the cursor - `context_height`. <br>
   Opening the context menu with a `(x,y)` click where `y > y_cutoff`
-  is guaranteed to make the first option clickable at `y - context_height + 10`.
+  is guaranteed to make the first option clickable at `y - context_height + rel_y`.
+
+It is generally reasonable to select `rel_y = RMB_FIRST_OPTION_BELOW_RELATIVE_XY[1]`
 
 Be mindful of those cases when writing code.
 """

@@ -30,9 +30,10 @@ def map_toggle_sat_labels():
 
 
 def map_get_coords_at_cursor():
-    """Get coordinates of map point at current cursor position from leftclick context menu"""
+    """Get pair of decimal degree coordinates of map point at current cursor position from leftclick context menu"""
     CONTEXT_Y_CUTOFF = 384  # when clicking on y below the cutoff, the context menu stays at the cutoff
-    
+    CONTEXT_CLOSE_XY = 796,744
+
     x, y = pyautogui.position()
 
     with wait_for_screen_change(region=(x,y,20,20)):
@@ -40,8 +41,13 @@ def map_get_coords_at_cursor():
 
     pyautogui.moveRel(RMB_FIRST_OPTION_BELOW_RELATIVE_XY)
     if y >= CONTEXT_Y_CUTOFF:
-        pyautogui.moveTo(None, CONTEXT_Y_CUTOFF + RMB_FIRST_OPTION_BELOW_RELATIVE_XY[1])
-    
+        rel_y = RMB_FIRST_OPTION_BELOW_RELATIVE_XY[1]
+        pyautogui.moveTo(None, CONTEXT_Y_CUTOFF + rel_y)
     pyautogui.click()
     time.sleep(0.1)
-    return pyperclip.paste()
+
+    pyautogui.click(CONTEXT_CLOSE_XY)
+    time.sleep(0.01)
+
+    x_dd, y_dd = pyperclip.paste().split(",")
+    return float(x_dd), float(y_dd)
