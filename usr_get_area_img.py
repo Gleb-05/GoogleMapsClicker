@@ -24,7 +24,7 @@ AREA_HEIGHT_DD = 0.020182
 # TODO cant be constants on areas too large? area_width_dd increases closer to equator due to map projection.
 
 # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
-AREA_TIME = 2.5
+AREA_TIME_SEC = 2.5
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     """
@@ -54,9 +54,9 @@ def construct_region(r_width: int = 1, r_height: int = 1):
     - the sidepanel is collapsed (will be expanded on function end)
     - the zoom level and the map type are selected
     """
-    final_img = np.zeros(((1+2*r_height)*AREA_HEIGHT, (1+2*r_width)*AREA_WIDTH, 3))
+    final_img = np.zeros(((1+2*r_height)*AREA_HEIGHT, (1+2*r_width)*AREA_WIDTH, 3), dtype=np.uint8)
     for x,y in iter_drag_displacements(r_width, r_height):
-        area = np.asarray(pyautogui.screenshot(region=AREA_REGION))
+        area = np.asarray(pyautogui.screenshot(region=AREA_REGION), dtype=np.uint8)
         x0, y0 = x*AREA_WIDTH, y*AREA_HEIGHT
         x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
@@ -64,7 +64,7 @@ def construct_region(r_width: int = 1, r_height: int = 1):
     return final_img
 
 
-def get_dd_rect_img(leftup_xy_dd: str, rightdown_xy_dd: str, satellite=False):
+def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
     """
     Return an image that shows a rectangular region of the map.
     `leftup_xy_dd` and `rightdown_xy_dd` define the corners of the region.
@@ -75,25 +75,26 @@ def get_dd_rect_img(leftup_xy_dd: str, rightdown_xy_dd: str, satellite=False):
     """
     t_start = time.perf_counter()
 
-    lu_x, lu_y = [float(c) for c in leftup_xy_dd.split(",")]
-    rd_x, rd_y = [float(c) for c in rightdown_xy_dd.split(",")]
+    lu_y, lu_x = [float(c) for c in leftup_yx_dd.split(",")]
+    rd_y, rd_x = [float(c) for c in rightdown_yx_dd.split(",")]
     w = rd_x - lu_x
     h = rd_y - lu_y
 
     cx = lu_x+w/2
     cy = lu_y+h/2
-    addressbar_center_at_dd(f"{cx},{cy}", satellite=satellite)
+    addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
     if satellite:
         map_toggle_sat_labels()
 
     area_width_dd, area_height_dd = get_area_dd_wh()
     r_width = math.floor((abs(w) + area_width_dd / 2) / area_width_dd)
     r_height = math.floor((abs(h) + area_height_dd / 2) / area_height_dd)
+    print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*AREA_TIME_SEC//60}m")
 
     final_img = construct_region(r_width, r_height)
 
     Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(
-        f"region_{leftup_xy_dd}_{rightdown_xy_dd}_" +
+        f"region_{leftup_yx_dd}_{rightdown_yx_dd}_" +
         f"{'sat' if satellite else 'map'}_" +
         time.strftime(f'%d.%m.%Y_%H.%M.%S') +
         ".png")
@@ -130,6 +131,47 @@ def get_area_dd_wh():
     area_height_dd = abs(rightdown_xy_dd[1] - leftup_xy_dd[1])
     area_width_dd, area_heigh_dd = round(area_width_dd, 6), round(area_height_dd, 6)
     return area_width_dd, area_heigh_dd
+
+
+def get_area_stats():
+    """
+    Research area deformities from map projection
+    """
+    x, y, w, h = AREA_REGION
+
+    pyautogui.moveTo(x, y, duration=0.1)
+    leftup_xy_dd = map_get_coords_at_cursor()
+    pyautogui.moveTo(x+w, y, duration=0.1)
+    rightup_xy_dd = map_get_coords_at_cursor()
+    pyautogui.moveTo(x+w, y+h, duration=0.1)
+    rightdown_xy_dd = map_get_coords_at_cursor()
+    pyautogui.moveTo(x, y+h, duration=0.1)
+    leftdown_xy_dd = map_get_coords_at_cursor()
+    
+    dx_left = abs(leftdown_xy_dd[0] - leftup_xy_dd[0])
+    dx_right = abs(rightdown_xy_dd[0] - rightup_xy_dd[0])
+    area_upwidth_dd = abs(rightup_xy_dd[0] - leftup_xy_dd[0])
+    area_downwidth_dd = abs(rightdown_xy_dd[0] - leftdown_xy_dd[0])
+    dwidth = area_upwidth_dd - area_downwidth_dd
+    width_ratio = area_upwidth_dd / area_downwidth_dd if area_downwidth_dd != 0 else 0
+
+    dy_up = abs(rightup_xy_dd[1] - leftup_xy_dd[1])
+    dy_down = abs(rightdown_xy_dd[1] - leftdown_xy_dd[1])
+    area_leftheight_dd = abs(leftdown_xy_dd[1] - leftup_xy_dd[1])
+    area_rightheigth_dd = abs(rightdown_xy_dd[1] - rightup_xy_dd[1])
+    dheight = area_leftheight_dd -  area_rightheigth_dd
+    height_ratio = area_leftheight_dd / area_rightheigth_dd if area_rightheigth_dd != 0 else 0
+
+    return(f"""==={leftup_xy_dd}===
+{dx_left=}\t{dx_right=}
+  {area_upwidth_dd=}
+{area_downwidth_dd=}
+{dwidth=}\t{width_ratio=}
+{dy_up=}\t{dy_down=}
+ {area_leftheight_dd=}
+{area_rightheigth_dd=}
+{dheight=}\t{height_ratio=}
+""")
 
 
 class disp(IntEnum):
