@@ -10,6 +10,8 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
 - Install required dependencies inside venv: `pip install -r requirements.txt`
 - Run `python prepare.py` and choose relevant functions from the dropdown menu.
 
+**THE CODE WAS WRITTEN FOR A 1366x768 DISPLAY, CHANGING ALL CONSTANTS BY HAND MAY BE DIFFICULT WITHOUT DIRECTIONS, USE WITH CAUTION**
+
 What to use first:
 - `get_dd_rect_img_small_map` - get map view of fields around Beynes France
 - `get_dd_rect_img_small_sat` - get satellite view of fields around Beynes France
