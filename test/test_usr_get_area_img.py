@@ -148,13 +148,13 @@ class TestDragArea(unittest.TestCase):
 
     @staticmethod
     def drag_shift():
-        """Drag the viewable area in a closed loop around the screen to see how drag imperfections accumulate.
+        """Drag the visible area in a closed loop around the screen to see how drag imperfections accumulate.
         
-        The loop happens in a 2x2 grid of viewable areas.
+        The loop happens in a 2x2 grid of visible areas.
         The loop starts in the left-upper area of this grid and goes through the following displacements:
         `[ right-down, left-up, right, down, left, right-up, left-down, up ]`
 
-        All viewable areas share one corner at the center of the grid, which is the only place shared across all steps of the loop.
+        All visible areas share one corner at the center of the grid, which is the only place shared across all steps of the loop.
         After each step a screenshot of the center of the grid is saved.
         All screenshots are saved into an image with margins between them, where one row corresponds to one complete loop.
 

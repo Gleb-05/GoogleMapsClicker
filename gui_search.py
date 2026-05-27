@@ -49,7 +49,7 @@ def zero_search_results(lang='eng'):
 
 def center_on_search_result(search_query: str):
     """
-    Align the center of the viewable area with the place marker by performing the following sequence: <br>
+    Align the center of the visible area with the place marker by performing the following sequence: <br>
     Enter query - Drag the map (currently hardcoded) - Hide side panel
 
     *Previously Enter query - Reload page - Hide side pannel, 
