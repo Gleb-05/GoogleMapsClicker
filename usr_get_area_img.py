@@ -1,3 +1,5 @@
+import time
+import math
 from enum import IntEnum
 import pyautogui
 from PIL import Image
@@ -6,16 +8,27 @@ import numpy as np
 from constants import SCREEN_W, SCREEN_H
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
-from gui_map import drag_map
+from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
+from addressbar import addressbar_decimal_degrees
 
+# In pixels
 # AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text.
 AREA_WIDTH = 1314-110  # should be safely (10px) beside interactive ui elements
 AREA_HEIGHT = 724-145  # same
 AREA_REGION = (110, 145, AREA_WIDTH, AREA_HEIGHT)
 
+# Depending on resolution and screen size, actual geographical coverage of the visible area will change
+# and decimal degree width and height will describe it.
+AREA_WIDTH_DD = 0.006382
+AREA_HEIGHT_DD = 0.020182
+# TODO cant be constants on areas too large? area_width_dd increases closer to equator due to map projection.
+
+# A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
+AREA_TIME = 2.5
+
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     """
-    Return an image that shows a region of the map. At the center of the region is a marker found by searching `area_query`.
+    Return an image that shows a rectangular region of the map. At the center of the region is a marker found by searching `area_query`.
 
     `area_query` is typically a pair of decimal coordinates, like *(48.643650, 1.921213)*.
 
@@ -26,16 +39,64 @@ def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
     """
     center_on_search_result(area_query)   
+    final_img = construct_region(r_width, r_height)
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
+    return final_img
 
+
+def construct_region(r_width: int = 1, r_height: int = 1):
+    """
+    Construct a rectangular region by screenshotting visible areas in a hamilton path and combining the screenshots.
+    The path covers everything from area at `(-r_width, -r_height)` to area at `(r_width, r_height)`, relative to a center area.
+
+    `construct_region` should be called when 
+    - the screen shows the center area of the rectangular region
+    - the sidepanel is collapsed (will be expanded on function end)
+    - the zoom level and the map type are selected
+    """
     final_img = np.zeros(((1+2*r_height)*AREA_HEIGHT, (1+2*r_width)*AREA_WIDTH, 3))
     for x,y in iter_drag_displacements(r_width, r_height):
         area = np.asarray(pyautogui.screenshot(region=AREA_REGION))
         x0, y0 = x*AREA_WIDTH, y*AREA_HEIGHT
         x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
-
-    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
     expand_sidepanel()
+    return final_img
+
+
+def get_dd_rect_img(leftup_xy_dd: str, rightdown_xy_dd: str, satellite=False):
+    """
+    Return an image that shows a rectangular region of the map.
+    `leftup_xy_dd` and `rightdown_xy_dd` define the corners of the region.
+    Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
+
+    The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD
+    For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
+    """
+    t_start = time.perf_counter()
+
+    lu_x, lu_y = [float(c) for c in leftup_xy_dd.split(",")]
+    rd_x, rd_y = [float(c) for c in rightdown_xy_dd.split(",")]
+    w = rd_x - lu_x
+    h = rd_y - lu_y
+
+    cx = lu_x+w/2
+    cy = lu_y+h/2
+    addressbar_decimal_degrees(f"{cx},{cy}", satellite=satellite)
+    if satellite:
+        map_toggle_sat_labels()
+
+    area_width_dd, area_height_dd = get_area_dd_wh()
+    r_width = math.floor((abs(w) + area_width_dd / 2) / area_width_dd)
+    r_height = math.floor((abs(h) + area_height_dd / 2) / area_height_dd)
+
+    final_img = construct_region(r_width, r_height)
+
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(f"region_{cx}x{cy}+{w}+{h}_{time.strftime(f'%d.%m.%Y_%H.%M.%S')}.png")
+
+    t_end = time.perf_counter()
+    print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
+
     return final_img
 
 
@@ -43,6 +104,28 @@ def get_area_scale():
     """Get an image of map's scale (pixel distance to real distance)"""
     SCALE_REGION = (SCREEN_W-224, SCREEN_H-16, 224, 16)
     return pyautogui.screenshot(region=SCALE_REGION)
+
+
+def get_area_dd_wh():
+    """
+    Get width and height of an area at current resolution in decimal degrees
+    
+    Use in `get_dd_rect_img`.
+    """
+    leftup_xy = AREA_REGION[0], AREA_REGION[1]
+    rightdown_xy = leftup_xy[0] + AREA_WIDTH, leftup_xy[1] + AREA_HEIGHT
+    
+    pyautogui.moveTo(leftup_xy, duration=0.1)
+    time.sleep(0.1)
+    leftup_xy_dd = map_get_coords_at_cursor()
+    pyautogui.moveTo(rightdown_xy, duration=0.1)
+    time.sleep(0.1)
+    rightdown_xy_dd = map_get_coords_at_cursor()
+    
+    area_width_dd = abs(rightdown_xy_dd[0] - leftup_xy_dd[0])
+    area_height_dd = abs(rightdown_xy_dd[1] - leftup_xy_dd[1])
+    area_width_dd, area_heigh_dd = round(area_width_dd, 6), round(area_height_dd, 6)
+    return area_width_dd, area_heigh_dd
 
 
 class disp(IntEnum):
@@ -70,13 +153,13 @@ def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = AREA_REGION):
     area_width = area_region[2]
     area_height = area_region[3]
 
-    x_from = x_to = AREA_REGION[0]
+    x_from = x_to = area_region[0]
     if xd==disp.POS:
         x_from += area_width
     elif xd==disp.NEG:
         x_to += area_width
 
-    y_from = y_to = AREA_REGION[1]
+    y_from = y_to = area_region[1]
     if yd==disp.POS:
         y_from += area_height
     elif yd==disp.NEG:
