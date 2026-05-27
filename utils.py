@@ -29,6 +29,15 @@ def select_addressbar():
     time.sleep(0.3)
 
 
+def switch_tab(to_left=False):
+    """Switch to the nearest tab, the one to the right of the current one by default."""
+    if to_left:
+        pyautogui.hotkey('ctrl', 'shift', 'tab')
+    else:
+        pyautogui.hotkey('ctrl', 'tab')
+    time.sleep(0.3)
+
+
 def strict_no_change(img1, img2):
     """
     Accept two PIL.Image variables [captured with pyautogui.screenshot(region=region)].

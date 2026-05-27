@@ -7,7 +7,7 @@ from wait_contexts import wait_for_screen_change, wait_for_animation_end
 
 def addressbar_center_at_dd(dd: str, satellite=False):
     """
-    Pass `dd` string pair (example = '48.003034,1.984737') to display it on the map. Use default map, or satellite if `True` is passed.
+    Pass `yx dd` string pair (example = '48.003034,1.984737') to display it on the map. Use default map, or satellite if `True` is passed.
     The visible area is automatically centerd on the `dd` coordinates provided.
     """
     SET_MAPVIEW_ADDRESS = "https://www.google.com/maps/@?api=1&basemap=satellite"
