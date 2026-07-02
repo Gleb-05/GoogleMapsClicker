@@ -2,9 +2,9 @@ import time
 import pyautogui
 import pyperclip
 
-from constants import RMB_FIRST_OPTION_BELOW_RELATIVE_XY
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_use_console
+from gui_contextmenu import contextmenu_click_option
 
 
 def drag_map(x_from, y_from, x_to, y_to, drag_duration=0.3):
@@ -42,21 +42,16 @@ def map_get_coords_at_cursor():
     Might cause freezing of the visible area which can be broken by tab switching.
     """
     CONTEXT_Y_CUTOFF = 384  # when clicking on y below the cutoff, the context menu stays at the cutoff
-    CONTEXT_CLOSE_XY = 796,744
+    POPUP_CLOSE_XY = 796,744
 
     x, y = pyautogui.position()
 
     with wait_for_screen_change(region=(x,y,20,20)):
         pyautogui.rightClick()
 
-    pyautogui.moveRel(RMB_FIRST_OPTION_BELOW_RELATIVE_XY)
-    if y >= CONTEXT_Y_CUTOFF:
-        rel_y = RMB_FIRST_OPTION_BELOW_RELATIVE_XY[1]
-        pyautogui.moveTo(None, CONTEXT_Y_CUTOFF + rel_y)
-    pyautogui.click()
-    time.sleep(0.1)
+    contextmenu_click_option(menu_snaps_to_screen_bottom=True, y_cutoff=CONTEXT_Y_CUTOFF)
 
-    pyautogui.click(CONTEXT_CLOSE_XY)
+    pyautogui.click(POPUP_CLOSE_XY)
     time.sleep(0.01)
 
     y_dd, x_dd = pyperclip.paste().split(",")  # lat-long!

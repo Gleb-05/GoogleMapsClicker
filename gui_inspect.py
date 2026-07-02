@@ -2,8 +2,8 @@ import time
 import pyautogui
 import pyperclip
 
-from constants import RMB_FIRST_OPTION_BELOW_RELATIVE_XY
 from utils import py_paste
+from gui_contextmenu import contextmenu_click_option
 from wait_contexts import wait_for_screen_change, wait_for_screen_image, wait_for_animation_end
 
 INSPECT_ELEMENTS_TAB_XY=548,100
@@ -71,10 +71,9 @@ def inspect_find_and_copy_first(find_query):
     with wait_for_screen_change(inspect_console_output_region):
         pyautogui.press('enter')
     time.sleep(0.1)
-    pyautogui.rightClick(INSPECT_CONSOLE_OUTPUT_XY, duration=0.1)
-    pyautogui.moveRel(RMB_FIRST_OPTION_BELOW_RELATIVE_XY, duration=0.1)
-    pyautogui.click(duration=0.1)
+    pyautogui.rightClick(INSPECT_CONSOLE_OUTPUT_XY)
     time.sleep(0.1)
+    contextmenu_click_option()
     return pyperclip.paste()
 
 
