@@ -9,6 +9,14 @@ from gui_inspect import inspect_find_and_copy_first
 from gui_scroll import py_scroll
 
 PLACE_LINKBTN_REGION = (325, 380, 375-325, 580-380)
+# TODO
+"""
+Notice how in two months time the `place_linkbtn.png` img stopped working.
+Recapturing it was easy, since all the other constants already worked on my machine.
+But for a new machine, the guesswork behind the constants is too large to also include img recapturing.
+Working with page elements through the console seems more reliable.
+This usr_ file shall be refactored accordingly.
+"""
 
 
 def extract_place_info():
