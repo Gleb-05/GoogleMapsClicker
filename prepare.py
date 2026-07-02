@@ -8,13 +8,13 @@ import keyboard
 
 from test.test_usr_get_area_img import TestDragArea
 
-from constants import PLACE_NAME_HTML, SCROLLBAR_REGION
+from constants import PLACE_NAME_HTML, SCROLLBAR_REGION, REGION_1, REGION_2
 from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card
 from gui_search import use_search, search_back, center_on_search_result
 from usr_extract_place_info import extract_place_info_safe
-from usr_get_area_img import get_area_img, get_area_dd_wh, get_dd_rect_img, get_area_stats
+from usr_get_area_img import get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd_constants_once
 from gui_map import map_get_coords_at_cursor, map_toggle_sat_labels
 
 SAFE_Y=250  # safely below browser ui edge
@@ -52,13 +52,13 @@ class DebugFrame:
             "process_search_queries": self.process_search_queries,
             "center_on_search_result": lambda: center_on_search_result("48,2"),
             "get_area_dd_wh": get_area_dd_wh,
+            "estimate_area_width_and_height_dd_constants_once": estimate_area_width_and_height_dd_constants_once,
             "get_area_img": lambda: get_area_img("48,2"),
-            "get_dd_rect_img_small_map": lambda: get_dd_rect_img("48.87295496938,1.88147722555", "48.86096261907,1.911476845556"),
-            "get_dd_rect_img_small_sat": lambda: get_dd_rect_img("48.87295496938,1.88147722555", "48.86096261907,1.911476845556", satellite=True),
-            "get_dd_rect_img_map": lambda: get_dd_rect_img("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543"),
-            "get_dd_rect_img_sat": lambda: get_dd_rect_img("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543", satellite=True),
+            "get_dd_rect_img_small_map": lambda: get_dd_rect_img(*REGION_1),
+            "get_dd_rect_img_small_sat": lambda: get_dd_rect_img(*REGION_1, satellite=True),
+            "get_dd_rect_img_map": lambda: get_dd_rect_img(*REGION_2),
+            "get_dd_rect_img_sat": lambda: get_dd_rect_img(*REGION_2, satellite=True),
             "test_drag_area": TestDragArea.drag_shift,
-            "get_area_stats": get_area_stats,
             "test_area_deforms": TestDragArea.area_deforms,
             "map_get_coords_at_cursor": map_get_coords_at_cursor,
             "map_toggle_sat_labels": map_toggle_sat_labels
@@ -70,8 +70,9 @@ class DebugFrame:
         instruction = "Press NumLk (or alt+f2) after moving your cursor to a suitable position."
         tk.Label(root, text=instruction, wraplength=300).pack(expand=True)
         
-        self.label = tk.Label(root, text="Log Label", wraplength=300)
-        self.label.pack(expand=True)
+        self.debug_text = tk.Text(root, width=300)
+        self.debug_text.insert("1.0", "Debug text")
+        self.debug_text.pack(expand=True)
 
         threading.Thread(target=self.listen_hotkey, daemon=True).start()
 
@@ -81,7 +82,8 @@ class DebugFrame:
         except Exception as e:
             result = e
             traceback.print_exc()
-        self.label.config(text=str(result))
+        self.debug_text.delete("1.0", tk.END)
+        self.debug_text.insert("1.0", str(result))
 
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)

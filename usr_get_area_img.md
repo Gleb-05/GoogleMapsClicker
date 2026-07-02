@@ -125,3 +125,101 @@ At this scale all drawbacks of the projection can be ignored. Meters per pixel, 
   - dheight=0.0
 
 1 deg in latitude ~ 0.0001 deg change in deg-per-pixel
+
+
+# Fix `get_dd_rect_img` overestimation of `r_width` and `r_height`
+
+As established, imperfections of the map projection can be ignored. This invites use of constant `area_width_dd` and `area_height_dd` in `r_width` and `r_height` estimation. It's faster and easier than calling `get_area_dd_wh()` on each new region.
+
+There is another reason to review things. The `area_dim_dd` (*dim used to mean either width or height for brevity*) from `get_area_dd_wh()` may lead to `r_dim` overestimation, as evidenced by the following. See the region in [images\r_dim_correct_estimation](./images/r_dim_correct_estimation) folder. It was constructed after the fix, with a grid that outlines individual areas for debug purposes. In the same folder, see two markers that correspond to left-up corner and right-down corner of the region, as set in `REGION_1` constant. Note that both markers appear within corresponding areas of the region, making it obvious that the fix was correct. Now note the [region..map](./map_regions/region_48.87295496938,1.88147722555_48.86096261907,1.911476845556_map_27.05.2026_18.26.46.png). See how it goes far beyond the markers specified by `REGION_1`, although they are captured very early in the region contruction. It means that before the fix, using `get_area_dd_wh()` on the central area of the region was not helpful in `r_dim` estimation.
+
+Skipping a bunch of math (found below), 
+
+## The conclusions
+
+I would usually put this part in the end. But people like to see results, so here we are.
+
+`area_width_dd` and `area_height_dd` constants make sence and there IS a way to find them.
+
+Manually calling `get_area_dd_wh()` across the entire France gives a sence of the distribution of those values. The dd width differs on e-7 scale, while dd hight differences are on a e-4 scale. It means that `r_height` is more likely to be overestimated. Choosing between constant and dynamic `area_dim_dd` will not resolve this issue.
+
+It might be possible to reverse-engineer the distortion and include it into `r_dim` estimation. But a more practical question is, how far can `area_dim_dd` values be pushed without distorting the `r_dim` values? The answer is, the larger the region, the smaller the interval that `area_dim_dd` can occupy while yielding the same estimated `r_dim`. Note that `area_width_dd` values occupy a large interval, while `area_height_dd` values occupy a much smaller interval with an almost constant lower bound.
+
+## Data to support the conclusions
+
+See `get_area_dd_wh()` sampled across the entire France:
+
+```  
+(0.01291751878432379 , 0.004099505502807688)
+(0.012917457462526372, 0.004104199847375867)
+(0.012917580106413418, 0.00410411952361045)
+(0.012917620579149691, 0.004108811660152867)
+(0.012917508666207667, 0.004085822071168366)
+(0.012917578573356375, 0.004085472306080362)
+(0.012917554351099980, 0.00423344401397685)
+(0.0129176819017216,   0.004409910785682314)
+(0.012917518784324233, 0.004154054820681097)
+```
+
+See bounds for `area_w_dd` and `area_h_dd` using `REGION_1` and `REGION_2`
+
+```
+area_w_bounds_1=(0.009999873335333328, 0.029999620005999983)
+area_w_bounds_2=(0.011947242867661401, 0.013540208583349589)
+area_h_bounds_1=(0.003997450103331819, 0.011992350309995459)
+area_h_bounds_2=(0.004013117500747763, 0.004230042771058453)
+```
+
+See less strict bounds on distorted REGION_2 (was taken by hand)
+```
+area_w_bounds_2=(0.01291422, 0.01526226)
+area_h_bounds_2=(0.00398613, 0.00422771)
+```
+
+## A bunch of math
+
+Copying the `estimate_area_width_and_height_dd_constants_once()` docstring:
+
+```python
+"""
+With initial `area_width_dd` and `area_height_dd` provided by `get_area_dd_wh()`, 
+use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants. 
+They shall satisfy the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality.
+
+Steps:
+- `estimate_r_dim()` is used to get the initial estimation of `r_dim`.
+- `estimate_area_dim_dd_bounds()` is used to estimate bounds for the constants.
+- Let `lower_1`, `upper_1`, `lower_2`, `upper_2` be chosen in a way that defines two nested intervals.
+  A point that divides both intervals in equal proportion 
+  will become the value of the relevant area_dim_dd constant.
+"""
+```
+
+Copying the `estimate_r_dim(region_dim_dd, area_dim_dd)` docstring:
+
+```python
+"""
+For either dim=width or dim=height, 
+estimate minimal `r_dim` such that `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd`.
+
+Solution: `math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))`.
+
+This is an inverse of the `estimate_area_dim_dd_bounds` function.
+"""
+```
+
+Now, the math.
+
+Left-up and right-down corners that define each region allow to calculate `region_width_dd` and `region_height_dd` of the region.
+
+The `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality just establishes that regardless of how big the region is, it will be covered if enough areas are arranged in a grid. The inequality is left withour proof.
+
+As can be seen, having `region_dim_dd` and `area_dim_dd` allows to estimate the `r_dim`. Conversely, having `region_dim_dd` and `r_dim` allows to estimate the `area_dim_dd`. This is exactly what `estimate_area_dim_dd_bounds(region_dim_dd, r_dim)` does, and here is how.
+
+Remember that the solution is `math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))`. Taking it to be equal to an arbitrary `x`, the solution may be rewritten as "`(abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd)` IS IN `(x-1, x]`". After trivial transformations, we get "`area_dim_dd` IS IN `[abs(region_dim_dd) / (3 + 2*x), abs(region_dim_dd) / (1 + 2*x)]`". Finally, by substituting `x` for `r_dim` values obtained from `estimate_r_dim`, we get concrete intervals for `area_width_dd` and `area_height_dd`. The substitution step makes the initial estimation of `r_dim` with actual GUI necessary, but it's enough to do it once.
+
+Finally, by using two regions, two upper and two lower bounds are obtained for both `area_height_dd` and `area_width_dd`. As was aleady said, let the intervals be chosen in a way that defines two nested intervals, namely `[l1 l2 u2 u1]`. A point that divides both intervals in equal proportion will become the value of the relevant `area_dim_dd` constant. This choise as opposed to choosing a middle point comes from an intuition that on larger and larger regions the behavior with which the interval for `area_dim_dd` shrinks will not change.
+
+Let the distance from the point to `u1` be `u`, and from the point to `l1` be `l`. Then, solving for `u + l = (u1-l1); u / l = (u - (u1-u2)) / (l - (l2-l1))` will provide a solution. The point will be at `u1 - (u1-l1)*(u1-u2) / (u1-u2 + l2-l1)`.
+
+This concludes the cascade of functions that leads to `area_width_dd` and `area_height_dd` constants that will work almost anywhere in France.

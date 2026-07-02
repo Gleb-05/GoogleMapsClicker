@@ -5,8 +5,8 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from constants import SCREEN_W, SCREEN_H
-from utils import tab_switch, tab_new
+from constants import SCREEN_W, SCREEN_H, REGION_1, REGION_2
+from utils import tab_switch, tab_new, tab_close
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
@@ -18,20 +18,26 @@ AREA_WIDTH = 1314-110  # should be safely (10px) beside interactive ui elements
 AREA_HEIGHT = 724-145  # same
 AREA_REGION = (110, 145, AREA_WIDTH, AREA_HEIGHT)
 
+AREA_EDGES = False
+"""Draw edges when areas are combined within a region. Debug purposes, affects `construct_region()`"""
+
 # Depending on resolution and screen size, actual geographical coverage of the visible area will change
 # and decimal degree width and height will describe it.
-AREA_WIDTH_DD = 0.006382
-AREA_HEIGHT_DD = 0.020182
+AREA_WIDTH_DD = 0.012115772764788004
+"""Set with `estimate_area_width_and_height_dd_constants_once()`"""
+AREA_HEIGHT_DD = 0.0040135544595252485
+"""Set with `estimate_area_width_and_height_dd_constants_once()`"""
 # TODO cant be constants on areas too large? area_width_dd increases closer to equator due to map projection.
 
 # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
 AREA_TIME_SEC = 2.5
 
+
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     """
     Return an image that shows a rectangular region of the map. At the center of the region is a marker found by searching `area_query`.
 
-    `area_query` is typically a pair of decimal coordinates, like *(48.643650, 1.921213)*.
+    `area_query` is typically a pair of decimal lat-long coordinates, like *(48.643650, 1.921213)*.
 
     The screen visible around the marker is called an AREA.
     AREA_WIDTH and AREA_HEIGHT constants define an area unobstructed by the elements of google maps interface.
@@ -45,7 +51,7 @@ def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     return final_img
 
 
-def construct_region(r_width: int = 1, r_height: int = 1, area_edges=False):
+def construct_region(r_width: int = 1, r_height: int = 1):
     """
     Construct a rectangular region by screenshotting visible areas in a hamilton path and combining the screenshots.
     The path covers everything from area at `(-r_width, -r_height)` to area at `(r_width, r_height)`, relative to a center area.
@@ -62,28 +68,35 @@ def construct_region(r_width: int = 1, r_height: int = 1, area_edges=False):
         x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
         fir = final_img[y0:y1, x0:x1]  # final image region
-        if area_edges:
+        if AREA_EDGES:
             fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
     expand_sidepanel()
     return final_img
 
 
-def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
+def yx_dd_str_to_float(yx_dd: str):
+    """Return a tuple of floats from a string defining a comma-separated pair of decimal degree coordinates"""
+    return (float(c) for c in yx_dd.split(","))
+
+
+def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims_dd = True, satellite=False):
     """
     Return an image that shows a rectangular region of the map.
-    `leftup_xy_dd` and `rightdown_xy_dd` define the corners of the region.
+    `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
     Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
 
     The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
     """
+    # TODO i have no idea why, but google maps now often freezes,
+    # switching the tab forward and back seems to break the freeze.
     tab_new()
     tab_switch(to_left=True)
     
     t_start = time.perf_counter()
 
-    lu_y, lu_x = [float(c) for c in leftup_yx_dd.split(",")]
-    rd_y, rd_x = [float(c) for c in rightdown_yx_dd.split(",")]
+    lu_y, lu_x = yx_dd_str_to_float(leftup_yx_dd)
+    rd_y, rd_x = yx_dd_str_to_float(rightdown_yx_dd)
     w = rd_x - lu_x
     h = rd_y - lu_y
 
@@ -93,15 +106,21 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
     if satellite:
         map_toggle_sat_labels()
 
-    area_width_dd, area_height_dd = get_area_dd_wh()
-    r_width = math.ceil((abs(w) - area_width_dd) / (2*area_width_dd))
-    r_height = math.ceil((abs(h) - area_height_dd) / (2*area_height_dd))
+    if use_const_area_dims_dd:
+        area_width_dd, area_height_dd = AREA_WIDTH_DD, AREA_HEIGHT_DD
+    else:
+        # takes more time, brings little accuracy
+        area_width_dd, area_height_dd = get_area_dd_wh()
+
+    r_width = estimate_r_dim(w, area_width_dd)
+    r_height = estimate_r_dim(h, area_height_dd)
     print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*AREA_TIME_SEC/60:.2f}m")
     
-    # TODO i have no idea why, but google maps now often freezes,
-    # switching the tab forward and back seems to break the freeze.
+    # TODO tab juggling
     tab_switch()
+    # on tab_switch the 'sidepanel' label shows up. simple click solves the issue
     tab_switch(to_left=True)
+    pyautogui.click(duration=0.1)
 
     final_img = construct_region(r_width, r_height)
 
@@ -113,6 +132,10 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
 
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
+
+    # TODO tab juggling
+    tab_switch()
+    tab_close()
 
     return final_img
 
@@ -127,7 +150,7 @@ def get_area_dd_wh():
     """
     Get width and height of an area at current resolution in decimal degrees
     
-    Use in `get_dd_rect_img`.
+    Potentially use in `get_dd_rect_img`. See corresponding md file for width-height samples.
     """
     leftup_xy = AREA_REGION[0], AREA_REGION[1]
     rightdown_xy = leftup_xy[0] + AREA_WIDTH, leftup_xy[1] + AREA_HEIGHT
@@ -141,50 +164,90 @@ def get_area_dd_wh():
     
     area_width_dd = abs(rightdown_xy_dd[0] - leftup_xy_dd[0])
     area_height_dd = abs(rightdown_xy_dd[1] - leftup_xy_dd[1])
-    area_width_dd, area_heigh_dd = round(area_width_dd, 6), round(area_height_dd, 6)
+    # area_width_dd, area_height_dd = round(area_width_dd, 6), round(area_height_dd, 6)
     time.sleep(0.3)
-    return area_width_dd, area_heigh_dd
+    return area_width_dd, area_height_dd
 
 
-def get_area_stats():
+def estimate_r_dim(region_dim_dd, area_dim_dd):
     """
-    Research area deformities from map projection
-    """
-    x, y, w, h = AREA_REGION
+    For either dim=width or dim=height, 
+    estimate minimal `r_dim` such that `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd`.
 
-    pyautogui.moveTo(x, y, duration=0.1)
-    leftup_xy_dd = map_get_coords_at_cursor()
-    pyautogui.moveTo(x+w, y, duration=0.1)
-    rightup_xy_dd = map_get_coords_at_cursor()
-    pyautogui.moveTo(x+w, y+h, duration=0.1)
-    rightdown_xy_dd = map_get_coords_at_cursor()
-    pyautogui.moveTo(x, y+h, duration=0.1)
-    leftdown_xy_dd = map_get_coords_at_cursor()
+    Solution: `math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))`.
     
-    dx_left = abs(leftdown_xy_dd[0] - leftup_xy_dd[0])
-    dx_right = abs(rightdown_xy_dd[0] - rightup_xy_dd[0])
-    area_upwidth_dd = abs(rightup_xy_dd[0] - leftup_xy_dd[0])
-    area_downwidth_dd = abs(rightdown_xy_dd[0] - leftdown_xy_dd[0])
-    dwidth = area_upwidth_dd - area_downwidth_dd
-    width_ratio = area_upwidth_dd / area_downwidth_dd if area_downwidth_dd != 0 else 0
+    This is an inverse of the `estimate_area_dim_dd_bounds` function.
+    """
+    return math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))
 
-    dy_up = abs(rightup_xy_dd[1] - leftup_xy_dd[1])
-    dy_down = abs(rightdown_xy_dd[1] - leftdown_xy_dd[1])
-    area_leftheight_dd = abs(leftdown_xy_dd[1] - leftup_xy_dd[1])
-    area_rightheigth_dd = abs(rightdown_xy_dd[1] - rightup_xy_dd[1])
-    dheight = area_leftheight_dd -  area_rightheigth_dd
-    height_ratio = area_leftheight_dd / area_rightheigth_dd if area_rightheigth_dd != 0 else 0
 
-    return(f"""==={leftup_xy_dd}===
-{dx_left=}\t{dx_right=}
-  {area_upwidth_dd=}
-{area_downwidth_dd=}
-{dwidth=}\t{width_ratio=}
-{dy_up=}\t{dy_down=}
- {area_leftheight_dd=}
-{area_rightheigth_dd=}
-{dheight=}\t{height_ratio=}
-""")
+def estimate_area_dim_dd_bounds(region_dim_dd, r_dim):
+    """
+    For either dim=width or dim=height, 
+    return tuple of (lower, upper) bounds 
+    such that for `area_dim_dd` within those bounds 
+    the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality holds true.
+
+    Solution: `abs(region_dim_dd) / (<lower=3, upper=1> + 2 * (r_dim - 1))`.
+
+    This is an inverse of the `estimate_r_dim` function.
+    """
+    lower_bound = abs(region_dim_dd) / (3 + 2 * (r_dim - 1))
+    upper_bound = abs(region_dim_dd) / (1 + 2 * (r_dim - 1))
+    return (lower_bound, upper_bound)
+
+
+def estimate_area_width_and_height_dd_constants_once(area_width_dd = 0.0129175, area_height_dd = 0.0041041):
+    """
+    With initial `area_width_dd` and `area_height_dd` provided by `get_area_dd_wh()`, 
+    use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants. 
+    They shall satisfy the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality.
+
+    Steps:
+    - `estimate_r_dim()` is used to get the initial estimation of `r_dim`.
+    - `estimate_area_dim_dd_bounds()` is used to estimate bounds for the constants.
+    - Let `lower_1`, `upper_1`, `lower_2`, `upper_2` be chosen in a way that defines two nested intervals.
+      A point that divides both intervals in equal proportion 
+      will become the value of the relevant area_dim_dd constant.
+    """
+    (lu_y_1, lu_x_1), (rd_y_1, rd_x_1) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in REGION_1)
+    (lu_y_2, lu_x_2), (rd_y_2, rd_x_2) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in REGION_2)
+    w1 = rd_x_1 - lu_x_1
+    h1 = rd_y_1 - lu_y_1
+    w2 = rd_x_2 - lu_x_2
+    h2 = rd_y_2 - lu_y_2
+
+    r_width_1 = estimate_r_dim(w1, area_width_dd)
+    r_height_1 = estimate_r_dim(h1, area_height_dd)
+    r_width_2 = estimate_r_dim(w2, area_width_dd)
+    r_height_2 = estimate_r_dim(h2, area_height_dd)
+
+    area_w_bounds_1 = estimate_area_dim_dd_bounds(w1, r_width_1)
+    area_w_bounds_2 = estimate_area_dim_dd_bounds(w2, r_width_2)
+    area_h_bounds_1 = estimate_area_dim_dd_bounds(h1, r_height_1)
+    area_h_bounds_2 = estimate_area_dim_dd_bounds(h2, r_height_2)
+
+#     print(f"""{area_w_bounds_1=}
+# {area_w_bounds_2=}
+# {area_h_bounds_1=}
+# {area_h_bounds_2=}"""
+#     )
+
+    def find_proportional_division(l1, u1, l2, u2):
+        # arrange to have nested intervals: [l1 l2 u2 u1]
+        l1, l2 = min(l1, l2), max(l1, l2)
+        u1, u2 = max(u1, u2), min(u1, u2)
+        assert l1 <= l2 <= u2 <= u1, "making nested intervals failed"
+        # print(l1,l2,u2,u1)
+        interval = u1 - l1
+        d_upper = u1 - u2
+        d_lower = l2 - l1
+        return u1 - (interval * d_upper) / (d_upper + d_lower)
+    
+    area_width_dd_const = find_proportional_division(*area_w_bounds_1, *area_w_bounds_2)
+    area_height_dd_const =  find_proportional_division(*area_h_bounds_1, *area_h_bounds_2)
+
+    return area_width_dd_const, area_height_dd_const
 
 
 class disp(IntEnum):
