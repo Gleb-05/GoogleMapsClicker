@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 
 from constants import SCREEN_W, SCREEN_H
-from utils import switch_tab
+from utils import tab_switch, tab_new
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
@@ -77,6 +77,9 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
     The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
     """
+    tab_new()
+    tab_switch(to_left=True)
+    
     t_start = time.perf_counter()
 
     lu_y, lu_x = [float(c) for c in leftup_yx_dd.split(",")]
@@ -97,8 +100,8 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, satellite=False):
     
     # TODO i have no idea why, but google maps now often freezes,
     # switching the tab forward and back seems to break the freeze.
-    switch_tab()
-    switch_tab(to_left=True)
+    tab_switch()
+    tab_switch(to_left=True)
 
     final_img = construct_region(r_width, r_height)
 

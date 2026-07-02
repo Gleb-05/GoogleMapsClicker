@@ -29,13 +29,25 @@ def select_addressbar():
     time.sleep(0.3)
 
 
-def switch_tab(to_left=False):
+def tab_new():
+    """Open new tab using a shortcut"""
+    pyautogui.shortcut('ctrl', 't')
+    time.sleep(0.1)
+
+
+def tab_switch(to_left=False):
     """Switch to the nearest tab, the one to the right of the current one by default."""
     if to_left:
         pyautogui.hotkey('ctrl', 'shift', 'tab')
     else:
         pyautogui.hotkey('ctrl', 'tab')
     time.sleep(0.3)
+
+
+def tab_close():
+    """Close current tab. If it's the rightmost tab, a tab to the left will open. Otherwise, a tab to the right will open."""
+    pyautogui.shortcut('ctrl', 'w')  # 
+    time.sleep(0.1)
 
 
 def strict_no_change(img1, img2):
