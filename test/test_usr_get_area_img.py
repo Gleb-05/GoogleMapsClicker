@@ -10,10 +10,11 @@ from usr_get_area_img import (
     iter_core_drag_displacements, 
     iter_drag_displacements, 
     drag_area, 
-    addressbar_center_at_dd, 
-    get_area_stats,
-    disp, AREA_REGION
-    )
+    addressbar_center_at_dd,
+    map_get_coords_at_cursor,
+    disp, 
+    AREA_REGION
+)
 
 
 def gather_displacements(r_width: int, r_height: int):
@@ -197,8 +198,8 @@ class TestDragArea(unittest.TestCase):
         shrinked_region = (x, y, w, h)
 
         # Select a corner of the starting area which is the center of the 2x2 grid.
-        # In this case, the left-upper area of the grid is the starting area, 
-        #   so its right-lower corner is the center of the grid.
+        # In this case, the left-up area of the grid is the starting area, 
+        #   so its right-down corner is the center of the grid.
         x, y = x+w, y+h
 
         for j in range(loop_repeat):
@@ -216,18 +217,61 @@ class TestDragArea(unittest.TestCase):
 
 
     @staticmethod
+    def get_area_stats():
+        """
+        Research area deformities from map projection
+        """
+        x, y, w, h = AREA_REGION
+
+        pyautogui.moveTo(x, y, duration=0.1)
+        leftup_xy_dd = map_get_coords_at_cursor()
+        pyautogui.moveTo(x+w, y, duration=0.1)
+        rightup_xy_dd = map_get_coords_at_cursor()
+        pyautogui.moveTo(x+w, y+h, duration=0.1)
+        rightdown_xy_dd = map_get_coords_at_cursor()
+        pyautogui.moveTo(x, y+h, duration=0.1)
+        leftdown_xy_dd = map_get_coords_at_cursor()
+        
+        dx_left = abs(leftdown_xy_dd[0] - leftup_xy_dd[0])
+        dx_right = abs(rightdown_xy_dd[0] - rightup_xy_dd[0])
+        area_upwidth_dd = abs(rightup_xy_dd[0] - leftup_xy_dd[0])
+        area_downwidth_dd = abs(rightdown_xy_dd[0] - leftdown_xy_dd[0])
+        dwidth = area_upwidth_dd - area_downwidth_dd
+        width_ratio = area_upwidth_dd / area_downwidth_dd if area_downwidth_dd != 0 else 0
+
+        dy_up = abs(rightup_xy_dd[1] - leftup_xy_dd[1])
+        dy_down = abs(rightdown_xy_dd[1] - leftdown_xy_dd[1])
+        area_leftheight_dd = abs(leftdown_xy_dd[1] - leftup_xy_dd[1])
+        area_rightheigth_dd = abs(rightdown_xy_dd[1] - rightup_xy_dd[1])
+        dheight = area_leftheight_dd -  area_rightheigth_dd
+        height_ratio = area_leftheight_dd / area_rightheigth_dd if area_rightheigth_dd != 0 else 0
+
+        return(f"""==={leftup_xy_dd}===
+    {dx_left=}\t{dx_right=}
+    {area_upwidth_dd=}
+    {area_downwidth_dd=}
+    {dwidth=}\t{width_ratio=}
+    {dy_up=}\t{dy_down=}
+    {area_leftheight_dd=}
+    {area_rightheigth_dd=}
+    {dheight=}\t{height_ratio=}
+    """)
+
+
+    @staticmethod
     def area_deforms():
         """Drag from top of France downward and record area deformities caused by map projection into one file"""
         TOP = "51.019308981766414,2.1669934760145924"
         addressbar_center_at_dd(TOP)
         with open("map_projection_deforms.txt", mode="wt", encoding="utf-8") as f:
             for _ in range(50):
-                stats = get_area_stats()
+                stats = TestDragArea.get_area_stats()
                 print(stats)
                 f.write(stats)
                 time.sleep(1)
                 for _ in range(5):
                     drag_area(yd = disp.POS)
+    
 
 if __name__ == '__main__':
     unittest.main()
