@@ -2,7 +2,7 @@ import math
 import time
 import pyautogui
 
-from constants import SEARCH_SCREEN_CHANGE_REGION, SCROLLBAR_REGION
+from config import SCROLLBAR_REGION
 from utils import distance_to_white
 from wait_contexts import wait_for_animation_end
 from gui_f3find import open_f3find, f3find_once, close_f3find
@@ -12,7 +12,7 @@ PLACE_CARD_XY = (12,550)
 SCROLL_MULT=1.3
 
 
-def py_scroll(distance, region=SEARCH_SCREEN_CHANGE_REGION):
+def py_scroll(distance, region):
     """Pass `distance` to scroll and `region` to wait_for_animation_end"""
     # Using precise distance leads to underscroll, arbitrary multiplier is used as a fix
     with wait_for_animation_end(region):
@@ -27,6 +27,8 @@ def scroll_to_next_card(scroll_up=True):
     """
     FIRST_PLACE_CARD_TOP_Y = 240
     LAST_PLACE_CARD_BOTTOM_Y = 635
+     # rectangle somewhere in the middle of the google maps interface, useful for scroll checks
+    SEARCH_SCREEN_CHANGE_REGION = (30, 330, 50, 20)  # TODO compute automatically from search bar Y, window Y and scroll X ?
 
     left_x, left_y = PLACE_CARD_XY
     # changing_region was unreliable - edge case: same blank card bottoms are compared
@@ -38,7 +40,7 @@ def scroll_to_next_card(scroll_up=True):
     distance = distance_to_white(left_x, left_y, from_down=scroll_up)
     if distance is None:
         return
-    py_scroll(-distance)
+    py_scroll(-distance, SEARCH_SCREEN_CHANGE_REGION)
 
     # when the last two cards are reached, the card can't move toward the cursor because the scroll is at its edge.
     # thus, the cursor should move toward the card.
