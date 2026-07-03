@@ -6,9 +6,10 @@ import tkinter as tk
 import pyautogui
 import keyboard
 
+from config import PLACE_NAME_HTML, SCROLLBAR_REGION
 from test.test_usr_get_area_img import TestDragArea
 
-from constants import PLACE_NAME_HTML, SCROLLBAR_REGION, REGION_1, REGION_2
+from constants import REGION_1, REGION_2
 from wait_contexts import wait_for_screen_image
 from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card

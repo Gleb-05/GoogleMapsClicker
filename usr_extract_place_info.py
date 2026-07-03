@@ -2,7 +2,8 @@ import time
 import pyautogui
 import pyperclip
 
-from constants import SCREEN_H, SEARCH_Y, PLACE_NAME_HTML, PLACE_TYPE_HTML
+from config import PLACE_NAME_HTML, PLACE_TYPE_HTML, SCREEN_H
+from gui_search import SEARCH_Y
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_find_and_copy_first

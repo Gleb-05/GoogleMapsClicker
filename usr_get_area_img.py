@@ -5,7 +5,8 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from constants import SCREEN_W, SCREEN_H, REGION_1, REGION_2
+from constants import REGION_1, REGION_2
+from config import SCREEN_H, SCREEN_W
 from utils import tab_switch, tab_new, tab_close
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result

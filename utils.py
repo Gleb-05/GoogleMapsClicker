@@ -29,6 +29,17 @@ def select_addressbar():
     time.sleep(0.3)
 
 
+def refocus_page():
+    """
+    Bring focus back to the page by focusing on the address bar.
+    Useful to bring hotkeys (like ctrl+f) into correct context.
+    """
+    select_addressbar()
+    time.sleep(0.01)
+    pyautogui.press('esc')  # address bar suggestions obstruct the page otherwise
+    time.sleep(0.1)
+
+
 def tab_new():
     """Open new tab using a shortcut"""
     pyautogui.shortcut('ctrl', 't')

@@ -1,21 +1,11 @@
 import time
 import pyautogui
 
-from constants import SEARCH_Y, SEARCH_BAR_X
-from utils import is_no_change, py_paste
+from utils import is_no_change, py_paste, refocus_page
 
 # TODO crutches like this arise from differences in the interface. Find better solution.
 d = 1068-570 # difference between x of f3find_count_region in fullscreen and when set_browser_x is used
 F3FIND_COUNT_REGION = (570-2, 98-2, 21+d+5, 14+5)  # exact search_f3_once.png coordinates, adjusted for error
-
-
-def refocus_page():
-    """
-    Bring focus back to the page by clicking at the coordinates of a search bar.
-    Useful to bring hotkeys (like ctrl+f) into correct context.
-    """
-    # this is the simplest lest demanding invariant part of google maps ui to use for refocusing
-    pyautogui.click(SEARCH_BAR_X, SEARCH_Y)
 
 
 def open_f3find(f3find_str: str):

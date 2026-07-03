@@ -1,12 +1,15 @@
 import time
 import pyautogui
 
-from constants import SEARCH_Y, SEARCH_BAR_X, PLACE_NAME_HTML, SCROLLBAR_REGION
+from config import SCROLLBAR_REGION
+from config import PLACE_NAME_HTML
 from utils import py_paste
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
+SEARCH_Y = 112
+SEARCH_BAR_X = 122
 
 
 def use_search(search_query: str):
