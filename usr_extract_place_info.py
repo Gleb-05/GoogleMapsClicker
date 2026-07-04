@@ -1,11 +1,14 @@
 import time
+import csv
 import pyautogui
 import pyperclip
 
-from config import PLACE_NAME_HTML, PLACE_TYPE_HTML, SCREEN_H
-from gui_search import SEARCH_Y
+from config import PLACE_NAME_HTML, PLACE_TYPE_HTML, SCREEN_H, SCROLLBAR_REGION
+from gui_scroll import total_scroll_down, scroll_to_next_card, SEARCH_SCREEN_CHANGE_REGION
+from gui_search import SEARCH_Y, use_search, search_back
+from gui_inspect import inspect_find
 from utils import py_reload, py_locateCenter, CustomError
-from wait_contexts import wait_for_screen_change, wait_for_animation_end
+from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
 from gui_inspect import inspect_find_and_copy_first
 from gui_scroll import py_scroll
 
@@ -18,6 +21,67 @@ But for a new machine, the guesswork behind the constants is too large to also i
 Working with page elements through the console seems more reliable.
 This usr_ file shall be refactored accordingly.
 """
+
+
+def process_search_queries():
+    """
+    For each query from query generator:
+    - enter query into search bar
+    - if "can't find" string is present on the page, skip query
+    - if not, use chosen safe procesing on the query results
+    """
+    for search_query in search_queries_naive():
+        if not use_search(search_query):
+            # TODO log that search_query gave zero search results
+            continue
+        for _ in iter_search_results():
+            write_to_csv(extract_place_info_safe())
+
+
+def search_queries_naive():
+    """Return hard-coded list of locations"""
+    naive_list = ['puffy cookies']
+    return [q + ' paris' for q in naive_list]
+
+
+def write_to_csv(info_tuple, filepath="output.csv", mode="a"):
+    with open(filepath, mode, newline="", encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(info_tuple)
+
+
+def iter_search_results():
+    """
+    Yield search results.
+
+    Possible search results:
+    - there is one place: the inspect find has PLACE_NAME_HTML.
+        the place webpage is already opened, yield immediately.
+    - there are multiple places: the inspect find does NOT have a PLACE_NAME_HTML.
+        each place card from the search results should be opened, yield, and then search page should be opened back.
+    
+    A small width of the webpage is assumed (`search_back` only works if the place info replaces the search list visually)
+    """
+    if inspect_find(PLACE_NAME_HTML):
+        yield
+        # going back to search page is unnecessary, since search bar is still displayed
+    else:
+        total_scroll_down()
+        last_card = False
+        while True:
+            scrollbar_snapshot = pyautogui.screenshot(region=SCROLLBAR_REGION)
+            pyautogui.click()
+            yield
+            # press 'back' and wait for page to load before scrolling to next card
+            # check if page is loaded using SCROLLBAR_REGION
+            try:
+                with wait_for_screen_image(SCROLLBAR_REGION, scrollbar_snapshot, 5):
+                    search_back()
+            except TimeoutError:
+                pass
+            if last_card:
+                break
+            last_card = scroll_to_next_card()
 
 
 def extract_place_info():
@@ -74,7 +138,7 @@ def extract_place_pluscode():
         if pluscode_xy is not None:
             break
         # sometimes pluscode row will be further down, requiring an additional scroll down
-        py_scroll(300 - SCREEN_H)
+        py_scroll(300 - SCREEN_H, SEARCH_SCREEN_CHANGE_REGION)
     if pluscode_xy is None:
         raise pyautogui.ImageNotFoundException
     pyautogui.click(pluscode_xy)
