@@ -10,7 +10,7 @@ from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
 SEARCH_Y = 112
 SEARCH_BAR_X = 122
-
+LANG = 'eng'  # TODO this one is really config
 
 def use_search(search_query: str):
     """
@@ -42,7 +42,7 @@ def single_search_result():
     return inspect_find(PLACE_NAME_HTML)
 
 
-def zero_search_results(lang='eng'):
+def zero_search_results(lang=LANG):
     """Return `True` if page has "can't find ..." string. Choose `lang`: [eng]"""
     NO_SEARCH_STR = {'eng': "Google Maps can't find"}
     no_search_str = NO_SEARCH_STR[lang]
