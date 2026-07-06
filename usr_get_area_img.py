@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import time
 import math
 from enum import IntEnum
@@ -8,7 +8,7 @@ import numpy as np
 
 from constants import REGION_1, REGION_2
 from config import SCREEN_H, SCREEN_W
-from utils import tab_switch, tab_new, tab_close
+from utils import tab_switch, tab_new, tab_close, ConfigTkMeta
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
@@ -17,49 +17,72 @@ from addressbar import addressbar_center_at_dd
 @dataclass
 class Config:
     """
-    get_area_img.py config.
-    Lowercase - user provides the config.
-    Uppercase - the config depends on user-provided config
-    (it is either derived from it or is obtained from a function that relies on it)
+    get_area_img.py config
     """
 
     # should be safely (10px) beside interactive ui elements
-    # TODO make function to define AREA_REGION
+    # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
-    area_region_leftup_xy : tuple[int,int] = (110, 145)
-    """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
-    area_region_rightdown_xy : tuple[int,int] = (1314,724)
-    """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
+
+    AREA_LEFTUP_XY : tuple[int,int] = field(
+        default = (110, 145),
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            "AREA_LEFTUP_XY", 
+            "Select leftup corner of area to be captured. From center, left until 'Layers' button, up until account icon."
+        )}
+    )
+    AREA_RIGHTDOWN_XY : tuple[int,int] = field(
+        default = (1314,724),
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            "AREA_RIGHTDOWN_XY",
+            "Select rightdown corner of area to be captured. From center, right until '+ -' buttons, down until 'Google Maps' text."
+        )}
+    )
 
     @property
     def AREA_WIDTH(self) -> int:
-        return self.area_region_rightdown_xy[0] - self.area_region_leftup_xy[0]
+        return self.AREA_RIGHTDOWN_XY[0] - self.AREA_LEFTUP_XY[0]
     @property
     def AREA_HEIGHT(self) -> int:
-        return self.area_region_rightdown_xy[1] - self.area_region_leftup_xy[0]
+        return self.AREA_RIGHTDOWN_XY[1] - self.AREA_LEFTUP_XY[1]
     @property
     def AREA_REGION(self) ->  tuple[int,int,int,int]:
-        return [*self.area_region_leftup_xy, self.AREA_WIDTH, self.AREA_HEIGHT]
+        """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
+        return [*self.AREA_LEFTUP_XY, self.AREA_WIDTH, self.AREA_HEIGHT]
 
     # TODO this config is "decision", others are "measurement". Differentiate?
-    area_edges : bool = False
-    """Draw edges when areas are combined within a region. Debug purposes, affects `construct_region()`"""
+    AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
+        default = False,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            "AREA_EDGES",
+            "Draw edges for individual areas combined within a region?"
+        )}
+    )
 
     # Depending on resolution and screen size, actual geographical coverage of the visible area will change
     # and decimal degree width and height will describe it.
     AREA_WIDTH_DD : float = 0.012115772764788004
     """Set with `estimate_area_width_and_height_dd_constants_once()`"""
     AREA_HEIGHT_DD : float = 0.0040135544595252485
-    """Set with `estimate_area_width_and_height_dd_constants_once()`"""
+    """Set """
 
-    scale_wh : tuple[int,int] = (224, 16)
-    """Region in right-down corner of the screen with a pixel-per-meter ruler"""
+    # TODO both AREA_WIDTH_DD and AREA_HEIGHT_DD are set with `estimate_area_width_and_height_dd_constants_once()`
+    # and would need to be reset on any change to AREA_REGION. It's a gray area between constants and configurables.
+    # It is not explicitly set by the user, but depends on user's actions.
+
+    SCALE_WH : tuple[int,int] = field(
+        default = (224, 16),
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SCALE_WH",
+            "Select region in right-down corner of the screen with a pixel-per-meter ruler"
+        )}
+    )
     @property
     def SCALE_REGION(self) -> tuple[int,int,int,int]:
-        return (SCREEN_W-self.scale_wh[0], SCREEN_H-self.scale_wh[1], *self.scale_wh)
+        return (SCREEN_W-self.SCALE_WH[0], SCREEN_H-self.SCALE_WH[1], *self.SCALE_WH)
 
     # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
-    AREA_TIME_SEC : float = 3.2
+    AREA_TIME_SEC : float = 3.2  # TODO replace with dynamic time estimation??
 
 C = Config()
 
@@ -99,7 +122,7 @@ def construct_region(r_width: int = 1, r_height: int = 1):
         x1, y1 = x0 + C.AREA_WIDTH, y0 + C.AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
         fir = final_img[y0:y1, x0:x1]  # final image region
-        if C.area_edges:
+        if C.AREA_EDGES:
             fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
     expand_sidepanel()
     return final_img

@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+from typing import ClassVar
 import time
 import functools
 import pyautogui
@@ -21,6 +23,25 @@ class CustomError(Exception):
     def _build_message(self):
         ctx = ", ".join(f"{k}={v}" for k, v in self.context.items())
         return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
+
+@dataclass(frozen=True)
+class ConfigTkMeta:
+    """A bridge between config code and user control.
+
+    - label: str - the name of the config value
+    - doc: str - guiding or explaining text alongside the config value
+    - widget_dict: dict - all info needed to make a widget to change the config value.
+    - expose: bool - a flag by which config values are selected to be shown in the tk app.
+
+    Additionaly, a KEY: ClassVar[str] = "tk" is specified for consistency.
+    """
+    KEY: ClassVar[str] = "tk"
+    """`metadata = { ConfigTkMeta.KEY: ConfigTkMeta(...) }` is the way to augment the dataclass field()."""
+    
+    label: str
+    doc: str
+    widget_dict: dict = field(default_factory=dict)
+    expose: bool = True
 
 
 def select_addressbar():
