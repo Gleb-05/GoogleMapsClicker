@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import time
 import math
 from enum import IntEnum
@@ -13,25 +14,54 @@ from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
 from addressbar import addressbar_center_at_dd
 
-# In pixels
-# AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text.
-AREA_WIDTH = 1314-110  # should be safely (10px) beside interactive ui elements
-AREA_HEIGHT = 724-145  # same
-AREA_REGION = (110, 145, AREA_WIDTH, AREA_HEIGHT)
+@dataclass
+class Config:
+    """
+    get_area_img.py config.
+    Lowercase - user provides the config.
+    Uppercase - the config depends on user-provided config
+    (it is either derived from it or is obtained from a function that relies on it)
+    """
 
-AREA_EDGES = False
-"""Draw edges when areas are combined within a region. Debug purposes, affects `construct_region()`"""
+    # should be safely (10px) beside interactive ui elements
+    # TODO make function to define AREA_REGION
+    # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
+    area_region_leftup_xy : tuple[int,int] = (110, 145)
+    """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
+    area_region_rightdown_xy : tuple[int,int] = (1314,724)
+    """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
 
-# Depending on resolution and screen size, actual geographical coverage of the visible area will change
-# and decimal degree width and height will describe it.
-AREA_WIDTH_DD = 0.012115772764788004
-"""Set with `estimate_area_width_and_height_dd_constants_once()`"""
-AREA_HEIGHT_DD = 0.0040135544595252485
-"""Set with `estimate_area_width_and_height_dd_constants_once()`"""
-# TODO cant be constants on areas too large? area_width_dd increases closer to equator due to map projection.
+    @property
+    def AREA_WIDTH(self) -> int:
+        return self.area_region_rightdown_xy[0] - self.area_region_leftup_xy[0]
+    @property
+    def AREA_HEIGHT(self) -> int:
+        return self.area_region_rightdown_xy[1] - self.area_region_leftup_xy[0]
+    @property
+    def AREA_REGION(self) ->  tuple[int,int,int,int]:
+        return [*self.area_region_leftup_xy, self.AREA_WIDTH, self.AREA_HEIGHT]
 
-# A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
-AREA_TIME_SEC = 2.5
+    # TODO this config is "decision", others are "measurement". Differentiate?
+    area_edges : bool = False
+    """Draw edges when areas are combined within a region. Debug purposes, affects `construct_region()`"""
+
+    # Depending on resolution and screen size, actual geographical coverage of the visible area will change
+    # and decimal degree width and height will describe it.
+    AREA_WIDTH_DD : float = 0.012115772764788004
+    """Set with `estimate_area_width_and_height_dd_constants_once()`"""
+    AREA_HEIGHT_DD : float = 0.0040135544595252485
+    """Set with `estimate_area_width_and_height_dd_constants_once()`"""
+
+    scale_wh : tuple[int,int] = (224, 16)
+    """Region in right-down corner of the screen with a pixel-per-meter ruler"""
+    @property
+    def SCALE_REGION(self) -> tuple[int,int,int,int]:
+        return (SCREEN_W-self.scale_wh[0], SCREEN_H-self.scale_wh[1], *self.scale_wh)
+
+    # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
+    AREA_TIME_SEC : float = 3.2
+
+C = Config()
 
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
@@ -62,14 +92,14 @@ def construct_region(r_width: int = 1, r_height: int = 1):
     - the sidepanel is collapsed (will be expanded on function end)
     - the zoom level and the map type are selected
     """
-    final_img = np.zeros(((1+2*r_height)*AREA_HEIGHT, (1+2*r_width)*AREA_WIDTH, 3), dtype=np.uint8)
+    final_img = np.zeros(((1+2*r_height)*C.AREA_HEIGHT, (1+2*r_width)*C.AREA_WIDTH, 3), dtype=np.uint8)
     for x,y in iter_drag_displacements(r_width, r_height):
-        area = np.asarray(pyautogui.screenshot(region=AREA_REGION), dtype=np.uint8)
-        x0, y0 = x*AREA_WIDTH, y*AREA_HEIGHT
-        x1, y1 = x0 + AREA_WIDTH, y0 + AREA_HEIGHT
+        area = np.asarray(pyautogui.screenshot(region=C.AREA_REGION), dtype=np.uint8)
+        x0, y0 = x*C.AREA_WIDTH, y*C.AREA_HEIGHT
+        x1, y1 = x0 + C.AREA_WIDTH, y0 + C.AREA_HEIGHT
         final_img[y0:y1, x0:x1] = area
         fir = final_img[y0:y1, x0:x1]  # final image region
-        if AREA_EDGES:
+        if C.area_edges:
             fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
     expand_sidepanel()
     return final_img
@@ -108,14 +138,14 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
         map_toggle_sat_labels()
 
     if use_const_area_dims_dd:
-        area_width_dd, area_height_dd = AREA_WIDTH_DD, AREA_HEIGHT_DD
+        area_width_dd, area_height_dd = C.AREA_WIDTH_DD, C.AREA_HEIGHT_DD
     else:
         # takes more time, brings little accuracy
         area_width_dd, area_height_dd = get_area_dd_wh()
 
     r_width = estimate_r_dim(w, area_width_dd)
     r_height = estimate_r_dim(h, area_height_dd)
-    print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*AREA_TIME_SEC/60:.2f}m")
+    print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*C.AREA_TIME_SEC/60:.2f}m")
     
     # TODO tab juggling
     tab_switch()
@@ -128,7 +158,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(
         f"region_{leftup_yx_dd}_{rightdown_yx_dd}_" +
         f"{'sat' if satellite else 'map'}_" +
-        time.strftime(f'%d.%m.%Y_%H.%M.%S') +
+        time.strftime(r'%d.%m.%Y_%H.%M.%S') +
         ".png")
 
     t_end = time.perf_counter()
@@ -143,8 +173,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
 
 def get_area_scale():
     """Get an image of map's scale (pixel distance to real distance)"""
-    SCALE_REGION = (SCREEN_W-224, SCREEN_H-16, 224, 16)
-    return pyautogui.screenshot(region=SCALE_REGION)
+    return pyautogui.screenshot(region=C.SCALE_REGION)
 
 
 def get_area_dd_wh():
@@ -153,8 +182,8 @@ def get_area_dd_wh():
     
     Potentially use in `get_dd_rect_img`. See corresponding md file for width-height samples.
     """
-    leftup_xy = AREA_REGION[0], AREA_REGION[1]
-    rightdown_xy = leftup_xy[0] + AREA_WIDTH, leftup_xy[1] + AREA_HEIGHT
+    leftup_xy = C.AREA_REGION[0], C.AREA_REGION[1]
+    rightdown_xy = leftup_xy[0] + C.AREA_WIDTH, leftup_xy[1] + C.AREA_HEIGHT
     
     pyautogui.moveTo(leftup_xy, duration=0.1)
     time.sleep(0.1)
@@ -265,7 +294,7 @@ class disp(IntEnum):
     ZER = 0
 
 
-def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = AREA_REGION):
+def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = C.AREA_REGION):
     """
     For currently displayed area at (x,y), perform dragging to view area at (x+xd, y+yd).
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
