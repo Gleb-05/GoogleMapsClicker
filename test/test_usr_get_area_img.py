@@ -13,7 +13,7 @@ from usr_get_area_img import (
     addressbar_center_at_dd,
     map_get_coords_at_cursor,
     disp, 
-    AREA_REGION
+    C
 )
 
 
@@ -190,7 +190,7 @@ class TestDragArea(unittest.TestCase):
         test_img = np.zeros((loop_repeat*cell_side, len(loop_steps)*cell_side, 3))
     
         # x, y of the AREA_REGION are at the left-upper corner
-        x, y, w, h = AREA_REGION
+        x, y, w, h = C.AREA_REGION
         x = x + r_area
         y = y + r_area
         w = w - area_side
@@ -221,7 +221,7 @@ class TestDragArea(unittest.TestCase):
         """
         Research area deformities from map projection
         """
-        x, y, w, h = AREA_REGION
+        x, y, w, h = C.AREA_REGION
 
         pyautogui.moveTo(x, y, duration=0.1)
         leftup_xy_dd = map_get_coords_at_cursor()
