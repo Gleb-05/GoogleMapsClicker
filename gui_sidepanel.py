@@ -1,18 +1,42 @@
+from dataclasses import dataclass, field
 import pyautogui
 
+from utils import ConfigTkMeta
 from wait_contexts import wait_for_animation_end
 
-SIDEPANEL_Y = 425
-SIDEPANEL_COLLAPSE_X = 420
-SIDEPANEL_EXPAND_X = 12
-SIDEPANEL_CHANGE_REGION = (0, SIDEPANEL_Y-10, 2*SIDEPANEL_EXPAND_X, 20)
+@dataclass
+class Config:
+    """sidepanel.py config"""
+    SIDEPANEL_Y : int = field(
+        default=425,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SIDEPANEL_Y", 
+            "height at which the collapse-expand arrow for the sidepanel is")
+    })
+    SIDEPANEL_COLLAPSE_X : int = field(
+        default=420,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SIDEPANEL_COLLAPSE_X", 
+            "horisontal position of the collapse-expand arrow when sidepanel is open")
+    })
+    SIDEPANEL_EXPAND_X : int = field(
+        default=12,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SIDEPANEL_EXPAND_X",
+            "horisontal position of the collapse-expand arrow when sidepanel is closed")
+    })
 
+    @property
+    def SIDEPANEL_CHANGE_REGION(self) -> tuple[int,int,int,int]:
+        return (0, self.SIDEPANEL_Y-10, 2*self.SIDEPANEL_EXPAND_X, 20)
+
+C = Config()
 
 def collapse_sidepanel():
-    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
-        pyautogui.click(SIDEPANEL_COLLAPSE_X, SIDEPANEL_Y)
+    with wait_for_animation_end(C.SIDEPANEL_CHANGE_REGION):
+        pyautogui.click(C.SIDEPANEL_COLLAPSE_X, C.SIDEPANEL_Y)
 
 
 def expand_sidepanel():
-    with wait_for_animation_end(SIDEPANEL_CHANGE_REGION):
-        pyautogui.click(SIDEPANEL_EXPAND_X, SIDEPANEL_Y)
+    with wait_for_animation_end(C.SIDEPANEL_CHANGE_REGION):
+        pyautogui.click(C.SIDEPANEL_EXPAND_X, C.SIDEPANEL_Y)
