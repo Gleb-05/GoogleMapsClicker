@@ -44,9 +44,15 @@ class ConfigTkMeta:
     expose: bool = True
 
 
-def select_addressbar():
-    """Move focus to the address bar of the browser, highlighting the entire webpage address"""
+def select_addressbar(hide_suggestions=True):
+    """
+    Move focus to the address bar of the browser, highlighting the entire webpage address. 
+    By default suggestions that drop down are hidden immediately. Pass `False` to override.
+    """
     pyautogui.hotkey('alt', 'd')
+    if hide_suggestions:
+        time.sleep(0.01)
+        pyautogui.press('esc') # addressbar suggestions obstruct the page without it
     time.sleep(0.3)
 
 

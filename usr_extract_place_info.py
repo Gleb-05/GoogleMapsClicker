@@ -5,7 +5,7 @@ import pyperclip
 
 from config import PLACE_NAME_HTML, PLACE_TYPE_HTML, SCREEN_H, SCROLLBAR_REGION
 from gui_scroll import total_scroll_down, scroll_to_next_card, SEARCH_SCREEN_CHANGE_REGION
-from gui_search import SEARCH_Y, use_search, search_back
+from gui_search import C, use_search, search_back
 from gui_inspect import inspect_find
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
@@ -62,7 +62,7 @@ def iter_search_results():
     
     A small width of the webpage is assumed (`search_back` only works if the place info replaces the search list visually)
     """
-    if inspect_find(PLACE_NAME_HTML):
+    if inspect_find(PLACE_NAME_HTML):  # TODO this thing fails, most likely due to img/inspect_prevbtn.png obsolescence
         yield
         # going back to search page is unnecessary, since search bar is still displayed
     else:
@@ -121,13 +121,13 @@ def extract_place_link():
     time.sleep(0.3)
     place_link = pyperclip.paste()
     with wait_for_screen_change(PLACE_LINKBTN_REGION):
-        pyautogui.click(PLACE_LINKBTN_REGION[0], SEARCH_Y)
+        pyautogui.click(PLACE_LINKBTN_REGION[0], C.SEARCH_Y)
     
     return place_link
 
 
 def extract_place_pluscode():
-    PLACE_PLUSCODE_REGION = (20, SEARCH_Y, 50-20, SCREEN_H-SEARCH_Y-10)
+    PLACE_PLUSCODE_REGION = (20, C.SEARCH_Y, 50-20, SCREEN_H-C.SEARCH_Y-10)
 
     pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])  # for scroll to work, cursor should be in a good position
     pluscode_xy = None

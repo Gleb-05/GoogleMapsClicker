@@ -6,7 +6,6 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from constants import REGION_1, REGION_2
 from config import SCREEN_H, SCREEN_W
 from utils import tab_switch, tab_new, tab_close, ConfigTkMeta
 from gui_sidepanel import expand_sidepanel
@@ -20,7 +19,15 @@ class Config:
     get_area_img.py config
     """
 
-    # should be safely (10px) beside interactive ui elements
+    # TODO move REGION_1 and REGION_2 away from fields that are intended to be changed.
+    # feels like the Config has objects with different purposes.
+    REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
+    """Beynes France leftup_yx_dd and rightdown_yx_dd"""
+
+    REGION_2 = ("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543")
+    """Camp militaire de Mailly leftup_yx_dd and rightdown_yx_dd"""
+
+    # The area should be safely (10px) beside interactive ui elements
     # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
 
@@ -62,9 +69,7 @@ class Config:
     # Depending on resolution and screen size, actual geographical coverage of the visible area will change
     # and decimal degree width and height will describe it.
     AREA_WIDTH_DD : float = 0.012115772764788004
-    """Set with `estimate_area_width_and_height_dd_constants_once()`"""
     AREA_HEIGHT_DD : float = 0.0040135544595252485
-    """Set """
 
     # TODO both AREA_WIDTH_DD and AREA_HEIGHT_DD are set with `estimate_area_width_and_height_dd_constants_once()`
     # and would need to be reset on any change to AREA_REGION. It's a gray area between constants and configurables.
@@ -263,8 +268,8 @@ def estimate_area_width_and_height_dd_constants_once(area_width_dd = 0.0129175, 
       A point that divides both intervals in equal proportion 
       will become the value of the relevant area_dim_dd constant.
     """
-    (lu_y_1, lu_x_1), (rd_y_1, rd_x_1) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in REGION_1)
-    (lu_y_2, lu_x_2), (rd_y_2, rd_x_2) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in REGION_2)
+    (lu_y_1, lu_x_1), (rd_y_1, rd_x_1) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_1)
+    (lu_y_2, lu_x_2), (rd_y_2, rd_x_2) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_2)
     w1 = rd_x_1 - lu_x_1
     h1 = rd_y_1 - lu_y_1
     w2 = rd_x_2 - lu_x_2
