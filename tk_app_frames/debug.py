@@ -6,9 +6,8 @@ import keyboard
 
 from test.test_usr_get_area_img import TestDragArea
 
-from constants import REGION_1, REGION_2
 from gui_search import center_on_search_result
-from usr_get_area_img import get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd_constants_once
+from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd_constants_once
 from gui_map import map_get_coords_at_cursor, map_toggle_sat_labels
 
 
@@ -32,10 +31,10 @@ class DebugFrame:
             "get_area_dd_wh": get_area_dd_wh,
             "estimate_area_width_and_height_dd_constants_once": estimate_area_width_and_height_dd_constants_once,
             "get_area_img": lambda: get_area_img("48,2"),
-            "get_dd_rect_img_small_map": lambda: get_dd_rect_img(*REGION_1),
-            "get_dd_rect_img_small_sat": lambda: get_dd_rect_img(*REGION_1, satellite=True),
-            "get_dd_rect_img_map": lambda: get_dd_rect_img(*REGION_2),
-            "get_dd_rect_img_sat": lambda: get_dd_rect_img(*REGION_2, satellite=True),
+            "get_dd_rect_img_small_map": lambda: get_dd_rect_img(*C.REGION_1),
+            "get_dd_rect_img_small_sat": lambda: get_dd_rect_img(*C.REGION_1, satellite=True),
+            "get_dd_rect_img_map": lambda: get_dd_rect_img(*C.REGION_2),
+            "get_dd_rect_img_sat": lambda: get_dd_rect_img(*C.REGION_2, satellite=True),
             "test_drag_area": TestDragArea.drag_shift,
             "test_area_deforms": TestDragArea.area_deforms,
             "map_get_coords_at_cursor": map_get_coords_at_cursor,

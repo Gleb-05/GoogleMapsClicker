@@ -1,16 +1,46 @@
+from dataclasses import dataclass, field
 import time
 import pyautogui
 
-from config import SCROLLBAR_REGION
-from config import PLACE_NAME_HTML
-from utils import py_paste
+from config import SCROLLBAR_REGION, LANG, PLACE_NAME_HTML
+from constants import NO_SEARCH_STR
+from utils import py_paste, ConfigTkMeta
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
-SEARCH_Y = 112
-SEARCH_BAR_X = 122
-LANG = 'eng'  # TODO this one is really config
+
+@dataclass
+class Config:
+    """search.py config."""
+    SEARCH_Y : int = field(
+        default=112,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SEARCH_Y",
+            "Middle height of the google maps search bar.")
+    })
+    SEARCH_BACK_X : int = field(
+        default=28,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SEARCH_BACK_X",
+            "Horisontal position of the 'back' button on the left of the search bar. "
+            "This button is available ONLY IF the webpage has small width."
+        )
+    })
+    SEARCH_BAR_X : int = field(
+        default=122,
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            "SEARCH_BAR_X",
+            "Middle width of the google maps search bar.")
+    })
+
+    # Subtract `from xy` - pixel coordinates of marker as it appears when the sidepanel is expanded
+    # from `to_xy` - coordinates of marker in the center of the screen (goes there after same page is reloaded)
+    DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY : tuple[int,int] = (-240,-1)
+    # TODO find alternatives for the `center_on_search_results` that are less gui-dependent
+
+C = Config()
+
 
 def use_search(search_query: str):
     """
@@ -19,7 +49,7 @@ def use_search(search_query: str):
     5sec wait is included.
     """
     # SEARCH_BUTTON_X = 278
-    pyautogui.click(SEARCH_BAR_X, SEARCH_Y)
+    pyautogui.click(C.SEARCH_BAR_X, C.SEARCH_Y)
     pyautogui.hotkey('ctrl', 'a')
     py_paste(search_query)
     pyautogui.press('enter')
@@ -32,8 +62,7 @@ def search_back():
     Click on the "back" button on the left of the search bar.
     This button is available ONLY IF the webpage has small width.
     """
-    SEARCH_BACK_X = 28
-    pyautogui.click(SEARCH_BACK_X, SEARCH_Y)
+    pyautogui.click(C.SEARCH_BACK_X, C.SEARCH_Y)
 
 
 def single_search_result():
@@ -42,10 +71,9 @@ def single_search_result():
     return inspect_find(PLACE_NAME_HTML)
 
 
-def zero_search_results(lang=LANG):
-    """Return `True` if page has "can't find ..." string. Choose `lang`: [eng]"""
-    NO_SEARCH_STR = {'eng': "Google Maps can't find"}
-    no_search_str = NO_SEARCH_STR[lang]
+def zero_search_results():
+    """Return `True` if page has "can't find ..." string of chosen LANG locality"""
+    no_search_str = NO_SEARCH_STR[LANG]
     open_f3find(no_search_str)
     return f3find_once()
 
@@ -63,7 +91,7 @@ def center_on_search_result(search_query: str):
     # monkey-patch with drag by EXACT distance between screen center and usual marker position after search
     y_to = SCROLLBAR_REGION[1] + 20
     x_to = SCROLLBAR_REGION[0] + 20
-    y_from = y_to + 1
-    x_from = x_to + 240
+    y_from = y_to - C.DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY[1]
+    x_from = x_to - C.DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY[0]
     drag_map(x_from, y_from, x_to, y_to)
     collapse_sidepanel()
