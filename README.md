@@ -51,7 +51,7 @@ More can be found in docstrings and `.md` files
 # Problem overview
 
 The most obvious solution for path planning is **Google Maps**.
-Using its API requires a setup with a credit card. Additionally, there is a limit on how many API calls can be made with a Free tier account, and the amount appears to beVisit places with known decimal coordinates through addressbar rather restricting. However, the Google Maps API provides a wide range of data in a clear and structured format, enabling data extraction within seconds. Compared to other options, it still may be worthwhile to perform a one-time comprehensive data extraction.
+Using its API requires a setup with a credit card. Additionally, there is a limit on how many API calls can be made with a Free tier account, and the amount appears to be rather restricting. However, the Google Maps API provides a wide range of data in a clear and structured format, enabling data extraction within seconds. Compared to other options, it still may be worthwhile to perform a one-time comprehensive data extraction.
 
 Extracting information from Google Maps without API is still possible through automation of GUI (graphical user interface).
 GUI Automation is linked to its own challenges, amongst which:
