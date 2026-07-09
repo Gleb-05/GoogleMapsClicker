@@ -60,3 +60,9 @@ class DebugFrame:
         keyboard.add_hotkey("num lock", self.execute_selected_step)
         keyboard.add_hotkey("alt+f2", self.execute_selected_step)  # fallback option
         keyboard.wait()  # Keep the thread alive
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = DebugFrame(root)
+    root.mainloop()

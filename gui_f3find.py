@@ -56,3 +56,4 @@ def close_f3find():
     # F3FIND_CLOSE_X = 705
     # pyautogui.click(x=F3FIND_CLOSE_X, y=SEARCH_Y)
     pyautogui.press('esc')  # it seems that f3find is the first thing that consumes "esc". doesnt break context
+    time.sleep(0.3)
