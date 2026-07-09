@@ -2,25 +2,23 @@ import json
 from dataclasses import dataclass, fields, asdict
 
 from utils import ConfigUpdateMixin
-# from gui_sidepanel import Config as Config_sidepanel, C as C_sidepanel
-# from gui_search import Config as Config_search, C as C_search
-# from gui_map import Config as Config_map, C as C_map
-# from addressbar import Config as Config_addressbar, C as C_addressbar
+from gui_sidepanel import Config as Config_sidepanel, C as C_sidepanel
+from gui_search import Config as Config_search, C as C_search
+from gui_map import Config as Config_map, C as C_map
+from addressbar import Config as Config_addressbar, C as C_addressbar
 from usr_get_area_img import Config as Config_areaimg, C as C_areaimg
 
 @dataclass()
 class Config:
     "Aggregating Config to dump and load other configs"
-    # sidepanel : Config_sidepanel
-    # search: Config_search
-    # gui_map: Config_map
-    # addressbar: Config_addressbar
+    sidepanel : Config_sidepanel
+    search: Config_search
+    gui_map: Config_map
+    addressbar: Config_addressbar
     areaimg: Config_areaimg
 
-C = Config(
-    #C_sidepanel, C_search, C_map, C_addressbar, 
-    C_areaimg)
-C_fields = (f.name for f in fields(C))
+C = Config(C_sidepanel, C_search, C_map, C_addressbar, C_areaimg)
+C_fields = set(f.name for f in fields(C))  # be careful not to leave it as a generator
 
 
 def dump_config():

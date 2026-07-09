@@ -48,7 +48,9 @@ class ConfigUpdateMixin:
         except dacite.exceptions.WrongTypeError as e:
             raise CustomError(
                 original_exception=e, 
-                fix="Consider adding the should-be type to the DACITE_CAST_TYPES field of the config that the field belongs to, " \
+                caution="Provided config may have invalid data!",
+                fix="If data is valid, consider adding the should-be type to the DACITE_CAST_TYPES field "
+                "of the config that the field belongs to; " \
                 "or adding that type to common_dacite_cast_types if it is common among configs") from e
 
         for f in fields(self):

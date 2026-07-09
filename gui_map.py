@@ -3,13 +3,13 @@ import time
 import pyautogui
 import pyperclip
 
-from utils import ConfigTkMeta
+from utils import ConfigTkMeta, ConfigUpdateMixin
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_use_console
 from gui_contextmenu import contextmenu_click_option
 
 @dataclass
-class Config:
+class Config(ConfigUpdateMixin):
     "map.py config"
 
     CONTEXT_Y_CUTOFF : int = field(
