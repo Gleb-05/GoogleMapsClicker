@@ -1,12 +1,13 @@
 from dataclasses import dataclass, field
 import pyautogui
 
-from utils import ConfigTkMeta, ConfigUpdateMixin
+from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from wait_contexts import wait_for_animation_end
 
 @dataclass
-class Config(ConfigUpdateMixin):
+class Config(ConfigRegistryMixin):
     """sidepanel.py config"""
+    REGISTER_KEY = "gui_sidepanel"
     SIDEPANEL_Y : int = field(
         default=425,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
@@ -31,6 +32,7 @@ class Config(ConfigUpdateMixin):
         return (0, self.SIDEPANEL_Y-10, 2*self.SIDEPANEL_EXPAND_X, 20)
 
 C = Config()
+C.register()
 
 def collapse_sidepanel():
     with wait_for_animation_end(C.SIDEPANEL_CHANGE_REGION):

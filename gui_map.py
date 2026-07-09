@@ -3,15 +3,16 @@ import time
 import pyautogui
 import pyperclip
 
-from utils import ConfigTkMeta, ConfigUpdateMixin
+from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui_inspect import inspect_use_console
 from gui_contextmenu import contextmenu_click_option
 
 @dataclass
-class Config(ConfigUpdateMixin):
+class Config(ConfigRegistryMixin):
     "map.py config"
-
+    REGISTER_KEY = "gui_map"
+    
     CONTEXT_Y_CUTOFF : int = field(
         default=384,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
@@ -39,6 +40,7 @@ class Config(ConfigUpdateMixin):
     # TODO both values above feel like PLACE_TYPE_HTML and PLACE_NAME_HTML - move to separate file?
 
 C = Config()
+C.register()
 
 
 def drag_map(x_from, y_from, x_to, y_to, drag_duration=0.3):

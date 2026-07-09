@@ -7,18 +7,19 @@ from PIL import Image
 import numpy as np
 
 from config import SCREEN_H, SCREEN_W
-from utils import tab_switch, tab_new, tab_close, ConfigTkMeta, ConfigUpdateMixin
+from config_registry import ConfigTkMeta, ConfigRegistryMixin
+from utils import tab_switch, tab_new, tab_close
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
 from addressbar import addressbar_center_at_dd
 
 @dataclass
-class Config(ConfigUpdateMixin):
+class Config(ConfigRegistryMixin):
     """
     get_area_img.py config
     """
-
+    REGISTER_KEY = "get_area_img"
     # TODO move REGION_1 and REGION_2 away from fields that are intended to be changed.
     # feels like the Config has objects with different purposes.
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
@@ -90,6 +91,7 @@ class Config(ConfigUpdateMixin):
     AREA_TIME_SEC : float = 3.2  # TODO replace with dynamic time estimation??
 
 C = Config()
+C.register()
 
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):

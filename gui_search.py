@@ -4,15 +4,18 @@ import pyautogui
 
 from config import SCROLLBAR_REGION, LANG, PLACE_NAME_HTML
 from constants import NO_SEARCH_STR
-from utils import py_paste, ConfigTkMeta, ConfigUpdateMixin
+from config_registry import ConfigTkMeta, ConfigRegistryMixin
+from utils import py_paste
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
 
 @dataclass
-class Config(ConfigUpdateMixin):
+class Config(ConfigRegistryMixin):
     """search.py config."""
+    REGISTER_KEY = "gui_search"
+
     SEARCH_Y : int = field(
         default=112,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
@@ -40,6 +43,7 @@ class Config(ConfigUpdateMixin):
     # TODO find alternatives for the `center_on_search_results` that are less gui-dependent
 
 C = Config()
+C.register()
 
 
 def use_search(search_query: str):
