@@ -96,3 +96,9 @@ class PrepareFrame:
     @auto_advance
     def set_inspect_y(self):
         pyautogui.dragTo(None, self.H - 1, duration=0.3)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PrepareFrame(root)
+    root.mainloop()
