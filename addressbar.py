@@ -1,18 +1,21 @@
 from dataclasses import dataclass
 import time
 import pyautogui
-from utils import select_addressbar, py_paste, ConfigUpdateMixin
+from config_registry import ConfigRegistryMixin
+from utils import select_addressbar, py_paste
 from gui_sidepanel import collapse_sidepanel
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 
 @dataclass
-class Config(ConfigUpdateMixin):
+class Config(ConfigRegistryMixin):
     "addressbar.py config"
+    REGISTER_KEY = "addressbar"
     SET_MAPVIEW_ADDRESS : str = "https://www.google.com/maps/@?api=1&basemap=satellite"
     DD_MAP_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},17z"
     DD_SAT_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
 
 C = Config()
+C.register()
 
 
 def open_url(url_address: str):
