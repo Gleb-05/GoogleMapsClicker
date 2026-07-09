@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import ClassVar
 import time
 import functools
@@ -6,7 +6,7 @@ import pyautogui
 import pyperclip
 from PIL import ImageChops, Image
 import numpy as np
-
+import dacite
 
 class CustomError(Exception):
     """
@@ -23,6 +23,37 @@ class CustomError(Exception):
     def _build_message(self):
         ctx = ", ".join(f"{k}={v}" for k, v in self.context.items())
         return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
+
+
+@dataclass()
+class ConfigUpdateMixin:
+    """
+    Inherit ConfigUpdateMixin inside config classes to make updates from the aggregated config possible.
+    
+    If needed, specify unusual types inside DACITE_CAST_TYPES tuple to ensure dacite.from_dict works correctly.
+    
+    `update` is to be called inside the aggregated config.
+    """
+    
+    DACITE_CAST_TYPES : ClassVar[tuple] = ()
+
+    def update(self, data):
+        common_dacite_cast_types = [tuple]  # json serializes tuples as lists, and tuples are common across configs
+        try:
+            loaded = dacite.from_dict(
+                type(self),
+                data,
+                config=dacite.Config(cast = list(self.DACITE_CAST_TYPES) + common_dacite_cast_types)
+            )
+        except dacite.exceptions.WrongTypeError as e:
+            raise CustomError(
+                original_exception=e, 
+                fix="Consider adding the should-be type to the DACITE_CAST_TYPES field of the config that the field belongs to, " \
+                "or adding that type to common_dacite_cast_types if it is common among configs") from e
+
+        for f in fields(self):
+            setattr(self, f.name, getattr(loaded, f.name))
+
 
 @dataclass(frozen=True)
 class ConfigTkMeta:

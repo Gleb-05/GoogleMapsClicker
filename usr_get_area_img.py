@@ -7,14 +7,14 @@ from PIL import Image
 import numpy as np
 
 from config import SCREEN_H, SCREEN_W
-from utils import tab_switch, tab_new, tab_close, ConfigTkMeta
+from utils import tab_switch, tab_new, tab_close, ConfigTkMeta, ConfigUpdateMixin
 from gui_sidepanel import expand_sidepanel
 from gui_search import center_on_search_result
 from gui_map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
 from addressbar import addressbar_center_at_dd
 
 @dataclass
-class Config:
+class Config(ConfigUpdateMixin):
     """
     get_area_img.py config
     """
