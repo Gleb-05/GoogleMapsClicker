@@ -4,14 +4,14 @@ import pyautogui
 
 from config import SCROLLBAR_REGION, LANG, PLACE_NAME_HTML
 from constants import NO_SEARCH_STR
-from utils import py_paste, ConfigTkMeta
+from utils import py_paste, ConfigTkMeta, ConfigUpdateMixin
 from gui_inspect import inspect_find
 from gui_sidepanel import collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
 
 @dataclass
-class Config:
+class Config(ConfigUpdateMixin):
     """search.py config."""
     SEARCH_Y : int = field(
         default=112,

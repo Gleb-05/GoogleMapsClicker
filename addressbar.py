@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 import time
 import pyautogui
-from utils import select_addressbar, py_paste
+from utils import select_addressbar, py_paste, ConfigUpdateMixin
 from gui_sidepanel import collapse_sidepanel
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 
 @dataclass
-class Config:
+class Config(ConfigUpdateMixin):
     "addressbar.py config"
     SET_MAPVIEW_ADDRESS : str = "https://www.google.com/maps/@?api=1&basemap=satellite"
     DD_MAP_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},17z"

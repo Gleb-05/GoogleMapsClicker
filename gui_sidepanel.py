@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 import pyautogui
 
-from utils import ConfigTkMeta
+from utils import ConfigTkMeta, ConfigUpdateMixin
 from wait_contexts import wait_for_animation_end
 
 @dataclass
-class Config:
+class Config(ConfigUpdateMixin):
     """sidepanel.py config"""
     SIDEPANEL_Y : int = field(
         default=425,
