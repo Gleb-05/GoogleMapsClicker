@@ -4,11 +4,10 @@ from dataclasses import dataclass, field, fields, asdict
 import dacite
 from utils import CustomError
 
-
-
 COMMON_DACITE_CAST_TYPES = [tuple]  
 # json serializes tuples as lists, and tuples are common across configs
 # this list can be expanded per future developer's discretion
+
 
 @dataclass()
 class ConfigRegistryMixin:
@@ -19,15 +18,24 @@ class ConfigRegistryMixin:
     Specify the REGISTER_KEY and call `register` after config instantiation.
 
     ```
+    # foobar.py
     @dataclass
-    class ConfigFoobar(ConfigUpdateMixin):
+    class Config(ConfigRegistryMixin):
         REGISTER_KEY = "foobar"
         # ...
-    C = ConfigFoobar()
+    C = Config()
     C.register()
     ```
 
     If needed, specify unusual types inside the config's `DACITE_CAST_TYPES` tuple to ensure dacite.from_dict works correctly.
+    Whatever the type, it should be **JSON serializable**
+    ```
+    class Config(ConfigRegistryMixin):
+        REGISTER_KEY = "foobar"
+        DACITE_CAST_TYPES = (Enum,)  # remember that one-element tuples require a comma
+        # ...
+
+    ```
     """
 
     REGISTER_KEY : ClassVar[str | None] = None
@@ -59,6 +67,10 @@ class ConfigRegistryMixin:
             raise ValueError("ConfigRegistryMixin descendant should specify a REGISTER_KEY string")
         register(config_key=self.REGISTER_KEY, config=self)
 
+    def deregister(self):
+        """Remove `self` instance from the config register"""
+        deregister(config_key=self.REGISTER_KEY)
+
 
 _config_register : dict[str, ConfigRegistryMixin] = {}
 """
@@ -67,9 +79,9 @@ Those should be accessed through a *singleton-like* config instance inside a rel
 
 This variable aggregates individual configs for two things:
 - making dumps
-- updating existing configs from the loaded dumps.
+- updating existing *singleton-like* configs from the loaded dumps.
 """
-C = _config_register
+
 
 def register(config_key: str, config: ConfigRegistryMixin):
     if config_key in _config_register:
@@ -77,9 +89,46 @@ def register(config_key: str, config: ConfigRegistryMixin):
     _config_register[config_key] = config
 
 
+def deregister(config_key: str):
+    if config_key in _config_register:
+        del _config_register[config_key]
+
+
+def _get_from_registry(config_key: str):
+    """debug function, avoid using outside of tests"""
+    return _config_register.get(config_key, None)
+
+
 def dump_config(path: str = "config.json"):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump({k : asdict(c) for k,c in _config_register.items()}, f, indent=2, ensure_ascii=False)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(
+                {k : asdict(c) for k,c in _config_register.items()}, 
+                f, 
+                # cls = ConfigEncoder
+                indent=2, 
+                ensure_ascii=False
+            )
+    except TypeError as e:
+        raise CustomError(
+            original_exception=e,
+            attention="ConfigRegistryMixin descendant *must* use JSON-serializable fields",
+            fix="Taking the simple nature of this app into account, please switch to JSON-serializable field types. " \
+            "For example, IntEnum instead of bare Enum."
+        ) from e
+    # In an unlikely event that some config CANNOT exist without a field of unserializable type,
+    # and this type turns out to be common or critical enough,
+    # consider adding the type to the ConfigEncoder, which is to be passed as `cls` parameter to `json.dump`
+
+# class ConfigEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if isinstance(obj, Enum):
+#             return obj.value
+
+#         if isinstance(obj, set):
+#             return list(obj)
+
+#         return super().default(obj)
 
 
 def load_config(path: str = "config.json"):
