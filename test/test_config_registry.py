@@ -37,13 +37,6 @@ class ConfigNoJsonSerialization(ConfigRegistryMixin):
     set_field : set = field(default_factory=lambda:{1,2,3})
 
 @dataclass
-class ConfigPassTypecasting(ConfigRegistryMixin):
-    "config with `enum_field` of `EnumType` to test if special types are cast correctly during loading (requires specifying DACITE_CAST_TYPES)"
-    REGISTER_KEY = "test"
-    DACITE_CAST_TYPES = (IntEnum,)
-    enum_field : MyEnum = MyEnum.TWO
-
-@dataclass
 class ConfigNest(ConfigRegistryMixin):
     "config with `dc_field` to test the registry with nested dataclasses"
     REGISTER_KEY = "test"
