@@ -1,30 +1,19 @@
+"""Scroll search results or place details. Always in the sidepanel"""
+
 import math
 import time
 import pyautogui
 
-from config import SCROLLBAR_REGION
+from gui_sidepanel import C_sidepanel
 from utils import distance_to_white
 from wait_contexts import wait_for_animation_end
 from gui_f3find import open_f3find, f3find_once, close_f3find
 
-PLACE_CARD_XY = (12,550)
+SCROLLBAR_REGION=(405,142,1,586)
+BOTTOM_PLACE_CARD_XY = (12,550)
 # PLACE_CARD_PAGETOP_XY = (12,255)
 SCROLL_MULT=1.3
-SEARCH_SCREEN_CHANGE_REGION = (30, 330, 50, 20)  # TODO compute automatically from search bar Y, window Y and scroll X ?
-"""
-Rectangle somewhere in the middle of the google maps interface, useful for scroll checks.
 
-Notice how this value unexpectedly shows up in usr_extract_place_info. This constant takes on 
-more responsibilities than its name suggests, and cannot simply be put in a config file.
-
-I am not sure how to handle this behavior yet. But, in some way, usr_extract_place_info and py_scroll would
-share a CONTEXT. There is a search panel, and it doesn't move, so the scrollbar doesn't move also. Making
-the SEARCH_SCREEN_CHANGE_REGION a context that multiple parts of the program can address, 
-as opposed to passing directly as an argument.
-
-Also also, the need to share such elusive states would disappear 
-after transitioning to page manipulation through console.
-"""
 
 def py_scroll(distance, region):
     """Pass `distance` to scroll and `region` to wait_for_animation_end"""
@@ -42,7 +31,7 @@ def scroll_to_next_card(scroll_up=True):
     FIRST_PLACE_CARD_TOP_Y = 240
     LAST_PLACE_CARD_BOTTOM_Y = 635
 
-    left_x, left_y = PLACE_CARD_XY
+    left_x, left_y = BOTTOM_PLACE_CARD_XY
     # changing_region was unreliable - edge case: same blank card bottoms are compared
 
     # Move the mouse over the place card for it to change color to gray
@@ -52,7 +41,7 @@ def scroll_to_next_card(scroll_up=True):
     distance = distance_to_white(left_x, left_y, from_down=scroll_up)
     if distance is None:
         return
-    py_scroll(-distance, SEARCH_SCREEN_CHANGE_REGION)
+    py_scroll(-distance, C_sidepanel.SIDEPANEL_CHANGE_REGION)
 
     # when the last two cards are reached, the card can't move toward the cursor because the scroll is at its edge.
     # thus, the cursor should move toward the card.
@@ -85,7 +74,7 @@ def total_scroll_down(lang='eng'):
     list_end_str = LIST_END_STR[lang]
 
     open_f3find(list_end_str)
-    pyautogui.moveTo(PLACE_CARD_XY)
+    pyautogui.moveTo(BOTTOM_PLACE_CARD_XY)
 
     while True:
         # TODO maybe change to holding a click at the bottom of search result scrollbar
@@ -96,5 +85,5 @@ def total_scroll_down(lang='eng'):
             break
 
     time.sleep(0.1)
-    pyautogui.moveTo(PLACE_CARD_XY)
+    pyautogui.moveTo(BOTTOM_PLACE_CARD_XY)
     

@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 import time
 import pyautogui
 
-from config import SCROLLBAR_REGION, LANG, PLACE_NAME_HTML
+from config import C_app
 from constants import NO_SEARCH_STR
 from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from utils import py_paste
 from gui_inspect import inspect_find
-from gui_sidepanel import collapse_sidepanel
+from gui_place import C_place
+from gui_sidepanel import C_sidepanel, collapse_sidepanel
 from gui_f3find import open_f3find, f3find_once
 from gui_map import drag_map
 
@@ -44,6 +45,7 @@ class Config(ConfigRegistryMixin):
 
 C = Config()
 C.register()
+C_search = C  # alias
 
 
 def use_search(search_query: str):
@@ -72,12 +74,12 @@ def search_back():
 def single_search_result():
     """Return `True` if one single place was found with google maps search, return `False` on multiple or no places"""
     # Only the webpage with one single search result has `place name` in its HTML
-    return inspect_find(PLACE_NAME_HTML)
+    return inspect_find(C_place.PLACE_NAME_HTML)
 
 
 def zero_search_results():
     """Return `True` if page has "can't find ..." string of chosen LANG locality"""
-    no_search_str = NO_SEARCH_STR[LANG]
+    no_search_str = NO_SEARCH_STR[C_app.LANG]
     open_f3find(no_search_str)
     return f3find_once()
 
@@ -93,8 +95,8 @@ def center_on_search_result(search_query: str):
     use_search(search_query)
     # py_reload() # puts the marker dead in the screen center, but introduces too much delay
     # monkey-patch with drag by EXACT distance between screen center and usual marker position after search
-    y_to = SCROLLBAR_REGION[1] + 20
-    x_to = SCROLLBAR_REGION[0] + 20
+    y_to = C_sidepanel.SIDEPANEL_Y + 20
+    x_to = C_sidepanel.SIDEPANEL_COLLAPSE_X + 20
     y_from = y_to - C.DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY[1]
     x_from = x_to - C.DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY[0]
     drag_map(x_from, y_from, x_to, y_to)
