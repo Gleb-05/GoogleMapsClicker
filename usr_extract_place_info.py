@@ -3,10 +3,11 @@ import csv
 import pyautogui
 import pyperclip
 
-from config import PLACE_NAME_HTML, PLACE_TYPE_HTML, SCREEN_H, SCROLLBAR_REGION
-from gui_scroll import total_scroll_down, scroll_to_next_card, SEARCH_SCREEN_CHANGE_REGION
-from gui_search import C, use_search, search_back
-from gui_inspect import inspect_find
+from config import C_app
+from gui_place import C_place
+from gui_scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
+from gui_search import C_search, use_search, search_back, single_search_result
+from gui_sidepanel import C_sidepanel
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
 from gui_inspect import inspect_find_and_copy_first
@@ -62,7 +63,7 @@ def iter_search_results():
     
     A small width of the webpage is assumed (`search_back` only works if the place info replaces the search list visually)
     """
-    if inspect_find(PLACE_NAME_HTML):  # TODO this thing fails, most likely due to img/inspect_prevbtn.png obsolescence
+    if single_search_result():  # TODO this thing fails, most likely due to img/inspect_prevbtn.png obsolescence
         yield
         # going back to search page is unnecessary, since search bar is still displayed
     else:
@@ -97,8 +98,8 @@ def extract_place_info():
     # and both name and type use inspect window and work slower
     place_link = extract_place_link()
     place_pluscode = extract_place_pluscode()
-    place_name = inspect_find_and_copy_first(PLACE_NAME_HTML)
-    place_type = inspect_find_and_copy_first(PLACE_TYPE_HTML)
+    place_name = inspect_find_and_copy_first(C_place.PLACE_NAME_HTML)
+    place_type = inspect_find_and_copy_first(C_place.PLACE_TYPE_HTML)
 
     return place_name, place_type, place_pluscode, place_link
 
@@ -121,13 +122,13 @@ def extract_place_link():
     time.sleep(0.3)
     place_link = pyperclip.paste()
     with wait_for_screen_change(PLACE_LINKBTN_REGION):
-        pyautogui.click(PLACE_LINKBTN_REGION[0], C.SEARCH_Y)
+        pyautogui.click(PLACE_LINKBTN_REGION[0], C_search.SEARCH_Y)
     
     return place_link
 
 
 def extract_place_pluscode():
-    PLACE_PLUSCODE_REGION = (20, C.SEARCH_Y, 50-20, SCREEN_H-C.SEARCH_Y-10)
+    PLACE_PLUSCODE_REGION = (20, C_search.SEARCH_Y, 50-20, C_app.SCREEN_H-C_search.SEARCH_Y-10)
 
     pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])  # for scroll to work, cursor should be in a good position
     pluscode_xy = None
@@ -138,7 +139,7 @@ def extract_place_pluscode():
         if pluscode_xy is not None:
             break
         # sometimes pluscode row will be further down, requiring an additional scroll down
-        py_scroll(300 - SCREEN_H, SEARCH_SCREEN_CHANGE_REGION)
+        py_scroll(300 - C_app.SCREEN_H, C_sidepanel.SIDEPANEL_CHANGE_REGION)
     if pluscode_xy is None:
         raise pyautogui.ImageNotFoundException
     pyautogui.click(pluscode_xy)

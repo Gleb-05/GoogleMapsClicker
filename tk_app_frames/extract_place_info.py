@@ -3,7 +3,7 @@ import traceback
 import tkinter as tk
 import keyboard
 
-from config import PLACE_NAME_HTML
+from gui_place import C_place
 
 from gui_inspect import inspect_find
 from gui_scroll import total_scroll_down, scroll_to_next_card
@@ -28,7 +28,7 @@ class DebugFrame:
         self.steps = {
             "process_search_queries": process_search_queries,
             "_extract_place_info_safe": extract_place_info_safe,
-            "_inspect_find": lambda: inspect_find(PLACE_NAME_HTML),
+            "_inspect_find": lambda: inspect_find(C_place.PLACE_NAME_HTML),
             "_total_scroll_down": total_scroll_down,
             "_scroll_to_next_card": scroll_to_next_card,
         }

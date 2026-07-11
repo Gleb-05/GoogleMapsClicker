@@ -6,7 +6,7 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from config import SCREEN_H, SCREEN_W
+from config import C_app
 from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from utils import tab_switch, tab_new, tab_close
 from gui_sidepanel import expand_sidepanel
@@ -85,7 +85,7 @@ class Config(ConfigRegistryMixin):
     )
     @property
     def SCALE_REGION(self) -> tuple[int,int,int,int]:
-        return (SCREEN_W-self.SCALE_WH[0], SCREEN_H-self.SCALE_WH[1], *self.SCALE_WH)
+        return (C_app.SCREEN_W-self.SCALE_WH[0], C_app.SCREEN_H-self.SCALE_WH[1], *self.SCALE_WH)
 
     # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
     AREA_TIME_SEC : float = 3.2  # TODO replace with dynamic time estimation??

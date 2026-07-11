@@ -1,9 +1,21 @@
-SCREEN_W = 1366 # TODO inherit winfo_screenwidth from tk app, don't leave constant!
-SCREEN_H = 768  # TODO same with winfo_screenheight
+from dataclasses import dataclass, field
+from config_registry import ConfigRegistryMixin, ConfigTkMeta
 
-SCROLLBAR_REGION=(405,142,1,586)  # TODO feels wrong to have it as a config? refactor later
-LANG = 'eng'
+@dataclass
+class Config(ConfigRegistryMixin):
+    "Configurations that impact the whole app"
+    REGISTER_KEY = "app"
+    
+    SCREEN_W : int = 1366 # TODO inherit winfo_screenwidth from tk app, don't leave constant!
+    SCREEN_H : int = 768  # TODO same with winfo_screenheight
 
-# those changed in two months also
-PLACE_TYPE_HTML="/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button"
-PLACE_NAME_HTML="/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/h1/text()"
+    LANG : str = field(
+        default='eng',
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            field_name="LANG",
+            doc="Choose language of google maps. Supported: ['eng']"
+        )}
+    )
+
+C_app = Config()
+C_app.register()
