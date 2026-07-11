@@ -3,7 +3,7 @@ import pyautogui
 import pyperclip
 
 from utils import py_paste
-from gui_contextmenu import contextmenu_click_option
+from gui.contextmenu import contextmenu_click_option
 from wait_contexts import wait_for_screen_change, wait_for_screen_image, wait_for_animation_end
 
 INSPECT_ELEMENTS_TAB_XY=548,100

@@ -6,11 +6,11 @@ from config import C_app
 from constants import NO_SEARCH_STR
 from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from utils import py_paste
-from gui_inspect import inspect_find
-from gui_place import C_place
-from gui_sidepanel import C_sidepanel, collapse_sidepanel
-from gui_f3find import open_f3find, f3find_once
-from gui_map import drag_map
+from gui.inspect import inspect_find
+from gui.place import C_place
+from gui.sidepanel import C_sidepanel, collapse_sidepanel
+from gui.f3find import open_f3find, f3find_once
+from gui.map import drag_map
 
 @dataclass
 class Config(ConfigRegistryMixin):

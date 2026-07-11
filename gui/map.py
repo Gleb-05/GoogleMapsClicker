@@ -5,8 +5,8 @@ import pyperclip
 
 from config_registry import ConfigTkMeta, ConfigRegistryMixin
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
-from gui_inspect import inspect_use_console
-from gui_contextmenu import contextmenu_click_option
+from gui.inspect import inspect_use_console
+from gui.contextmenu import contextmenu_click_option
 
 @dataclass
 class Config(ConfigRegistryMixin):

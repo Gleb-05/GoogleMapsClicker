@@ -3,10 +3,10 @@ import traceback
 import tkinter as tk
 import keyboard
 
-from gui_place import C_place
+from gui.place import C_place
 
-from gui_inspect import inspect_find
-from gui_scroll import total_scroll_down, scroll_to_next_card
+from gui.inspect import inspect_find
+from gui.scroll import total_scroll_down, scroll_to_next_card
 from usr_extract_place_info import process_search_queries, extract_place_info_safe
 
 

@@ -4,10 +4,10 @@ import math
 import time
 import pyautogui
 
-from gui_sidepanel import C_sidepanel
+from gui.sidepanel import C_sidepanel
 from utils import distance_to_white
 from wait_contexts import wait_for_animation_end
-from gui_f3find import open_f3find, f3find_once, close_f3find
+from gui.f3find import open_f3find, f3find_once, close_f3find
 
 SCROLLBAR_REGION=(405,142,1,586)
 BOTTOM_PLACE_CARD_XY = (12,550)

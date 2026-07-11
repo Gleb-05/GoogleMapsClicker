@@ -4,14 +4,14 @@ import pyautogui
 import pyperclip
 
 from config import C_app
-from gui_place import C_place
-from gui_scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
-from gui_search import C_search, use_search, search_back, single_search_result
-from gui_sidepanel import C_sidepanel
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
-from gui_inspect import inspect_find_and_copy_first
-from gui_scroll import py_scroll
+from gui.place import C_place
+from gui.scroll import total_scroll_down, scroll_to_next_card, SCROLLBAR_REGION
+from gui.search import C_search, use_search, search_back, single_search_result
+from gui.sidepanel import C_sidepanel
+from gui.inspect import inspect_find_and_copy_first
+from gui.scroll import py_scroll
 
 PLACE_LINKBTN_REGION = (325, 380, 375-325, 580-380)
 # TODO
