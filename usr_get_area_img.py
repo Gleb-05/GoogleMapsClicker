@@ -8,10 +8,11 @@ import numpy as np
 
 from config import C_app
 from config_registry import ConfigTkMeta, ConfigRegistryMixin
+from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
-from gui.map import drag_map, map_get_coords_at_cursor, map_toggle_sat_labels
+from gui.map import drag_map, map_get_coords_at_cursor
 from gui.addressbar import addressbar_center_at_dd
 
 @dataclass
