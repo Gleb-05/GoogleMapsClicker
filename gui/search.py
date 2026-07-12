@@ -1,51 +1,14 @@
-from dataclasses import dataclass, field
 import time
 import pyautogui
 
 from config import C_app
 from constants import NO_SEARCH_STR
-from config_registry import ConfigTkMeta, ConfigRegistryMixin
+from gui.core_configs import C_search as C, C_sidepanel, C_place
 from utils import py_paste
 from gui.inspect import inspect_find
-from gui.place import C_place
-from gui.sidepanel import C_sidepanel, collapse_sidepanel
+from gui.sidepanel import collapse_sidepanel
 from gui.f3find import open_f3find, f3find_once
 from gui.map import drag_map
-
-@dataclass
-class Config(ConfigRegistryMixin):
-    """search.py config."""
-    REGISTER_KEY = "gui_search"
-
-    SEARCH_Y : int = field(
-        default=112,
-        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_Y",
-            "Middle height of the google maps search bar.")
-    })
-    SEARCH_BACK_X : int = field(
-        default=28,
-        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_BACK_X",
-            "Horisontal position of the 'back' button on the left of the search bar. "
-            "This button is available ONLY IF the webpage has small width."
-        )
-    })
-    SEARCH_BAR_X : int = field(
-        default=122,
-        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_BAR_X",
-            "Middle width of the google maps search bar.")
-    })
-
-    # Subtract `from xy` - pixel coordinates of marker as it appears when the sidepanel is expanded
-    # from `to_xy` - coordinates of marker in the center of the screen (goes there after same page is reloaded)
-    DRAG_MARKER_TO_CENTER_DISPLACEMENT_XY : tuple[int,int] = (-240,-1)
-    # TODO find alternatives for the `center_on_search_results` that are less gui-dependent
-
-C = Config()
-C.register()
-C_search = C  # alias
 
 
 def use_search(search_query: str):
@@ -84,6 +47,7 @@ def zero_search_results():
     return f3find_once()
 
 
+# TODO find alternatives for the `center_on_search_results` that are less gui-dependent
 def center_on_search_result(search_query: str):
     """
     Align the center of the visible area with the place marker by performing the following sequence: <br>

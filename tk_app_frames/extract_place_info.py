@@ -3,7 +3,7 @@ import traceback
 import tkinter as tk
 import keyboard
 
-from gui.place import C_place
+from gui.core_configs.place import C_place
 
 from gui.inspect import inspect_find
 from gui.scroll import total_scroll_down, scroll_to_next_card
