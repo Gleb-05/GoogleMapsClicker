@@ -4,11 +4,12 @@ import tkinter as tk
 import pyautogui
 import keyboard
 
+from gui.layers import map_toggle_sat_labels
 from test.test_usr_get_area_img import TestDragArea
 
 from gui.search import center_on_search_result
 from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd_constants_once
-from gui.map import map_get_coords_at_cursor, map_toggle_sat_labels
+from gui.map import map_get_coords_at_cursor
 from config_registry import dump_config
 
 
