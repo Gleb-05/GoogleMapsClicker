@@ -4,15 +4,11 @@ import math
 import time
 import pyautogui
 
-from gui.sidepanel import C_sidepanel
+from gui.core_configs.scroll import SCROLLBAR_REGION, BOTTOM_PLACE_CARD_XY, SCROLL_MULT
+from gui.core_configs import C_sidepanel
 from utils import distance_to_white
 from wait_contexts import wait_for_animation_end
 from gui.f3find import open_f3find, f3find_once, close_f3find
-
-SCROLLBAR_REGION=(405,142,1,586)
-BOTTOM_PLACE_CARD_XY = (12,550)
-# PLACE_CARD_PAGETOP_XY = (12,255)
-SCROLL_MULT=1.3
 
 
 def py_scroll(distance, region):
