@@ -12,7 +12,6 @@ class Config(ConfigRegistryMixin):
     LANG : str = field(
         default='eng',
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            field_name="LANG",
             doc="Choose language of google maps. Supported: ['eng']"
         )}
     )

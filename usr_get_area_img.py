@@ -36,15 +36,13 @@ class Config(ConfigRegistryMixin):
     AREA_LEFTUP_XY : tuple[int,int] = field(
         default = (110, 145),
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            "AREA_LEFTUP_XY", 
-            "Select leftup corner of area to be captured. From center, left until 'Layers' button, up until account icon."
+            doc="Select leftup corner of area to be captured. From center, left until 'Layers' button, up until account icon."
         )}
     )
     AREA_RIGHTDOWN_XY : tuple[int,int] = field(
         default = (1314,724),
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            "AREA_RIGHTDOWN_XY",
-            "Select rightdown corner of area to be captured. From center, right until '+ -' buttons, down until 'Google Maps' text."
+            doc="Select rightdown corner of area to be captured. From center, right until '+ -' buttons, down until 'Google Maps' text."
         )}
     )
 
@@ -63,8 +61,7 @@ class Config(ConfigRegistryMixin):
     AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
         default = False,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            "AREA_EDGES",
-            "Draw edges for individual areas combined within a region?"
+            doc="Draw edges for individual areas combined within a region?"
         )}
     )
 
@@ -80,8 +77,7 @@ class Config(ConfigRegistryMixin):
     SCALE_WH : tuple[int,int] = field(
         default = (224, 16),
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SCALE_WH",
-            "Select region in right-down corner of the screen with a pixel-per-meter ruler"
+            doc="Select region in right-down corner of the screen with a pixel-per-meter ruler"
         )}
     )
     @property

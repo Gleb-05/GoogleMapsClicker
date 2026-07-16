@@ -10,22 +10,18 @@ class Config(ConfigRegistryMixin):
     SEARCH_Y : int = field(
         default=112,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_Y",
-            "Middle height of the google maps search bar.")
+            doc="Middle height of the google maps search bar.")
     })
     SEARCH_BACK_X : int = field(
         default=28,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_BACK_X",
-            "Horisontal position of the 'back' button on the left of the search bar. "
-            "This button is available ONLY IF the webpage has small width."
-        )
+            doc="Horisontal position of the 'back' button on the left of the search bar. "
+            "This button is available ONLY IF the webpage has small width.")
     })
     SEARCH_BAR_X : int = field(
         default=122,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            "SEARCH_BAR_X",
-            "Middle width of the google maps search bar.")
+            doc="Middle width of the google maps search bar.")
     })
 
     # Subtract `from xy` - pixel coordinates of marker as it appears when the sidepanel is expanded

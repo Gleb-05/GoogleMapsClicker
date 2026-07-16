@@ -145,7 +145,6 @@ def load_config(path: str = "config.json"):
 class ConfigTkMeta:
     """A bridge between config code and user control.
 
-    - field_name: str - the name used in code for the config value
     - doc: str - guiding or explaining text alongside the config value
     - widget_dict: dict - all info needed to make a widget to change the config value.
 
@@ -154,11 +153,10 @@ class ConfigTkMeta:
     KEY: ClassVar[str] = "tk"
     """`metadata = { ConfigTkMeta.KEY: ConfigTkMeta(...) }` is the way to augment the dataclass field()."""
 
-    field_name: str
     doc: str
     widget_dict: dict = field(default_factory=dict)
 
 
 def get_tk_fields(config: ConfigRegistryMixin):
-    """For a given config, return all fields with ConfigTkMeta"""
+    """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
     return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
