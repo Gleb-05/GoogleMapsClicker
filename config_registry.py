@@ -157,3 +157,8 @@ class ConfigTkMeta:
     field_name: str
     doc: str
     widget_dict: dict = field(default_factory=dict)
+
+
+def get_tk_fields(config: ConfigRegistryMixin):
+    """For a given config, return all fields with ConfigTkMeta"""
+    return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
