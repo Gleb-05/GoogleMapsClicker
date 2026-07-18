@@ -11,7 +11,7 @@ class BasicFrame:
         self.header = tk.Frame(root)
         self.header.pack(fill="x", expand=False, padx=10, pady=10)
         middle_frame, self.body = self._create_body()
-        middle_frame.configure(borderwidth=4, relief=tk.GROOVE)
+        middle_frame.configure(borderwidth=4, relief=tk.GROOVE, padx=2, pady=2)
         middle_frame.pack(fill="both", expand=True, padx=10)
         self.footer = tk.Frame(root)
         self.footer.pack(fill="x", expand=False, padx=10, pady=10)
@@ -59,13 +59,13 @@ class BasicFrame:
 
         width = (
             self.body.winfo_reqwidth() + self._vsb.winfo_reqwidth() 
-            + 10*2 + 4*2 + 4 # middle padx, middle borders, small margin
+            + 10*2 + 6*2 + 4 # middle padx, middle borders, small margin
         )
         width = min(width, BasicFrame.MAX_WIDTH)
 
         height = (
             self.body.winfo_reqheight() + self.header.winfo_reqheight() + self.footer.winfo_reqheight() 
-            + 10 * 4 + 4 * 2 + 4 # header and footer pady, middle borders, small margin
+            + 10*4 + 6*2 + 4 # header and footer pady, middle borders, small margin
         )
         height = min(height, BasicFrame.MAX_HEIGHT)
         
