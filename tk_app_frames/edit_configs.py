@@ -1,14 +1,15 @@
-
+import json
 import tkinter as tk
+from tkinter import messagebox
 from tk_app_frames.BasicFrame import BasicFrame
 from dataclasses import Field
 from typing import NamedTuple
-# from gui.core_configs import C_search
+from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
-from config_registry import get_tk_fields, _config_register, ConfigRegistryMixin, ConfigTkMeta
+# from usr_get_area_img import C
+from config_registry import get_tk_fields, _config_register, ConfigRegistryMixin, ConfigTkMeta, dump_config, load_config_from_dict, load_config
 
-
-class FrameWithVariables(NamedTuple):
+class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
     frame: tk.Frame
     variables: dict[str, tk.Variable]
@@ -18,16 +19,16 @@ def field_entry_w_variable(field: Field, master: tk.Misc) -> tk.Variable:
     field_frame = tk.Frame(master)
     field_frame.pack(fill=tk.X, expand=True, padx=10, pady=10)
 
-    tk.Frame(field_frame, height=1, background="gray").pack(fill=tk.X, expand=True, pady=(0,5))
-    
-    variable = tk.StringVar(value=str(field.default))
-    entry = tk.Entry(field_frame, textvariable=variable)
-    entry.pack(anchor=tk.W)
+    tk.Frame(field_frame, height=1, background="gray").pack(fill=tk.X, expand=True)
     
     meta: ConfigTkMeta = field.metadata.get(ConfigTkMeta.KEY)
     kw_label_make = {"master": field_frame, "wraplength": 400, "justify":"left"}
-    tk.Label(text=field.name, **kw_label_make).pack(anchor=tk.W)
-    tk.Label(text=meta.doc,   **kw_label_make).pack(anchor=tk.W)
+    tk.Label(text=f"{field.name}\n{meta.doc}",   **kw_label_make).pack(anchor=tk.W)
+    
+    variable = tk.StringVar(value=json.dumps(field.default))
+    entry = tk.Entry(field_frame, textvariable=variable)
+    entry.pack(anchor=tk.W)
+    
     return variable
 
 class EditConfigsFrame(BasicFrame):
@@ -44,9 +45,9 @@ class EditConfigsFrame(BasicFrame):
         tk.Label(self.header, text=instruction, wraplength=300).pack(expand=True)
 
         self.configs = {
-            key: config_frame_and_entries
+            key: config_frame_and_variables
             for key, config in _config_register.items()
-            if (config_frame_and_entries:=self._frame_with_variables(config)) is not None
+            if (config_frame_and_variables:=self._frame_and_variables(config)) is not None
         }
         self.config_names = list(self.configs.keys())
         self.current_config_name = self.config_names[0]
@@ -64,13 +65,13 @@ class EditConfigsFrame(BasicFrame):
 
         self.configs[self.current_config_name].frame.pack(fill="both")
      
-        tk.Button(self.footer, text="Save to file").pack(side="right")
-        tk.Button(self.footer, text="Load from file").pack(side="right", padx=5)
-        tk.Button(self.footer, text="Load default").pack(side="right")
+        tk.Button(self.footer, text="Save to file", command=self._save_to_file).pack(side="right")
+        tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right", padx=5)
+        tk.Button(self.footer, text="Load default", command=self._load_default).pack(side="right")
 
         self.update_root_geometry()
 
-    def _frame_with_variables(self, config: ConfigRegistryMixin) -> FrameWithVariables | None:
+    def _frame_and_variables(self, config: ConfigRegistryMixin) -> FrameAndVariables | None:
         tk_fields = get_tk_fields(config)
         if len(tk_fields) == 0:
             return None
@@ -78,9 +79,37 @@ class EditConfigsFrame(BasicFrame):
         variables = {}
         for field in tk_fields:
             variables[field.name] = field_entry_w_variable(field, config_frame) 
-        return FrameWithVariables(config_frame, variables)
+        return FrameAndVariables(config_frame, variables)
 
+    def _save_to_file(self):
+        config_dict = {
+            key: 
+            {field: json.loads(tkvar.get()) for field, tkvar in config.variables.items()} 
+            for key, config in self.configs.items()
+        }
+        try:
+            load_config_from_dict(config_dict)
+            # TODO unique file name
+            dump_config("usr_configs/gui_config.json")
+            messagebox.showinfo(message="SAVE SUCCESSFUL")
+        except CustomError as e:
+            messagebox.showerror("BAD NEW VALUES", str(e))
 
+    def _load_default(self):
+        load_config()
+        self._reload_variables()
+
+    def _load_from_file(self):
+        # TODO file selection
+        self._reload_variables()
+
+    def _reload_variables(self):
+        for key, config in _config_register.items():
+            if key not in self.configs:
+                continue
+            for field, tkvar in self.configs[key].variables.items():
+                tkvar.set(json.dumps(getattr(config, field)))
+        messagebox.showinfo(message="LOAD SUCCESSFUL")
 
 if __name__ == "__main__":
     tk_root = tk.Tk()

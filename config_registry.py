@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, fields, asdict
 import dacite
 from utils import CustomError
 
-COMMON_DACITE_CAST_TYPES = [tuple]  
+COMMON_DACITE_CAST_TYPES = [tuple, int, float]  
 # json serializes tuples as lists, and tuples are common across configs
 # this list can be expanded per future developer's discretion
 
@@ -133,12 +133,16 @@ def dump_config(path: str = "config.json"):
 
 def load_config(path: str = "config.json"):
     with open(path, "r", encoding="utf-8") as f:
-        data : dict = json.load(f)
-        for c_field, c_dict in data.items():
-            if c_field not in _config_register:
-                continue  # unsupported config fields are skipped
-            old_c = _config_register[c_field]
-            old_c._update(c_dict)  # pylint: disable=protected-access ; intended usecase
+        data : dict[str,dict] = json.load(f)
+        load_config_from_dict(data)
+
+
+def load_config_from_dict(config_dict: dict[str,dict]):
+    for c_key, c_dict in config_dict.items():
+        if c_key not in _config_register:
+            continue  # unsupported config fields are skipped
+        old_c = _config_register[c_key]
+        old_c._update(c_dict)  # pylint: disable=protected-access ; intended usecase
 
 
 @dataclass(frozen=True)
