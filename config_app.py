@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from config_registry import ConfigRegistryMixin
-from config_tk_bridge import ConfigTkMeta
+from config_to_tk_entries import ConfigTkMeta
 
 @dataclass
 class Config(ConfigRegistryMixin):

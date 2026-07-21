@@ -6,9 +6,9 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from config import C_app
+from config_app import C_app
 from config_registry import ConfigRegistryMixin
-from config_tk_bridge import ConfigTkMeta
+from config_to_tk_entries import ConfigTkMeta
 from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.sidepanel import expand_sidepanel
@@ -22,8 +22,8 @@ class Config(ConfigRegistryMixin):
     get_area_img.py config
     """
     REGISTER_KEY = "get_area_img"
-    # TODO move REGION_1 and REGION_2 away from fields that are intended to be changed.
-    # feels like the Config has objects with different purposes.
+    # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
+    # feels like the Config has objects with different purposes. Though one-point access IS convenient.
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
     """Beynes France leftup_yx_dd and rightdown_yx_dd"""
 
@@ -34,29 +34,48 @@ class Config(ConfigRegistryMixin):
     # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
 
-    AREA_LEFTUP_XY : tuple[int,int] = field(
-        default = (110, 145),
+    # TODO also consider using xy_read = [(1,0),(0,1),(1,0),(0,1)] 
+    # pros: less space to define user behavior in configs (right now one action - one coordinate)
+    # cons: needs a custom widget that combines multiple int entries.
+    AREA_LEFTUP_X : int = field(
+        default = 110,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select leftup corner of area to be captured. From center, left until 'Layers' button, up until account icon."
+            doc="Select leftup x of area to be captured. From center, left until 'Layers' button.",
+            xy_read=ConfigTkMeta.READ_X
         )}
     )
-    AREA_RIGHTDOWN_XY : tuple[int,int] = field(
-        default = (1314,724),
+    AREA_LEFTUP_Y : int = field(
+        default = 145,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select rightdown corner of area to be captured. From center, right until '+ -' buttons, down until 'Google Maps' text."
+            doc="Select leftup y of area to be captured. From center, up until account icon.",
+            xy_read=ConfigTkMeta.READ_Y
+        )}
+    )
+    AREA_RIGHTDOWN_X : int = field(
+        default = 1314,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Select rightdown x of area to be captured. From center, right until '+ -' buttons",
+            xy_read=ConfigTkMeta.READ_X
+        )}
+    )
+    AREA_RIGHTDOWN_Y : int = field(
+        default = 724,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Select rightdown y of area to be captured. From center, down until 'Google Maps' text.",
+            xy_read=ConfigTkMeta.READ_Y
         )}
     )
 
     @property
     def AREA_WIDTH(self) -> int:
-        return self.AREA_RIGHTDOWN_XY[0] - self.AREA_LEFTUP_XY[0]
+        return self.AREA_RIGHTDOWN_X - self.AREA_LEFTUP_X
     @property
     def AREA_HEIGHT(self) -> int:
-        return self.AREA_RIGHTDOWN_XY[1] - self.AREA_LEFTUP_XY[1]
+        return self.AREA_RIGHTDOWN_Y - self.AREA_LEFTUP_Y
     @property
     def AREA_REGION(self) ->  tuple[int,int,int,int]:
         """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
-        return [*self.AREA_LEFTUP_XY, self.AREA_WIDTH, self.AREA_HEIGHT]
+        return [self.AREA_LEFTUP_X, self.AREA_LEFTUP_Y, self.AREA_WIDTH, self.AREA_HEIGHT]
 
     # TODO this config is "decision", others are "measurement". Differentiate?
     AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
@@ -78,7 +97,8 @@ class Config(ConfigRegistryMixin):
     SCALE_WH : tuple[int,int] = field(
         default = (224, 16),
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select region in right-down corner of the screen with a pixel-per-meter ruler"
+            doc="Place cursor at leftup corner of a region in right-down corner of the screen with a pixel-per-meter ruler",
+            xy_read=ConfigTkMeta.READ_XY
         )}
     )
     @property
@@ -86,7 +106,7 @@ class Config(ConfigRegistryMixin):
         return (C_app.SCREEN_W-self.SCALE_WH[0], C_app.SCREEN_H-self.SCALE_WH[1], *self.SCALE_WH)
 
     # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
-    AREA_TIME_SEC : float = 3.2  # TODO replace with dynamic time estimation??
+    AREA_TIME_SEC = 3.2  # TODO replace with dynamic time estimation??
 
 C = Config()
 C.register()
@@ -144,7 +164,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
     Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
 
-    The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD
+    The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD.
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
     """
     # TODO i have no idea why, but google maps now often freezes,

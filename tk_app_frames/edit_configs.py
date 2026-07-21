@@ -7,7 +7,7 @@ from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
 from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
-from config_tk_bridge import get_tk_fields, field_entry_w_variable
+from config_to_tk_entries import get_tk_fields, field_entry_w_variable, XYReadManager
 
 class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
@@ -25,9 +25,10 @@ class EditConfigsFrame(BasicFrame):
         self.root.minsize(300, 100)
         self.root.attributes("-topmost", True)
 
-        instruction = "Press NumLk (or alt+f2) after moving your cursor \n to a suitable position."
-        tk.Label(self.header, text=instruction, wraplength=300).pack(expand=True)
+        instruction = "For entries with buttons saying 'set from cursor coordinates', \npress the button to begin the operation, \npress NumLk (or right shift) after moving your cursor to a suitable position \nor press ecs to cancel the operation."
+        tk.Label(self.body, text=instruction, wraplength=400, justify="left").pack(expand=True)
 
+        self.xy_read_manager = XYReadManager(self.root)
         self.configs = {
             key: config_frame_and_variables
             for key, config in _config_register.items()
@@ -41,14 +42,17 @@ class EditConfigsFrame(BasicFrame):
             self.configs[name].frame.pack(fill="both")
             self.current_config_name = name
             self.update_root_geometry()
-        tk.OptionMenu(self.body, 
+        option_menu_highlight = tk.Frame(self.body, background="white")
+        option_menu_highlight.pack(fill="x", expand=True, pady=10)
+        tk.OptionMenu(option_menu_highlight, 
                 tk.StringVar(value=self.current_config_name), 
                 *self.config_names, 
                 command=switch_frame
-                ).pack(side="top", anchor="center", pady=10)
+                ).pack(anchor="center", pady=10)
 
         self.configs[self.current_config_name].frame.pack(fill="both")
      
+        # TODO Apply button for when the entries have changed but the config did not
         tk.Button(self.footer, text="Save to file", command=self._save_to_file).pack(side="right")
         tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right", padx=5)
         tk.Button(self.footer, text="Load default", command=self._load_default).pack(side="right")
@@ -62,7 +66,7 @@ class EditConfigsFrame(BasicFrame):
         config_frame = tk.Frame(self.body)
         variables = {}
         for field in tk_fields:
-            variables[field.name] = field_entry_w_variable(field, config_frame) 
+            variables[field.name] = field_entry_w_variable(field, config_frame, self.xy_read_manager) 
         return FrameAndVariables(config_frame, variables)
 
     def _save_to_file(self):

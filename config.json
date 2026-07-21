@@ -4,24 +4,9 @@
     "SCREEN_H": 768,
     "LANG": "eng"
   },
-  "gui_sidepanel": {
-    "SIDEPANEL_Y": 425,
-    "SIDEPANEL_COLLAPSE_X": 420,
-    "SIDEPANEL_EXPAND_X": 12
-  },
   "gui_place": {
     "PLACE_TYPE_HTML": "/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button",
     "PLACE_NAME_HTML": "/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/h1/text()"
-  },
-  "gui_map": {
-    "CONTEXT_Y_CUTOFF": 384,
-    "CONTEXT_SNAPS_TO_SCREEN_BOTTOM": true,
-    "POPUP_CLOSE_XY": [
-      796,
-      744
-    ],
-    "LABELS_BUTTON_SELECTOR": "body > div:nth-child(5) > div.lbMcOd.y2iKwd.cSgCkb.qK6Xvf.znKqMd.Nkjr6c.K1N2o > div.UL7Qtf > div.seN1Zd.Hk4XGb > div > div > div > div.yYTQHb > ul > li:nth-child(2) > button",
-    "SWITCHVIEW_BUTTON_SELECTOR": "body > div:nth-child(5) > div.lbMcOd > div.UL7Qtf > div.jsXHHe.i2s2Oe > div.t090lc.pEO5hf > div > div > button"
   },
   "gui_search": {
     "SEARCH_Y": 112,
@@ -32,27 +17,35 @@
       -1
     ]
   },
+  "gui_sidepanel": {
+    "SIDEPANEL_Y": 425,
+    "SIDEPANEL_COLLAPSE_X": 420,
+    "SIDEPANEL_EXPAND_X": 12
+  },
+  "gui_map": {
+    "CONTEXT_Y_CUTOFF": 384,
+    "CONTEXT_SNAPS_TO_SCREEN_BOTTOM": true,
+    "POPUP_CLOSE_XY": [
+      796,
+      744
+    ]
+  },
   "addressbar": {
     "SET_MAPVIEW_ADDRESS": "https://www.google.com/maps/@?api=1&basemap=satellite",
     "DD_MAP_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},17z",
     "DD_SAT_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
   },
   "get_area_img": {
-    "AREA_LEFTUP_XY": [
-      110,
-      145
-    ],
-    "AREA_RIGHTDOWN_XY": [
-      1314,
-      724
-    ],
+    "AREA_LEFTUP_X": 110,
+    "AREA_LEFTUP_Y": 145,
+    "AREA_RIGHTDOWN_X": 1314,
+    "AREA_RIGHTDOWN_Y": 724,
     "AREA_EDGES": false,
     "AREA_WIDTH_DD": 0.012115772764788004,
     "AREA_HEIGHT_DD": 0.0040135544595252485,
     "SCALE_WH": [
       224,
       16
-    ],
-    "AREA_TIME_SEC": 3.2
+    ]
   }
 }

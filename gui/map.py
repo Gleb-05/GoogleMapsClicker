@@ -4,7 +4,7 @@ import pyautogui
 import pyperclip
 
 from config_registry import ConfigRegistryMixin
-from config_tk_bridge import ConfigTkMeta
+from config_to_tk_entries import ConfigTkMeta
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
 from gui.contextmenu import contextmenu_click_option
 

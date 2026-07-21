@@ -1,7 +1,7 @@
 import time
 import pyautogui
 
-from config import C_app
+from config_app import C_app
 from constants import NO_SEARCH_STR
 from gui.core_configs import C_search as C, C_sidepanel, C_place
 from utils import py_paste
