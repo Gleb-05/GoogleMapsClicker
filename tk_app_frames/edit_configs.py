@@ -2,34 +2,18 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 from tk_app_frames.BasicFrame import BasicFrame
-from dataclasses import Field
 from typing import NamedTuple
 from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
-from config_registry import get_tk_fields, _config_register, ConfigRegistryMixin, ConfigTkMeta, dump_config, load_config_from_dict, load_config
+from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
+from config_tk_bridge import get_tk_fields, field_entry_w_variable
 
 class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
     frame: tk.Frame
     variables: dict[str, tk.Variable]
 
-
-def field_entry_w_variable(field: Field, master: tk.Misc) -> tk.Variable:
-    field_frame = tk.Frame(master)
-    field_frame.pack(fill=tk.X, expand=True, padx=10, pady=10)
-
-    tk.Frame(field_frame, height=1, background="gray").pack(fill=tk.X, expand=True)
-    
-    meta: ConfigTkMeta = field.metadata.get(ConfigTkMeta.KEY)
-    kw_label_make = {"master": field_frame, "wraplength": 400, "justify":"left"}
-    tk.Label(text=f"{field.name}\n{meta.doc}",   **kw_label_make).pack(anchor=tk.W)
-    
-    variable = tk.StringVar(value=json.dumps(field.default))
-    entry = tk.Entry(field_frame, textvariable=variable)
-    entry.pack(anchor=tk.W)
-    
-    return variable
 
 class EditConfigsFrame(BasicFrame):
     '''See and change individual fields of configs'''

@@ -1,6 +1,6 @@
 import json
 from typing import ClassVar
-from dataclasses import dataclass, field, fields, asdict
+from dataclasses import dataclass, fields, asdict
 import dacite
 from utils import CustomError
 
@@ -143,24 +143,3 @@ def load_config_from_dict(config_dict: dict[str,dict]):
             continue  # unsupported config fields are skipped
         old_c = _config_register[c_key]
         old_c._update(c_dict)  # pylint: disable=protected-access ; intended usecase
-
-
-@dataclass(frozen=True)
-class ConfigTkMeta:
-    """A bridge between config code and user control.
-
-    - doc: str - guiding or explaining text alongside the config value
-    - widget_dict: dict - all info needed to make a widget to change the config value.
-
-    Additionaly, a KEY: ClassVar[str] = "tk" is specified for consistency.
-    """
-    KEY: ClassVar[str] = "tk"
-    """`metadata = { ConfigTkMeta.KEY: ConfigTkMeta(...) }` is the way to augment the dataclass field()."""
-
-    doc: str
-    widget_dict: dict = field(default_factory=dict)
-
-
-def get_tk_fields(config: ConfigRegistryMixin):
-    """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
-    return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
