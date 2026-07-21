@@ -12,7 +12,7 @@ from config_to_tk_entries import get_tk_fields, field_entry_w_variable, XYReadMa
 class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
     frame: tk.Frame
-    variables: dict[str, tk.Variable]
+    variables: dict[str, tk.StringVar]
 
 
 class EditConfigsFrame(BasicFrame):
@@ -25,8 +25,7 @@ class EditConfigsFrame(BasicFrame):
         self.root.minsize(300, 100)
         self.root.attributes("-topmost", True)
 
-        instruction = "For entries with buttons saying 'set from cursor coordinates', \npress the button to begin the operation, \npress NumLk (or right shift) after moving your cursor to a suitable position \nor press ecs to cancel the operation."
-        tk.Label(self.body, text=instruction, wraplength=400, justify="left").pack(expand=True)
+        tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
         self.xy_read_manager = XYReadManager(self.root)
         self.configs = {
