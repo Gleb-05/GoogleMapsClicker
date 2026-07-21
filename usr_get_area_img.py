@@ -7,7 +7,8 @@ from PIL import Image
 import numpy as np
 
 from config import C_app
-from config_registry import ConfigTkMeta, ConfigRegistryMixin
+from config_registry import ConfigRegistryMixin
+from config_tk_bridge import ConfigTkMeta
 from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.sidepanel import expand_sidepanel
