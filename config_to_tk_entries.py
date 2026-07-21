@@ -3,6 +3,7 @@ import keyboard
 import pyautogui
 from dataclasses import Field, dataclass, fields
 import tkinter as tk
+from tkinter import messagebox
 from typing import ClassVar
 
 from config_registry import ConfigRegistryMixin
@@ -88,27 +89,35 @@ def get_tk_fields(config: ConfigRegistryMixin):
 def field_entry_w_variable(config_field: Field, master: tk.Misc, xy_read_manager: XYReadManager) -> tk.StringVar:
     '''
     Using a `config_field` and its ConfigTkMeta, construct tk.Frame for display and edit and pack it into `master`.
-    Return `tk.Variable` to track its value in the main app.
+    Return `tk.StringVar` to track its value in the main app.
     `xy_read_manager` is used for entries that can be changed by reading cursor coordinates.
     '''
     field_frame = tk.Frame(master)
-    field_frame.pack(fill=tk.X, expand=True, padx=10, pady=10)
+    field_frame.pack(fill=tk.X, expand=True, padx=10, pady=15)
 
-    tk.Frame(field_frame, height=1, background="gray").pack(fill=tk.X, expand=True)
+    tk.Frame(field_frame, height=2, background="gray").pack(fill=tk.X, expand=True)
 
     meta: ConfigTkMeta = config_field.metadata.get(ConfigTkMeta.KEY)
     kw_label_make = {"master": field_frame, "wraplength": 400, "justify":"left"}
     tk.Label(text=f"{config_field.name}\n{meta.doc}",   **kw_label_make).pack(anchor=tk.W)
 
+    entry_frame = tk.Frame(field_frame)
+    entry_frame.pack(fill="x", expand=True)
     variable = tk.StringVar(value=json.dumps(config_field.default))
-    entry = tk.Entry(field_frame, textvariable=variable)
-    entry.pack(anchor=tk.W)
+    entry = tk.Entry(entry_frame, textvariable=variable)
+    entry.pack(side=tk.LEFT, anchor=tk.S)
 
     if meta.xy_reading:
         tk.Button(
-            field_frame, 
+            entry_frame, 
             text="set from cursor coordinates", 
             command=lambda:xy_read_manager.request(variable, meta.xy_read)
-            ).pack(anchor=tk.W)
+            ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+        instruction = "For entries with buttons saying 'set from cursor coordinates',\n- press the button to begin the operation,\n- press NumLk (or right shift) after moving your cursor to a suitable position\n- or press ecs to cancel the operation."
+        tk.Button(
+            entry_frame,
+            text=" ? ",
+            command=lambda: messagebox.showinfo("HOWTO", instruction)
+            ).pack(side=tk.LEFT, anchor=tk.W)
 
     return variable
