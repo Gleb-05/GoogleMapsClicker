@@ -32,7 +32,7 @@ class BasicFrame:
         middle_frame = tk.Frame(self.root, height=0)
 
         canvas = tk.Canvas(middle_frame, height=0, borderwidth=0, background="#8da0c5")
-        body_frame = tk.Frame(canvas, height=0, background="#ffffff")
+        body_frame = tk.Frame(canvas, height=0)
         vsb = tk.Scrollbar(middle_frame, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=vsb.set)
 

@@ -5,7 +5,7 @@ import pyperclip
 
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
-from config import C_app
+from config_app import C_app
 from gui.core_configs.scroll import SCROLLBAR_REGION
 from gui.core_configs import C_place, C_search, C_sidepanel
 from gui.scroll import total_scroll_down, scroll_to_next_card
