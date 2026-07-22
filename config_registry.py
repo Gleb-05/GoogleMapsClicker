@@ -4,7 +4,7 @@ from dataclasses import dataclass, fields, asdict
 import dacite
 from utils import CustomError
 
-COMMON_DACITE_CAST_TYPES = [tuple, int, float]  
+COMMON_DACITE_CAST_TYPES = [tuple]  
 # json serializes tuples as lists, and tuples are common across configs
 # this list can be expanded per future developer's discretion
 

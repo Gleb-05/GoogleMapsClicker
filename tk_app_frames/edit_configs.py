@@ -51,12 +51,13 @@ class EditConfigsFrame(BasicFrame):
 
         self.configs[self.current_config_name].frame.pack(fill="both")
      
-        # TODO Apply button for when the entries have changed but the config did not
         tk.Button(self.footer, text="Save to file", command=self._save_to_file).pack(side="right")
+        tk.Button(self.footer, text="Save changes", command=self._save_changes).pack(side="right", padx=5)
         tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right", padx=5)
         tk.Button(self.footer, text="Load default", command=self._load_default).pack(side="right")
 
         self.update_root_geometry()
+
 
     def _frame_and_variables(self, config: ConfigRegistryMixin) -> FrameAndVariables | None:
         tk_fields = get_tk_fields(config)
@@ -68,19 +69,50 @@ class EditConfigsFrame(BasicFrame):
             variables[field.name] = build_field_editor(field, config_frame, self.xy_read_manager) 
         return FrameAndVariables(config_frame, variables)
 
-    def _save_to_file(self):
-        config_dict = {
-            key: 
-            {field: json.loads(tkvar.get()) for field, tkvar in config.variables.items()} 
-            for key, config in self.configs.items()
-        }
+
+    def _save_changes(self, showbox = True):
+        '''Update config registry by iterating over tk variables. Return True on success'''
+        bad_field = ""
         try:
+            # config_dict = {
+            #     key: 
+            #     {fieldname: json.loads(tkvar.get()) for fieldname, tkvar in config.variables.items()} 
+            #     for key, config in self.configs.items()
+            # }
+            config_dict = {}
+            for key, config in self.configs.items():
+                field_values = {}
+                for fieldname, tkvar in config.variables.items():
+                    bad_field = fieldname  # awkward loops to get to the field that caused the json error
+                    field_values[fieldname] = json.loads(tkvar.get())
+                config_dict[key] = field_values
+
             load_config_from_dict(config_dict)
-            # TODO unique file name
+            if showbox: 
+                messagebox.showinfo(message="SAVE SUCCESSFUL")
+            return True
+        
+        except (json.JSONDecodeError) as e:
+            messagebox.showerror("VALUES INCOMPLETE OR MISSING", f"{bad_field}\n{str(e)}")
+            return False
+        except (CustomError) as e:
+            messagebox.showerror("BAD NEW VALUES", f"{str(e.original_e)}")
+            print(e)  # for developers
+            return False
+
+
+    def _save_to_file(self):
+        if self._save_changes(showbox=False) is False:
+            return
+        try:
             dump_config("usr_configs/gui_config.json")
-            messagebox.showinfo(message="SAVE SUCCESSFUL")
-        except CustomError as e:
-            messagebox.showerror("BAD NEW VALUES", str(e))
+            messagebox.showinfo(message="FILESAVE SUCCESSFUL")
+        except (CustomError) as e:
+            messagebox.showerror("ERROR ON CONFIG DUMP", str(e.original_e))
+            print(e)  # for developers
+        except (json.JSONDecodeError, ValueError, TypeError) as e:
+            messagebox.showerror("ERROR ON FILESAVE", str(e))
+
 
     def _load_default(self):
         load_config()
@@ -91,12 +123,16 @@ class EditConfigsFrame(BasicFrame):
         self._reload_variables()
 
     def _reload_variables(self):
-        for key, config in _config_register.items():
-            if key not in self.configs:
-                continue
-            for field, tkvar in self.configs[key].variables.items():
+        '''
+        Iterate over tk variables across all the frames and set values from _config_register into them.
+        Call AFTER _config_register is updated.
+        '''
+        for key, fav in self.configs.items():
+            for field, tkvar in fav.variables.items():
+                config = _config_register[key]
                 tkvar.set(json.dumps(getattr(config, field)))
         messagebox.showinfo(message="LOAD SUCCESSFUL")
+
 
 if __name__ == "__main__":
     tk_root = tk.Tk()
