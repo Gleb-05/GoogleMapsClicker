@@ -7,7 +7,7 @@ from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
 from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
-from config_to_tk_entries import get_tk_fields, field_entry_w_variable, XYReadManager
+from config_to_tk_entries import get_tk_fields, build_field_editor, XYReadManager
 
 class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
@@ -65,7 +65,7 @@ class EditConfigsFrame(BasicFrame):
         config_frame = tk.Frame(self.body)
         variables = {}
         for field in tk_fields:
-            variables[field.name] = field_entry_w_variable(field, config_frame, self.xy_read_manager) 
+            variables[field.name] = build_field_editor(field, config_frame, self.xy_read_manager) 
         return FrameAndVariables(config_frame, variables)
 
     def _save_to_file(self):

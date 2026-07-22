@@ -1,10 +1,10 @@
 import json
 import keyboard
 import pyautogui
-from dataclasses import Field, dataclass, fields
+from dataclasses import Field, field, dataclass, fields
 import tkinter as tk
 from tkinter import messagebox
-from typing import ClassVar
+from typing import ClassVar, get_origin
 
 from config_registry import ConfigRegistryMixin
 
@@ -16,10 +16,11 @@ class ConfigTkMeta:
     - doc: str - guiding or explaining text alongside the config value
     - xy_read: if unset, this config value shall not be changed by a user via reading cursor coordinates.
       Otherwise, specify which coordinate shall be stored - ConfigTkMeta.READ_X, ConfigTkMeta.READ_Y, ConfigTkMeta.READ_XY
-
+    - option_list: if set, this config value can be changed by a user via Option Menu.
     Additionaly, a KEY: ClassVar[str] = "tk" is specified for consistency.
 
-    - xy_reading is a property to quickly filter config values that do not requre xy reading - not to be set in code.
+    - xy_reading is a property to quickly filter config values that requre xy reading - not to be set in code.
+    - option_listing is a property to filter config values that have non-empty option_list - not to be set in code.
     """
     KEY: ClassVar[str] = "tk"
     """`metadata = { ConfigTkMeta.KEY: ConfigTkMeta(...) }` is the way to augment the dataclass field()."""
@@ -28,10 +29,16 @@ class ConfigTkMeta:
     READ_XY: ClassVar[slice] = slice(2)
 
     doc: str
+
     xy_read: int | slice = -1
     @property
     def xy_reading(self):
         return self.xy_read != -1
+    
+    option_list: list[int|str|float] = field(default_factory=list)
+    @property
+    def option_listing(self):
+        return len(self.option_list) > 0
 
 
 class XYReadManager:
@@ -86,11 +93,15 @@ def get_tk_fields(config: ConfigRegistryMixin):
     return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
 
 
-def field_entry_w_variable(config_field: Field, master: tk.Misc, xy_read_manager: XYReadManager) -> tk.StringVar:
+def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XYReadManager) -> tk.StringVar:
     '''
     Using a `config_field` and its ConfigTkMeta, construct tk.Frame for display and edit and pack it into `master`.
-    Return `tk.StringVar` to track its value in the main app.
+    Return `tk.StringVar` to manage its value from the main app.
     `xy_read_manager` is used for entries that can be changed by reading cursor coordinates.
+
+    Notice that everything revolves around `json.dumps` and `json.loads`, that is, strings.
+    This approach allows to greatly simplify widget selection, effectively converging it to tk.StringVar.
+    Which can be linked to an Entry or an OptionMenu.
     '''
     field_frame = tk.Frame(master)
     field_frame.pack(fill=tk.X, expand=True, padx=10, pady=15)
@@ -103,9 +114,16 @@ def field_entry_w_variable(config_field: Field, master: tk.Misc, xy_read_manager
 
     entry_frame = tk.Frame(field_frame)
     entry_frame.pack(fill="x", expand=True)
+
     variable = tk.StringVar(value=json.dumps(config_field.default))
-    entry = tk.Entry(entry_frame, textvariable=variable)
-    entry.pack(side=tk.LEFT, anchor=tk.S)
+    
+    if (isbool:=config_field.type is bool) or meta.option_listing:
+        option_list = [json.dumps(False),json.dumps(True)] if isbool else [json.dumps(o) for o in meta.option_list]
+        menu = tk.OptionMenu(entry_frame, variable, *option_list)
+        menu.pack(side=tk.LEFT, anchor=tk.S)
+    else:
+        entry = tk.Entry(entry_frame, textvariable=variable)
+        entry.pack(side=tk.LEFT, anchor=tk.S)
 
     if meta.xy_reading:
         tk.Button(
