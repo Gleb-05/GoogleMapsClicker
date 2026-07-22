@@ -31,7 +31,7 @@ class BasicFrame:
 
         middle_frame = tk.Frame(self.root, height=0)
 
-        canvas = tk.Canvas(middle_frame, height=0, borderwidth=0, background="#8da0c5")
+        canvas = tk.Canvas(middle_frame, height=0, borderwidth=0, background="lightgray", highlightthickness=0)
         body_frame = tk.Frame(canvas, height=0)
         vsb = tk.Scrollbar(middle_frame, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=vsb.set)
@@ -59,13 +59,13 @@ class BasicFrame:
 
         width = (
             self.body.winfo_reqwidth() + self._vsb.winfo_reqwidth() 
-            + 10*2 + 6*2 + 4 # middle padx, middle borders, small margin
+            + 10*2 + 6*2 + 2 # middle padx, middle borders, small margin
         )
         width = min(width, BasicFrame.MAX_WIDTH)
 
         height = (
             self.body.winfo_reqheight() + self.header.winfo_reqheight() + self.footer.winfo_reqheight() 
-            + 10*4 + 6*2 + 4 # header and footer pady, middle borders, small margin
+            + 10*4 + 6*2 + 0 # header and footer pady, middle borders, small margin
         )
         height = min(height, BasicFrame.MAX_HEIGHT)
         
