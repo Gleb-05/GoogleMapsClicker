@@ -10,18 +10,24 @@ class Config(ConfigRegistryMixin):
     SIDEPANEL_Y : int = field(
         default=425,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="height at which the collapse-expand arrow for the sidepanel is")
-    })
+            doc="height at which the collapse-expand arrow for the sidepanel is",
+            xy_read=ConfigTkMeta.READ_Y
+        )}
+    )
     SIDEPANEL_COLLAPSE_X : int = field(
         default=420,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="horisontal position of the collapse-expand arrow when sidepanel is open")
-    })
+            doc="horisontal position of the collapse-expand arrow when sidepanel is open",
+            xy_read=ConfigTkMeta.READ_X
+        )}
+    )
     SIDEPANEL_EXPAND_X : int = field(
         default=12,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="horisontal position of the collapse-expand arrow when sidepanel is closed")
-    })
+            doc="horisontal position of the collapse-expand arrow when sidepanel is closed",
+            xy_read=ConfigTkMeta.READ_X
+        )}
+    )
 
     @property
     def SIDEPANEL_MINIMAL_CHANGE_REGION(self) -> tuple[int,int,int,int]:

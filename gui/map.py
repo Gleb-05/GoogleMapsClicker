@@ -16,7 +16,8 @@ class Config(ConfigRegistryMixin):
     CONTEXT_Y_CUTOFF : int = field(
         default=384,
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Y coordinate of the right click on the map at which the context menu that appears snaps to screen bottom"
+            doc="Y coordinate of the right click on the map at which the context menu that appears snaps to screen bottom",
+            xy_read=ConfigTkMeta.READ_Y
         )}
     )
     CONTEXT_SNAPS_TO_SCREEN_BOTTOM : bool = True
@@ -25,7 +26,8 @@ class Config(ConfigRegistryMixin):
         default=(796,744),
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
             doc="Pixel coordinates of the close button of the message \"Copied to clipboard\" that pops up " \
-            "after decimal degrees are selected from the context menu that appears on right click on the map"
+            "after decimal degrees are selected from the context menu that appears on right click on the map",
+            xy_read=ConfigTkMeta.READ_XY
         )}
     )
 
