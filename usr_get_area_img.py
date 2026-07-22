@@ -6,10 +6,9 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from config_app import C_app
 from config_registry import ConfigRegistryMixin
 from config_to_tk_entries import ConfigTkMeta
-from gui.layers import map_toggle_sat_labels
+# from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
@@ -26,7 +25,6 @@ class Config(ConfigRegistryMixin):
     # feels like the Config has objects with different purposes. Though one-point access IS convenient.
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
     """Beynes France leftup_yx_dd and rightdown_yx_dd"""
-
     REGION_2 = ("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543")
     """Camp militaire de Mailly leftup_yx_dd and rightdown_yx_dd"""
 
@@ -40,28 +38,28 @@ class Config(ConfigRegistryMixin):
     AREA_LEFTUP_X : int = field(
         default = 110,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select leftup x of area to be captured. From center, left until 'Layers' button.",
+            doc="Select leftup x of area to be captured. From center, left until 10px to 'Layers' button.",
             xy_read=ConfigTkMeta.READ_X
         )}
     )
     AREA_LEFTUP_Y : int = field(
         default = 145,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select leftup y of area to be captured. From center, up until account icon.",
+            doc="Select leftup y of area to be captured. From center, up until 10px to account icon.",
             xy_read=ConfigTkMeta.READ_Y
         )}
     )
     AREA_RIGHTDOWN_X : int = field(
         default = 1314,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select rightdown x of area to be captured. From center, right until '+ -' buttons",
+            doc="Select rightdown x of area to be captured. From center, right until 10px to '+ -' buttons",
             xy_read=ConfigTkMeta.READ_X
         )}
     )
     AREA_RIGHTDOWN_Y : int = field(
         default = 724,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select rightdown y of area to be captured. From center, down until 'Google Maps' text.",
+            doc="Select rightdown y of area to be captured. From center, down until 10px to 'Google Maps' text.",
             xy_read=ConfigTkMeta.READ_Y
         )}
     )
@@ -94,16 +92,29 @@ class Config(ConfigRegistryMixin):
     # and would need to be reset on any change to AREA_REGION. It's a gray area between constants and configurables.
     # It is not explicitly set by the user, but depends on user's actions.
 
-    SCALE_WH : tuple[int,int] = field(
-        default = (224, 16),
+    SCALE_LEFTUP_XY : tuple[int,int] = field(
+        default=(1142, 752),
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Place cursor at leftup corner of a region in right-down corner of the screen with a pixel-per-meter ruler",
+            doc="A pixel-per-meter ruler ('XX m' label included) is in the right-down corner of a browser. " \
+            "Place cursor in leftup corner of a rectangle that would cover it fully "
+            "(generally about half the ruler's length to the left - it sometimes becomes longer when other areas are viewed).",
+            xy_read=ConfigTkMeta.READ_XY
+        )}
+    )
+    SCALE_RIGHTDOWN_XY: tuple[int,int] = field(
+        default=(1366,768),
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="A pixel-per-meter ruler ('XX m' label included) is in the right-down corner of a browser. " \
+            "Place cursor in rightdown corner of a rectangle that would cover it fully "
+            "(generally the corner of the browser).",
             xy_read=ConfigTkMeta.READ_XY
         )}
     )
     @property
     def SCALE_REGION(self) -> tuple[int,int,int,int]:
-        return (C_app.SCREEN_W-self.SCALE_WH[0], C_app.SCREEN_H-self.SCALE_WH[1], *self.SCALE_WH)
+        SCALE_WIDTH = self.SCALE_RIGHTDOWN_XY[0] - self.SCALE_LEFTUP_XY[0]
+        SCALE_HEIGHT = self.SCALE_RIGHTDOWN_XY[1] - self.SCALE_LEFTUP_XY[1]
+        return (*self.SCALE_LEFTUP_XY, SCALE_WIDTH, SCALE_HEIGHT)
 
     # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
     AREA_TIME_SEC = 3.2  # TODO replace with dynamic time estimation??
@@ -183,7 +194,9 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     cy = lu_y+h/2
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
     if satellite:
-        map_toggle_sat_labels()
+        # map_toggle_sat_labels()
+        # TODO enable later - for now disabled to simplify config by omitting inspect console interactions
+        pass
 
     if use_const_area_dims_dd:
         area_width_dd, area_height_dd = C.AREA_WIDTH_DD, C.AREA_HEIGHT_DD
@@ -275,10 +288,10 @@ def estimate_area_dim_dd_bounds(region_dim_dd, r_dim):
     return (lower_bound, upper_bound)
 
 
-def estimate_area_width_and_height_dd_constants_once(area_width_dd = 0.0129175, area_height_dd = 0.0041041):
+def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.REGION_1[0]):
     """
-    With initial `area_width_dd` and `area_height_dd` provided by `get_area_dd_wh()`, 
-    use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants. 
+    Use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants.
+    Initial `area_width_dd` and `area_height_dd` values are from calling `addressbar_center_at_dd(decimal_degrees)` and `get_area_dd_wh()`. 
     They shall satisfy the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality.
 
     Steps:
@@ -288,6 +301,9 @@ def estimate_area_width_and_height_dd_constants_once(area_width_dd = 0.0129175, 
       A point that divides both intervals in equal proportion 
       will become the value of the relevant area_dim_dd constant.
     """
+    addressbar_center_at_dd(decimal_degrees, satellite=True)
+    area_width_dd, area_height_dd = get_area_dd_wh()  # area_width_dd = 0.0129175, area_height_dd = 0.0041041
+
     (lu_y_1, lu_x_1), (rd_y_1, rd_x_1) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_1)
     (lu_y_2, lu_x_2), (rd_y_2, rd_x_2) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_2)
     w1 = rd_x_1 - lu_x_1
@@ -342,7 +358,7 @@ class disp(IntEnum):
     ZER = 0
 
 
-def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = C.AREA_REGION):
+def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = C.AREA_REGION):  # pylint: disable=dangerous-default-value
     """
     For currently displayed area at (x,y), perform dragging to view area at (x+xd, y+yd).
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
