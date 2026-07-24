@@ -1,10 +1,12 @@
+from abc import ABC, abstractmethod
 import json
 import keyboard
 import pyautogui
 from dataclasses import Field, field, dataclass, fields
 import tkinter as tk
 from tkinter import messagebox
-from typing import ClassVar, get_origin
+from typing import ClassVar
+from collections.abc import Callable
 
 from config_registry import ConfigRegistryMixin
 
@@ -17,10 +19,12 @@ class ConfigTkMeta:
     - xy_read: if unset, this config value shall not be changed by a user via reading cursor coordinates.
       Otherwise, specify which coordinate shall be stored - ConfigTkMeta.READ_X, ConfigTkMeta.READ_Y, ConfigTkMeta.READ_XY
     - option_list: if set, this config value can be changed by a user via Option Menu.
+    
     Additionaly, a KEY: ClassVar[str] = "tk" is specified for consistency.
 
-    - xy_reading is a property to quickly filter config values that requre xy reading - not to be set in code.
-    - option_listing is a property to filter config values that have non-empty option_list - not to be set in code.
+    Useful readonly (not to be changed) properties to filter configs by:
+    - xy_reading - True for config values that requre xy reading.
+    - option_listing - True for config values that have non-empty option_list.
     """
     KEY: ClassVar[str] = "tk"
     """`metadata = { ConfigTkMeta.KEY: ConfigTkMeta(...) }` is the way to augment the dataclass field()."""
@@ -41,15 +45,124 @@ class ConfigTkMeta:
         return len(self.option_list) > 0
 
 
-class XYReadManager:
-    '''Manage keyboard listening to keys. Prompted by one of many entries that read xy cursor coordinates.'''
+@dataclass(frozen=True)
+class ConfigRecomputeMeta():
+    '''
+    Cover a very narrow case when one config field depends on another. 
+    Requires that config class inherits from ConfigRecomputeMixin.
+
+    - recompute_function_doc - guiding or explaining text alongside the recompute function
+    - .recompute_function_getter() - see `ConfigRecomputeMixin.recompute_getter`
+    - .recompute_causes - list of names of fields the current one depends on
+
+    Additionaly, a KEY: ClassVar[str] = "recompute" is specified for consistency.
+    '''
+    KEY: ClassVar[str] = "recompute"
+    '''`metadata = { ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(...) }` is the way to augment the dataclass field().'''
+    recompute_function_doc: str
+    recompute_function_getter: Callable[[], Callable]
+    recompute_causes: list[str]
+
+
+@dataclass
+class ConfigRecomputeMixin():
+    '''
+    In rare cases, some fields within the config depend on other fields, 
+    and there is a function that user shall invoke in order to recompute them.
+    
+    Most likely, the recompute function cannot be addressed until the config is instantiated.
+    See code below:
+    - add `ConfigRecomputeMeta` in relevant field's metadata
+    - provide a `Callable[[], Callable]` value to the `recompute_function_getter` to delay getting the recompute function until it's defined.
+      `get_recompute` helper is available as ConfigRecomputeMixin class method.
+    - call `add_recompute(r_func)` on instantiated config class after the func is defined in code.
+
+    ```
+    @dataclass
+    class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
+        RECOMPUTE_FUNCTIONS = {}
+        c1 : int = field(...)
+        c2 : float = field(
+            default=42.0,
+            metadata={ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(
+                recompute_function_doc="doc",
+                recompute_function_getter=ConfigRecomputeMixin.get_recompute(RECOMPUTE_FUNCTIONS, "r_func"),
+                recompute_causes=["c1"]
+            )}
+        )
+        c3 : int = field(...)
+        ...
+
+    C = Config()
+    C.register()
+
+    def r_func() -> float:
+        # relies on C.c1 and returns recomputed value of c2
+        return C.c1 * 42.0
+
+    C.add_recompute(r_func)
+    ```
+    '''
+    RECOMPUTE_FUNCTIONS : ClassVar[dict[str,Callable] | None] = None
+
+    def add_recompute(self, r_func: Callable):
+        '''
+        Do `C.add_recompute(r_func)` to do `self.RECOMPUTE_FUNCTIONS[r_func.__name__] = r_func`.
+        
+        Here `C` is the config instance that owns the field to be recomputed,
+        and `r_func` is the function that recomputes the config field.
+        '''
+        self.RECOMPUTE_FUNCTIONS[r_func.__name__] = r_func
+
+    @classmethod  # abysmal crutch, but it's much better than reworking everything for a very narrow case
+    def recompute_getter(cls, r_dict : dict[str,Callable], r_func_name : str) -> Callable[[], Callable]:
+        '''
+        Return lambda that returns RECOMPUTE_FUNCTIONS[r_func_name].
+
+        Do `recompute_function=ConfigRecomputeMixin.get_recompute(RECOMPUTE_FUNCTIONS, r_func_name)` 
+        inside config field's metadata, where `r_func_name` is the name of the function that recomputes the config field.
+        '''
+        return lambda : r_dict[r_func_name]
+
+
+
+class KeyboardControlManager(ABC):
+    '''
+    Listen for "cancelling" and "proceeding" key presses to control special user actions.
+
+    For example, reading cursor coordinates requires something beyond button press or mouse click.
+
+    "cancelling": "esc" <br>
+    "proceeding": "shift", "right shift", "left shift", "num lock"
+    '''
+
+    doc = "For entries with buttons saying '{btn_txt}',\n- press the button to begin the operation,\n- press Shift (or NumLk) after moving your cursor to a suitable position\n- or press Esc to cancel the operation."
+
+    def __init__(self):
+        keyboard.hook(self._on_key)
+
+    @abstractmethod
+    def _on_key(self, event: keyboard.KeyboardEvent):
+        pass
+
+    def cancelling(self, event: keyboard.KeyboardEvent) -> bool:
+        return event.name == "esc"
+
+    def proceeding(self, event: keyboard.KeyboardEvent) -> bool:
+        return event.name in ["shift", "right shift", "left shift", "num lock"]
+
+
+class XYReadManager(KeyboardControlManager):
+    '''Read xy cursor coordinates to pass them into a tk variable'''
+
+    doc = KeyboardControlManager.doc.format(btn_txt="set from cursor coordinates")
+
     def __init__(self, root : tk.Tk):
+        super().__init__()
         self.root = root
         self.target : tk.StringVar | None = None
         self.target_value: str | None = None
         self.xy_read : int | slice | None = None
-
-        keyboard.hook(self._on_key)  # runs in a thread of its own it seems
 
     def request(self, variable: tk.StringVar, xy_read: int | slice):
         '''Call this from a button next to the entry to begin reading'''
@@ -58,7 +171,7 @@ class XYReadManager:
             self.target.set(self.target_value)
         self.target = variable
         self.target_value = variable.get()
-        variable.set("AWAITS NUM LK / ESC")
+        variable.set("AWAITS SHIFT / ESC")
         self.xy_read = xy_read
 
     def _on_key(self, event: keyboard.KeyboardEvent):
@@ -70,14 +183,14 @@ class XYReadManager:
         if self.target is None:
             return
 
-        if event.name == "esc":
+        if self.cancelling(event):
             self.target.set(self.target_value)
             self.target = None
             self.target_value = None
             self.xy_read = None
             return
         
-        if event.name == "num lock" or event.name == "right shift":
+        if self.proceeding(event):
             x, y = pyautogui.position()
             _target = self.target
             _xy_read = self.xy_read
@@ -87,6 +200,8 @@ class XYReadManager:
             value = [x,y][_xy_read]
             self.root.after(0, lambda: _target.set(json.dumps(value)))
 
+class RecomputeManager(KeyboardControlManager):
+    doc = KeyboardControlManager.doc.format(btn_txt="Recompute")
 
 def get_tk_fields(config: ConfigRegistryMixin):
     """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
@@ -116,14 +231,39 @@ def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XY
     entry_frame.pack(fill="x", expand=True)
 
     variable = tk.StringVar(value=json.dumps(config_field.default))
+
+    recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
+    if recompute_meta:
+        entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
+        entry.pack(side=tk.LEFT, anchor=tk.S)
+        tk.Button(
+            entry_frame,
+            text = "Recompute",
+            command = lambda: messagebox.showinfo("PLACEHOLDER", recompute_meta.recompute_function_doc)
+        ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+        instructions = (
+            f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
+            "\nProceed with recomputing once you are satisfied with all config values listed."
+            "\n\n" + recompute_meta.recompute_function_doc +
+            "\n\n" + RecomputeManager.doc
+        )
+        tk.Button(
+            entry_frame,
+            text=" ? ",
+            command=lambda: messagebox.showinfo("HOWTO", instructions)
+        ).pack(side=tk.LEFT, anchor=tk.W)
+
+        return variable
     
     if (isbool:=config_field.type is bool) or meta.option_listing:
         option_list = [json.dumps(False),json.dumps(True)] if isbool else [json.dumps(o) for o in meta.option_list]
         menu = tk.OptionMenu(entry_frame, variable, *option_list)
         menu.pack(side=tk.LEFT, anchor=tk.S)
-    else:
-        entry = tk.Entry(entry_frame, textvariable=variable)
-        entry.pack(side=tk.LEFT, anchor=tk.S)
+
+        return variable
+
+    entry = tk.Entry(entry_frame, textvariable=variable)
+    entry.pack(side=tk.LEFT, anchor=tk.S)
 
     if meta.xy_reading:
         tk.Button(
@@ -131,11 +271,10 @@ def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XY
             text="set from cursor coordinates", 
             command=lambda:xy_read_manager.request(variable, meta.xy_read)
             ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
-        instruction = "For entries with buttons saying 'set from cursor coordinates',\n- press the button to begin the operation,\n- press NumLk (or right shift) after moving your cursor to a suitable position\n- or press ecs to cancel the operation."
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", instruction)
+            command=lambda: messagebox.showinfo("HOWTO", XYReadManager.doc)
             ).pack(side=tk.LEFT, anchor=tk.W)
 
     return variable

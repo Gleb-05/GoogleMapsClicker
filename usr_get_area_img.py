@@ -7,7 +7,7 @@ from PIL import Image
 import numpy as np
 
 from config_registry import ConfigRegistryMixin
-from config_to_tk_entries import ConfigTkMeta
+from config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 # from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.sidepanel import expand_sidepanel
@@ -16,11 +16,13 @@ from gui.map import drag_map, map_get_coords_at_cursor
 from gui.addressbar import addressbar_center_at_dd
 
 @dataclass
-class Config(ConfigRegistryMixin):
+class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     """
     get_area_img.py config
     """
     REGISTER_KEY = "get_area_img"
+    RECOMPUTE_FUNCTIONS = {}
+
     # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
     # feels like the Config has objects with different purposes. Though one-point access IS convenient.
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
@@ -75,6 +77,19 @@ class Config(ConfigRegistryMixin):
         """AREA WIDTH: from 'Layers' button to '+ -' buttons, AREA HEIGHT: from account icon to 'Google Maps' text."""
         return [self.AREA_LEFTUP_X, self.AREA_LEFTUP_Y, self.AREA_WIDTH, self.AREA_HEIGHT]
 
+    AREA_WIDTH_AND_HEIGHT_DD : tuple[float,float] = field(
+        default=(0.012115772764788004, 0.0040135544595252485),
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Depending on resolution and screen size, actual geographical coverage of the visible area will change. What describes it is decimal degree width and height."
+        ), ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(
+            recompute_function_doc="specific directions placeholder", # TODO
+            recompute_function_getter=ConfigRecomputeMixin.recompute_getter(
+                RECOMPUTE_FUNCTIONS, 
+                "estimate_area_width_and_height_dd_constants_once"),
+            recompute_causes=["AREA_LEFTUP_X", "AREA_LEFTUP_Y", "AREA_RIGHTDOWN_X", "AREA_RIGHTDOWN_Y"]
+        )}
+    )
+
     # TODO this config is "decision", others are "measurement". Differentiate?
     AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
         default = False,
@@ -82,15 +97,6 @@ class Config(ConfigRegistryMixin):
             doc="Draw edges for individual areas combined within a region?"
         )}
     )
-
-    # Depending on resolution and screen size, actual geographical coverage of the visible area will change
-    # and decimal degree width and height will describe it.
-    AREA_WIDTH_DD : float = 0.012115772764788004
-    AREA_HEIGHT_DD : float = 0.0040135544595252485
-
-    # TODO both AREA_WIDTH_DD and AREA_HEIGHT_DD are set with `estimate_area_width_and_height_dd_constants_once()`
-    # and would need to be reset on any change to AREA_REGION. It's a gray area between constants and configurables.
-    # It is not explicitly set by the user, but depends on user's actions.
 
     SCALE_LEFTUP_XY : tuple[int,int] = field(
         default=(1142, 752),
@@ -199,7 +205,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
         pass
 
     if use_const_area_dims_dd:
-        area_width_dd, area_height_dd = C.AREA_WIDTH_DD, C.AREA_HEIGHT_DD
+        area_width_dd, area_height_dd = C.AREA_WIDTH_AND_HEIGHT_DD
     else:
         # takes more time, brings little accuracy
         area_width_dd, area_height_dd = get_area_dd_wh()
@@ -260,7 +266,7 @@ def get_area_dd_wh():
     return area_width_dd, area_height_dd
 
 
-def estimate_r_dim(region_dim_dd, area_dim_dd):
+def estimate_r_dim(region_dim_dd : float, area_dim_dd : float) -> int:
     """
     For either dim=width or dim=height, 
     estimate minimal `r_dim` such that `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd`.
@@ -272,7 +278,7 @@ def estimate_r_dim(region_dim_dd, area_dim_dd):
     return math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))
 
 
-def estimate_area_dim_dd_bounds(region_dim_dd, r_dim):
+def estimate_area_dim_dd_bounds(region_dim_dd : float, r_dim : float):
     """
     For either dim=width or dim=height, 
     return tuple of (lower, upper) bounds 
@@ -288,7 +294,7 @@ def estimate_area_dim_dd_bounds(region_dim_dd, r_dim):
     return (lower_bound, upper_bound)
 
 
-def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.REGION_1[0]):
+def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.REGION_1[0]) -> tuple[float,float]:
     """
     Use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants.
     Initial `area_width_dd` and `area_height_dd` values are from calling `addressbar_center_at_dd(decimal_degrees)` and `get_area_dd_wh()`. 
@@ -327,7 +333,7 @@ def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.RE
 # {area_h_bounds_2=}"""
 #     )
 
-    def find_proportional_division(l1, u1, l2, u2):
+    def find_proportional_division(l1 : float, u1 : float, l2 : float, u2 : float):
         # arrange to have nested intervals: [l1 l2 u2 u1]
         l1, l2 = min(l1, l2), max(l1, l2)
         u1, u2 = max(u1, u2), min(u1, u2)
@@ -342,6 +348,8 @@ def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.RE
     area_height_dd_const =  find_proportional_division(*area_h_bounds_1, *area_h_bounds_2)
 
     return area_width_dd_const, area_height_dd_const
+
+C.add_recompute(estimate_area_width_and_height_dd_constants_once)
 
 
 class disp(IntEnum):
