@@ -10,6 +10,7 @@ from config_registry import ConfigRegistryMixin
 from config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 # from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
+from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
 from gui.map import drag_map, map_get_coords_at_cursor
@@ -23,20 +24,23 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     REGISTER_KEY = "get_area_img"
     RECOMPUTE_FUNCTIONS = {}
 
-    # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
-    # feels like the Config has objects with different purposes. Though one-point access IS convenient.
+    # TODO maybe prompt user for other regions in case the area is far from mainland France?
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
     """Beynes France leftup_yx_dd and rightdown_yx_dd"""
     REGION_2 = ("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543")
     """Camp militaire de Mailly leftup_yx_dd and rightdown_yx_dd"""
+    # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
+    # feels like the Config has objects with different purposes. Though one-point access IS convenient.
 
-    # The area should be safely (10px) beside interactive ui elements
+
+    # The (visible) area should be safely (10px) beside interactive ui elements
     # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
 
     # TODO also consider using xy_read = [(1,0),(0,1),(1,0),(0,1)] 
     # pros: less space to define user behavior in configs (right now one action - one coordinate)
     # cons: needs a custom widget that combines multiple int entries.
+
     AREA_LEFTUP_X : int = field(
         default = 110,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
@@ -82,10 +86,22 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
             doc="Depending on resolution and screen size, actual geographical coverage of the visible area will change. What describes it is decimal degree width and height."
         ), ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(
-            recompute_function_doc="specific directions placeholder", # TODO
+            # TODO maybe make a modal window to accept arguments for the recompute function?
+            # right now it was easier to remake the function flow to work without arguments
+            recompute_function_doc=(
+"""Before pressing a key to proceed, minimize the app and drag the map over to the center of the region you want to capture.
+The app will automatically gather the dimensions it needs and update this config value.
+
+Expected actions: 
+- decimal degree (dd) coordinates are read from the map, 
+- the page reloads with those coordinates now at the center of the map
+- with sidepanel hidden, what you see is "the visible area" - a high-res building block of the region you want to capture.
+- decimal degrees are read from two points on the screen: (AREA_LEFTUP_X, ...Y), (AREA_RIGHTDOWN_X, ...Y)
+- a bunch of math returns new values for the width and height of the visible area, measured in decimal degrees.
+"""),
             recompute_function_getter=ConfigRecomputeMixin.recompute_getter(
                 RECOMPUTE_FUNCTIONS, 
-                "estimate_area_width_and_height_dd_constants_once"),
+                "recompute_area_width_and_height_dd"),
             recompute_causes=["AREA_LEFTUP_X", "AREA_LEFTUP_Y", "AREA_RIGHTDOWN_X", "AREA_RIGHTDOWN_Y"]
         )}
     )
@@ -294,22 +310,20 @@ def estimate_area_dim_dd_bounds(region_dim_dd : float, r_dim : float):
     return (lower_bound, upper_bound)
 
 
-def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.REGION_1[0]) -> tuple[float,float]:
+def estimate_area_width_and_height_dd(area_width_dd = 0.0129175, area_height_dd = 0.0041041) -> tuple[float,float]:
     """
-    Use `REGION_1` and `REGION_2` values to estimate `AREA_WIDTH_DD` and `AREA_HEIGHT_DD` constants.
-    Initial `area_width_dd` and `area_height_dd` values are from calling `addressbar_center_at_dd(decimal_degrees)` and `get_area_dd_wh()`. 
-    They shall satisfy the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality.
+    Using `area_width_dd` and `area_height_dd` from an arbitrary visible area,
+    use `REGION_1` and `REGION_2` constants to estimate `AREA_WIDTH_AND_HEIGHT_DD`.
+    Dimensions of the `AREA_WIDTH_AND_HEIGHT_DD` (that is, both width and height) 
+    shall satisfy the `(1 + 2*r_dim) * area_dim_dd >= region_dim_dd` inequality.
 
     Steps:
     - `estimate_r_dim()` is used to get the initial estimation of `r_dim`.
-    - `estimate_area_dim_dd_bounds()` is used to estimate bounds for the constants.
-    - Let `lower_1`, `upper_1`, `lower_2`, `upper_2` be chosen in a way that defines two nested intervals.
-      A point that divides both intervals in equal proportion 
-      will become the value of the relevant area_dim_dd constant.
+    - `estimate_area_dim_dd_bounds()` is used to estimate bounds for the dimensions.
+    - For two pairs of bounds found from `REGION_1` and `REGION_2`,
+      let `lower_1`, `upper_1`, `lower_2`, `upper_2` bounds be chosen in a way to define two nested intervals.
+      A point that divides both intervals in equal proportion will become the value of the relevant dimension.
     """
-    addressbar_center_at_dd(decimal_degrees, satellite=True)
-    area_width_dd, area_height_dd = get_area_dd_wh()  # area_width_dd = 0.0129175, area_height_dd = 0.0041041
-
     (lu_y_1, lu_x_1), (rd_y_1, rd_x_1) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_1)
     (lu_y_2, lu_x_2), (rd_y_2, rd_x_2) = (yx_dd_str_to_float(yx_dd_str) for yx_dd_str in C.REGION_2)
     w1 = rd_x_1 - lu_x_1
@@ -349,7 +363,24 @@ def estimate_area_width_and_height_dd_constants_once(decimal_degrees: str = C.RE
 
     return area_width_dd_const, area_height_dd_const
 
-C.add_recompute(estimate_area_width_and_height_dd_constants_once)
+
+def recompute_area_width_and_height_dd() -> tuple[float,float]:
+    '''
+    Should be called when the map shows the area to be captured.
+    Provides area_width_dd and area_height_dd to the `estimate_area_width_and_height_dd`.
+
+    What happens:
+    `pyautogui.moveTo(a little to the left of the sidepanel) -> `map_get_coords_at_cursor` 
+    -> `addressbar_center_at_dd` -> `get_area_dd_wh` -> `estimate_area_width_and_height_dd`
+    '''
+    pyautogui.moveTo(C_sidepanel.SIDEPANEL_COLLAPSE_X + 20, C_sidepanel.SIDEPANEL_Y)
+    x, y = map_get_coords_at_cursor()
+    addressbar_center_at_dd(f"{y},{x}", satellite=True)
+    area_width_dd, area_height_dd = get_area_dd_wh()
+    return estimate_area_width_and_height_dd(area_width_dd, area_height_dd)
+
+
+C.add_recompute(recompute_area_width_and_height_dd)
 
 
 class disp(IntEnum):
