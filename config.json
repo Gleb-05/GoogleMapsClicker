@@ -40,12 +40,18 @@
     "AREA_LEFTUP_Y": 145,
     "AREA_RIGHTDOWN_X": 1314,
     "AREA_RIGHTDOWN_Y": 724,
+    "AREA_WIDTH_AND_HEIGHT_DD": [
+      0.012115772764788004,
+      0.0040135544595252485
+    ],
     "AREA_EDGES": false,
-    "AREA_WIDTH_DD": 0.012115772764788004,
-    "AREA_HEIGHT_DD": 0.0040135544595252485,
-    "SCALE_WH": [
-      224,
-      16
+    "SCALE_LEFTUP_XY": [
+      1142,
+      752
+    ],
+    "SCALE_RIGHTDOWN_XY": [
+      1366,
+      768
     ]
   }
 }

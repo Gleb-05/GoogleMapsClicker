@@ -5,7 +5,7 @@ import pyautogui
 from dataclasses import Field, field, dataclass, fields
 import tkinter as tk
 from tkinter import messagebox
-from typing import ClassVar
+from typing import ClassVar, Any
 from collections.abc import Callable
 
 from config_registry import ConfigRegistryMixin
@@ -128,22 +128,19 @@ class ConfigRecomputeMixin():
 
 class KeyboardControlManager(ABC):
     '''
-    Listen for "cancelling" and "proceeding" key presses to control special user actions.
+    Listen for "cancelling" and "proceeding" key presses with `keyboard.hook` to control special user actions.
 
     For example, reading cursor coordinates requires something beyond button press or mouse click.
 
     "cancelling": "esc" <br>
     "proceeding": "shift", "right shift", "left shift", "num lock"
     '''
-
-    doc = "For entries with buttons saying '{btn_txt}',\n- press the button to begin the operation,\n- press Shift (or NumLk) after moving your cursor to a suitable position\n- or press Esc to cancel the operation."
-
     def __init__(self):
-        keyboard.hook(self._on_key)
+        keyboard.hook(self._on_key)  # CAUTION - runs in a separate thread
 
     @abstractmethod
     def _on_key(self, event: keyboard.KeyboardEvent):
-        pass
+        raise NotImplementedError()
 
     def cancelling(self, event: keyboard.KeyboardEvent) -> bool:
         return event.name == "esc"
@@ -152,67 +149,83 @@ class KeyboardControlManager(ABC):
         return event.name in ["shift", "right shift", "left shift", "num lock"]
 
 
-class XYReadManager(KeyboardControlManager):
-    '''Read xy cursor coordinates to pass them into a tk variable'''
+class StringVarManager(KeyboardControlManager):
+    '''
+    Manage changing the value of StringVar using a helper function (triggered by specific key presses).
 
-    doc = KeyboardControlManager.doc.format(btn_txt="set from cursor coordinates")
+    Attributes:
+        :(not to be accessed directly)
+        root: for thread safety, since keyboard is listening in a separate thread.
+        target: StringVar whose value is changed on proceeding with the operation..
+        target_value: improve user experience, signal that the operation was initialized.
+        new_value_getter: when executed (with no arguments), its return is to be put into the target StringVar.
+    '''
 
-    def __init__(self, root : tk.Tk):
+    def doc(self, btn_txt):
+        _doc = "For entries with buttons saying '{}'," \
+        "\n- press the button to initiate the operation and choose between proceeding and cancelling," \
+        "\n- to proceed, press Shift (or NumLk) after moving your cursor to a suitable position," \
+        "\n- to cancel, press Esc."
+        return _doc.format(btn_txt)
+
+    def __init__(self, root : tk.Misc):
         super().__init__()
         self.root = root
         self.target : tk.StringVar | None = None
         self.target_value: str | None = None
-        self.xy_read : int | slice | None = None
+        self.new_value_getter : Callable[[], Any] | None = None
 
-    def request(self, variable: tk.StringVar, xy_read: int | slice):
-        '''Call this from a button next to the entry to begin reading'''
+    def _nullify(self):
+        self.target = None
+        self.target_value = None
+        self.new_value_getter = None
+
+    def request(self, variable: tk.StringVar, new_value_getter: Callable[[], Any]):
+        '''
+        Do `command = lambda: request(...)` for a button next to the entry.
+        With request, the target variable `variable` and what to do on proceed `new_value_getter` is specified.
+
+        Generally, `new_value_getter` is `lambda: _get_new_value(*args, **kwargs)`
+        '''
         if self.target is not None:
             # new button was pressed immediately after, restore value of previously pressed button
             self.target.set(self.target_value)
         self.target = variable
         self.target_value = variable.get()
-        variable.set("AWAITS SHIFT / ESC")
-        self.xy_read = xy_read
+        self.target.set("AWAITS SHIFT / ESC")
+        self.new_value_getter = new_value_getter
 
     def _on_key(self, event: keyboard.KeyboardEvent):
         '''
         if target tk variable was not set using `request` - nothing.
-        else if esc - cancel xy read.
-        else if num lk or Rshift - pass x, y, or both coordinates to the target tk variable.
+        else if Esc - cancel the operation.
+        else if Shift or NumLk - proceed with target.set(json.dumps(new_value_getter())).
         '''
         if self.target is None:
             return
 
         if self.cancelling(event):
-            self.target.set(self.target_value)
-            self.target = None
-            self.target_value = None
-            self.xy_read = None
+            self.target.set(self.target_value)  # undo `target.set` in `request`
+            self._nullify()
             return
         
         if self.proceeding(event):
-            x, y = pyautogui.position()
-            _target = self.target
-            _xy_read = self.xy_read
-            self.target = None
-            self.target_value = None
-            self.xy_read = None
-            value = [x,y][_xy_read]
-            self.root.after(0, lambda: _target.set(json.dumps(value)))
+            value = self.new_value_getter()
+            _target = self.target  # note that self.target turns into null before root.after is evaluated
+            self.root.after(0, lambda: _target.set(json.dumps(value)))  # thread-save
+            self._nullify()
 
-class RecomputeManager(KeyboardControlManager):
-    doc = KeyboardControlManager.doc.format(btn_txt="Recompute")
 
 def get_tk_fields(config: ConfigRegistryMixin):
     """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
     return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
 
 
-def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XYReadManager) -> tk.StringVar:
+def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: StringVarManager) -> tk.StringVar:
     '''
     Using a `config_field` and its ConfigTkMeta, construct tk.Frame for display and edit and pack it into `master`.
     Return `tk.StringVar` to manage its value from the main app.
-    `xy_read_manager` is used for entries that can be changed by reading cursor coordinates.
+    `stringvar_manager` is used for entries that can be changed using a helper function.
 
     Notice that everything revolves around `json.dumps` and `json.loads`, that is, strings.
     This approach allows to greatly simplify widget selection, effectively converging it to tk.StringVar.
@@ -236,16 +249,17 @@ def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XY
     if recompute_meta:
         entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
         entry.pack(side=tk.LEFT, anchor=tk.S)
+        btn_txt = "Recompute"
         tk.Button(
             entry_frame,
-            text = "Recompute",
-            command = lambda: messagebox.showinfo("PLACEHOLDER", recompute_meta.recompute_function_doc)
+            text = btn_txt,
+            command = lambda: messagebox.showinfo("PLACEHOLDER", recompute_meta.recompute_function_doc)  # TODO
         ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
         instructions = (
             f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
             "\nProceed with recomputing once you are satisfied with all config values listed."
             "\n\n" + recompute_meta.recompute_function_doc +
-            "\n\n" + RecomputeManager.doc
+            "\n\n" + stringvar_manager.doc(btn_txt)
         )
         tk.Button(
             entry_frame,
@@ -266,15 +280,21 @@ def build_field_editor(config_field: Field, master: tk.Misc, xy_read_manager: XY
     entry.pack(side=tk.LEFT, anchor=tk.S)
 
     if meta.xy_reading:
+        btn_txt = "set from cursor coordinates"
         tk.Button(
             entry_frame, 
-            text="set from cursor coordinates", 
-            command=lambda:xy_read_manager.request(variable, meta.xy_read)
+            text=btn_txt, 
+            command=lambda: stringvar_manager.request(variable, lambda: _get_xy_read(meta.xy_read))
             ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", XYReadManager.doc)
+            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt))
             ).pack(side=tk.LEFT, anchor=tk.W)
 
     return variable
+
+
+def _get_xy_read(xy_read: int | slice):
+    x,y = pyautogui.position()
+    return [x,y][xy_read]
