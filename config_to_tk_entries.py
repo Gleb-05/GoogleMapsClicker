@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import time
 import json
 import keyboard
 import pyautogui
@@ -159,6 +160,8 @@ class StringVarManager(KeyboardControlManager):
         target: StringVar whose value is changed on proceeding with the operation..
         target_value: improve user experience, signal that the operation was initialized.
         new_value_getter: when executed (with no arguments), its return is to be put into the target StringVar.
+        long_operation_time_sec (default = 3) : if changing the value takes longer than that, 
+            an info messagebox will show on operation finish.
     '''
 
     def doc(self, btn_txt):
@@ -174,6 +177,7 @@ class StringVarManager(KeyboardControlManager):
         self.target : tk.StringVar | None = None
         self.target_value: str | None = None
         self.new_value_getter : Callable[[], Any] | None = None
+        self.long_operation_time_sec = 3
 
     def _nullify(self):
         self.target = None
@@ -185,7 +189,9 @@ class StringVarManager(KeyboardControlManager):
         Do `command = lambda: request(...)` for a button next to the entry.
         With request, the target variable `variable` and what to do on proceed `new_value_getter` is specified.
 
-        Generally, `new_value_getter` is `lambda: _get_new_value(*args, **kwargs)`
+        Generally, `new_value_getter` is `lambda: _get_new_value(*args, **kwargs)` 
+        
+        *Sometimes, it is `helper_function_getter()` (returns `helper_function` that returns `new_value` when executed)*
         '''
         if self.target is not None:
             # new button was pressed immediately after, restore value of previously pressed button
@@ -210,8 +216,13 @@ class StringVarManager(KeyboardControlManager):
             return
         
         if self.proceeding(event):
+            _s = time.perf_counter()
             value = self.new_value_getter()
-            _target = self.target  # note that self.target turns into null before root.after is evaluated
+            _e = time.perf_counter() - _s
+            if _e > self.long_operation_time_sec:
+                messagebox.showinfo("Changing value", "Operation finished")  # UX for longer operations
+            # why _target - self.target turns into null before root.after is evaluated
+            _target = self.target
             self.root.after(0, lambda: _target.set(json.dumps(value)))  # thread-save
             self._nullify()
 
@@ -253,7 +264,8 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
         tk.Button(
             entry_frame,
             text = btn_txt,
-            command = lambda: messagebox.showinfo("PLACEHOLDER", recompute_meta.recompute_function_doc)  # TODO
+            # TODO maybe add support for functions with arguments. need a modal window to get them though. 
+            command = lambda: stringvar_manager.request(variable, recompute_meta.recompute_function_getter())
         ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
         instructions = (
             f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
