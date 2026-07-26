@@ -9,6 +9,7 @@ from tkinter import messagebox
 from typing import ClassVar, Any
 from collections.abc import Callable
 
+from constants import ATTENTION_HIGHLIGH
 from config_registry import ConfigRegistryMixin
 
 
@@ -62,6 +63,7 @@ class ConfigRecomputeMeta():
     '''`metadata = { ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(...) }` is the way to augment the dataclass field().'''
     recompute_function_doc: str
     recompute_function_getter: Callable[[], Callable]
+    '''Returns `lambda: recompute_function`'''
     recompute_causes: list[str]
 
 
@@ -258,25 +260,31 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
 
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
     if recompute_meta:
+        conditions = (
+            f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
+            "\nProceed with recomputing once you are satisfied with all config values listed."
+        )
+        tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGH).pack(anchor=tk.NW)
+
         entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
         entry.pack(side=tk.LEFT, anchor=tk.S)
-        btn_txt = "Recompute"
+        btn_txt = "recompute"
+
+        def _warn_and_request():
+            # TODO maybe add support for functions with arguments. need a modal window to get them though. 
+            messagebox.showwarning("BEFORE PROCEEDING", recompute_meta.recompute_function_doc)
+            stringvar_manager.request(variable, recompute_meta.recompute_function_getter())
+        
         tk.Button(
             entry_frame,
             text = btn_txt,
-            # TODO maybe add support for functions with arguments. need a modal window to get them though. 
-            command = lambda: stringvar_manager.request(variable, recompute_meta.recompute_function_getter())
+            command = _warn_and_request
         ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
-        instructions = (
-            f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
-            "\nProceed with recomputing once you are satisfied with all config values listed."
-            "\n\n" + recompute_meta.recompute_function_doc +
-            "\n\n" + stringvar_manager.doc(btn_txt)
-        )
+
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", instructions)
+            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt))
         ).pack(side=tk.LEFT, anchor=tk.W)
 
         return variable

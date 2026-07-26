@@ -89,16 +89,17 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
             # TODO maybe make a modal window to accept arguments for the recompute function?
             # right now it was easier to remake the function flow to work without arguments
             recompute_function_doc=(
-"""Before pressing a key to proceed, minimize the app and drag the map over to the center of the region you want to capture.
+"""WHAT TO DO: 
+Before pressing a key to proceed, minimize the app and drag the map over to the center of the region you want to capture.
 The app will automatically gather the dimensions it needs and update this config value.
 
-Expected actions: 
+WHAT WILL HAPPEN: 
 - decimal degree (dd) coordinates are read from the map, 
 - the page reloads with those coordinates now at the center of the map
 - with sidepanel hidden, what you see is "the visible area" - a high-res building block of the region you want to capture.
 - decimal degrees are read from two points on the screen: (AREA_LEFTUP_X, ...Y), (AREA_RIGHTDOWN_X, ...Y)
-- a bunch of math returns new values for the width and height of the visible area, measured in decimal degrees.
-"""),
+- a bunch of math returns new values for the width and height of the visible area, measured in decimal degrees."""
+            ),
             recompute_function_getter=ConfigRecomputeMixin.recompute_getter(
                 RECOMPUTE_FUNCTIONS, 
                 "recompute_area_width_and_height_dd"),
