@@ -1,8 +1,12 @@
+import os
 import json
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
 from tk_app_frames.BasicFrame import BasicFrame
 from typing import NamedTuple
+
+from constants import ROOT_DIR
 from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
@@ -12,7 +16,7 @@ from config_to_tk_entries import get_tk_fields, build_field_editor, StringVarMan
 class FrameAndVariables(NamedTuple):
     '''Variables tightly coupled with a frame that contains them'''
     frame: tk.Frame
-    variables: dict[str, tk.StringVar]
+    variables: dict[str, tk.StringVar]  # maybe replace tk.StringVar with a (.get .set) Protocol for custom wrappers around tk widgets?
 
 
 class EditConfigsFrame(BasicFrame):
@@ -28,6 +32,8 @@ class EditConfigsFrame(BasicFrame):
         tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
         self.stringvar_manager = StringVarManager(self.root)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
+
+        # Store (tk frame to render)-(tk variables to set and get values) pairs for each config
         self.configs = {
             key: config_frame_and_variables
             for key, config in _config_register.items()
@@ -36,9 +42,10 @@ class EditConfigsFrame(BasicFrame):
         self.config_names = list(self.configs.keys())
         self.current_config_name = self.config_names[0]
 
+        # set up OptionMenu to switch between config frames
         def switch_frame(name):
             self.configs[self.current_config_name].frame.pack_forget()
-            self.configs[name].frame.pack(fill="both")
+            self.configs[name].frame.pack(fill="both", expand=False)
             self.current_config_name = name
             self.update_root_geometry()
         option_menu_highlight = tk.Frame(self.body, background="white")
@@ -50,11 +57,12 @@ class EditConfigsFrame(BasicFrame):
                 ).pack(anchor="center", pady=10)
 
         self.configs[self.current_config_name].frame.pack(fill="both")
-     
+
+        # Add buttons to work with config files and the currently used config itself.
+        self._last_used_path_to_config = "default_1366x768_config.json"
         tk.Button(self.footer, text="Save to file", command=self._save_to_file).pack(side="right")
         tk.Button(self.footer, text="Save changes", command=self._save_changes).pack(side="right", padx=5)
-        tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right", padx=5)
-        tk.Button(self.footer, text="Load default", command=self._load_default).pack(side="right")
+        tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right")
 
         self.update_root_geometry()
 
@@ -72,6 +80,7 @@ class EditConfigsFrame(BasicFrame):
 
     def _save_changes(self, showbox = True):
         '''Update config registry by iterating over tk variables. Return True on success'''
+        bad_key = ""
         bad_field = ""
         try:
             # config_dict = {
@@ -81,6 +90,7 @@ class EditConfigsFrame(BasicFrame):
             # }
             config_dict = {}
             for key, config in self.configs.items():
+                bad_key = key
                 field_values = {}
                 for fieldname, tkvar in config.variables.items():
                     bad_field = fieldname  # awkward loops to get to the field that caused the json error
@@ -93,34 +103,68 @@ class EditConfigsFrame(BasicFrame):
             return True
         
         except (json.JSONDecodeError) as e:
-            messagebox.showerror("VALUES INCOMPLETE OR MISSING", f"{bad_field}\n{str(e)}")
+            messagebox.showerror("VALUES INCOMPLETE OR MISSING", f"{bad_key}: {bad_field}\n{str(e)}")
             return False
         except (CustomError) as e:
-            messagebox.showerror("BAD NEW VALUES", f"{str(e.original_e)}")
+            messagebox.showerror("BAD NEW VALUES", f"{bad_key}: {str(e.original_e)}")
             print(e)  # for developers
             return False
+
+
+    def _get_config_name(self, title: str, save: bool):
+        '''Returns filename of config, selected by user from a filedialog. Savedialog if `save=True`, else opendialog.'''
+        dialog = filedialog.asksaveasfilename if save else filedialog.askopenfilename
+        return dialog(
+            title=title,
+            defaultextension=".json",
+            filetypes=[("json", ["*.json","*.JSON"])],
+            initialdir=os.path.join(ROOT_DIR, "usr_configs"),
+            initialfile=self._last_used_path_to_config
+        )
 
 
     def _save_to_file(self):
-        if self._save_changes(showbox=False) is False:
+        '''Update config registry and save to file of choice'''
+        if self._save_changes(showbox=False) is False:  # new config values were rejected
             return
+        
+        path_to_config = self._get_config_name("Save config to json file", save=True)
+        if len(path_to_config) == 0:  # selection was cancelled
+            return
+        
         try:
-            dump_config("usr_configs/gui_config.json")
+            dump_config(path_to_config)
             messagebox.showinfo(message="FILESAVE SUCCESSFUL")
-        except (CustomError) as e:
+            self._last_used_path_to_config = path_to_config
+
+        except CustomError as e:
             messagebox.showerror("ERROR ON CONFIG DUMP", str(e.original_e))
             print(e)  # for developers
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
-            messagebox.showerror("ERROR ON FILESAVE", str(e))
+        except json.JSONDecodeError as e:
+            messagebox.showerror("JSON ERROR ON FILESAVE", str(e))
+        except (ValueError, TypeError) as e:
+            messagebox.showerror("UNUSUAL ERROR ON FILESAVE", str(e))
 
-
-    def _load_default(self):
-        load_config()
-        self._reload_variables()
 
     def _load_from_file(self):
-        # TODO file selection
-        self._reload_variables()
+        '''From file of choice load new config values and pass them to tk variables'''
+        path_to_config = self._get_config_name("Load config from json file", save=False)
+        if len(path_to_config) == 0:  # selection was cancelled
+            return
+
+        try:
+            load_config(path_to_config)
+            self._reload_variables()
+            self._last_used_path_to_config = path_to_config
+
+        except CustomError as e:
+            messagebox.showerror("ERROR ON CONFIG LOAD", str(e.original_e))
+            print(e)  # for developers
+        except json.JSONDecodeError as e:
+            messagebox.showerror("JSON ERROR ON FILELOAD", str(e))
+        except (ValueError, TypeError) as e:
+            messagebox.showerror("UNUSUAL ERROR ON FILELOAD", str(e))
+
 
     def _reload_variables(self):
         '''
@@ -132,6 +176,7 @@ class EditConfigsFrame(BasicFrame):
                 config = _config_register[key]
                 tkvar.set(json.dumps(getattr(config, field)))
         messagebox.showinfo(message="LOAD SUCCESSFUL")
+
 
 
 if __name__ == "__main__":
