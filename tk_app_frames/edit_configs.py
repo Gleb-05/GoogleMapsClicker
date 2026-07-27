@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 from tk_app_frames.BasicFrame import BasicFrame
-from typing import NamedTuple
+from tk_app_frames.SwitchFrameController import setup_switch_frame_controller, FrameAndVariables
 
 from constants import ROOT_DIR
 from utils import CustomError
@@ -13,10 +13,6 @@ import usr_get_area_img  # crutch to get all necessary configs
 from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
 from config_to_tk_entries import get_tk_fields, build_field_editor, StringVarManager
 
-class FrameAndVariables(NamedTuple):
-    '''Variables tightly coupled with a frame that contains them'''
-    frame: tk.Frame
-    variables: dict[str, tk.StringVar]  # maybe replace tk.StringVar with a (.get .set) Protocol for custom wrappers around tk widgets?
 
 
 class EditConfigsFrame(BasicFrame):
@@ -39,24 +35,7 @@ class EditConfigsFrame(BasicFrame):
             for key, config in _config_register.items()
             if (config_frame_and_variables:=self._frame_and_variables(config)) is not None
         }
-        self.config_names = list(self.configs.keys())
-        self.current_config_name = self.config_names[0]
-
-        # set up OptionMenu to switch between config frames
-        def switch_frame(name):
-            self.configs[self.current_config_name].frame.pack_forget()
-            self.configs[name].frame.pack(fill="both", expand=False)
-            self.current_config_name = name
-            self.update_root_geometry()
-        option_menu_highlight = tk.Frame(self.body, background="white")
-        option_menu_highlight.pack(fill="x", expand=True, pady=10)
-        tk.OptionMenu(option_menu_highlight, 
-                tk.StringVar(value=self.current_config_name), 
-                *self.config_names, 
-                command=switch_frame
-                ).pack(anchor="center", pady=10)
-
-        self.configs[self.current_config_name].frame.pack(fill="both")
+        setup_switch_frame_controller(self.configs, self.body, self.update_root_geometry)
 
         # Add buttons to work with config files and the currently used config itself.
         self._last_used_path_to_config = "default_1366x768_config.json"

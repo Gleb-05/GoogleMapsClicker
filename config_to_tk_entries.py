@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import time
 import json
 import keyboard
@@ -11,6 +10,7 @@ from collections.abc import Callable
 
 from constants import ATTENTION_HIGHLIGH
 from config_registry import ConfigRegistryMixin
+from utils import KeyboardControlManager
 
 
 @dataclass(frozen=True)
@@ -128,33 +128,9 @@ class ConfigRecomputeMixin():
         return lambda : r_dict[r_func_name]
 
 
-
-class KeyboardControlManager(ABC):
-    '''
-    Listen for "cancelling" and "proceeding" key presses with `keyboard.hook` to control special user actions.
-
-    For example, reading cursor coordinates requires something beyond button press or mouse click.
-
-    "cancelling": "esc" <br>
-    "proceeding": "shift", "right shift", "left shift", "num lock"
-    '''
-    def __init__(self):
-        keyboard.hook(self._on_key)  # CAUTION - runs in a separate thread
-
-    @abstractmethod
-    def _on_key(self, event: keyboard.KeyboardEvent):
-        raise NotImplementedError()
-
-    def cancelling(self, event: keyboard.KeyboardEvent) -> bool:
-        return event.name == "esc"
-
-    def proceeding(self, event: keyboard.KeyboardEvent) -> bool:
-        return event.name in ["shift", "right shift", "left shift", "num lock"]
-
-
 class StringVarManager(KeyboardControlManager):
     '''
-    Manage changing the value of StringVar using a helper function (triggered by specific key presses).
+    Having multiple StringVars, choose one at a time to change its value using an arbitrary helper function (triggered by specific key presses).
 
     Attributes:
         :(not to be accessed directly)
@@ -165,14 +141,6 @@ class StringVarManager(KeyboardControlManager):
         long_operation_time_sec (default = 3) : if changing the value takes longer than that, 
             an info messagebox will show on operation finish.
     '''
-
-    def doc(self, btn_txt):
-        _doc = "For entries with buttons saying '{}'," \
-        "\n- press the button to initiate the operation and choose between proceeding and cancelling," \
-        "\n- to proceed, press Shift (or NumLk) after moving your cursor to a suitable position," \
-        "\n- to cancel, press Esc."
-        return _doc.format(btn_txt)
-
     def __init__(self, root : tk.Misc):
         super().__init__()
         self.root = root
@@ -281,10 +249,11 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
             command = _warn_and_request
         ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
 
+        before_proceeding = "complete preparations that are displayed when the button is pressed"
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt))
+            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt, before_proceeding))
         ).pack(side=tk.LEFT, anchor=tk.W)
 
         return variable
@@ -306,10 +275,11 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
             text=btn_txt, 
             command=lambda: stringvar_manager.request(variable, lambda: _get_xy_read(meta.xy_read))
             ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+        before_proceeding = "move the cursor to where you want to read the coordinates"
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt))
+            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt, before_proceeding))
             ).pack(side=tk.LEFT, anchor=tk.W)
 
     return variable
