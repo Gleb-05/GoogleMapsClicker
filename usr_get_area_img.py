@@ -192,14 +192,20 @@ def yx_dd_str_to_float(yx_dd: str):
     return (float(c) for c in yx_dd.split(","))
 
 
-def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims_dd = True, satellite=False):
+def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims_dd : bool = True, satellite : bool = False):
     """
     Return an image that shows a rectangular region of the map.
     `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
     Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
 
-    The image is constructed by combining entire areas, defined by AREA_WIDTH_DD and AREA_HEIGHT_DD.
+    The image is constructed by combining entire areas.
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
+
+    If `use_const_area_dims_dd` is True, the number of areas to cover the region 
+    is estimated using AREA_WIDTH_AND_HEIGHT_DD constant (the constant can be recomputed, see edit_configs).
+    Otherwise, `get_dd_rect_image` will take around 10sec to compute the dimensions of the area in decimal degrees.
+
+    If `satellite` is False, a regular mapview is used. Satellite imagery (mapview overlay still active) is used if `satellite` is True.
     """
     # TODO i have no idea why, but google maps now often freezes,
     # switching the tab forward and back seems to break the freeze.

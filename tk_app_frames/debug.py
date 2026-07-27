@@ -8,7 +8,7 @@ from gui.layers import map_toggle_sat_labels
 from test.test_usr_get_area_img import TestDragArea
 
 from gui.search import center_on_search_result
-from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd_constants_once
+from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd
 from gui.map import map_get_coords_at_cursor
 from config_registry import dump_config
 
@@ -32,7 +32,7 @@ class DebugFrame:
             "dump_config": dump_config,
             "center_on_search_result": lambda: center_on_search_result("48,2"),
             "get_area_dd_wh": get_area_dd_wh,
-            "estimate_area_width_and_height_dd_constants_once": estimate_area_width_and_height_dd_constants_once,
+            "estimate_area_width_and_height_dd": estimate_area_width_and_height_dd,
             "get_area_img": lambda: get_area_img("48,2"),
             "get_dd_rect_img_small_map": lambda: get_dd_rect_img(*C.REGION_1),
             "get_dd_rect_img_small_sat": lambda: get_dd_rect_img(*C.REGION_1, satellite=True),
@@ -54,7 +54,7 @@ class DebugFrame:
         self.debug_text.insert("1.0", "Debug text")
         self.debug_text.pack(expand=True)
 
-        threading.Thread(target=self.listen_hotkey, daemon=True).start()
+        self.listen_hotkey()
 
     def execute_selected_step(self):
         try:
@@ -68,7 +68,6 @@ class DebugFrame:
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)
         keyboard.add_hotkey("alt+f2", self.execute_selected_step)  # fallback option
-        keyboard.wait()  # Keep the thread alive
 
     def show_xy(self):
         x, y = pyautogui.position()
