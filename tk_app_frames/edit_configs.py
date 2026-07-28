@@ -3,7 +3,7 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
-from tk_app_frames.BasicFrame import BasicFrame
+from tk_app_frames.basic_frame import BasicFrame
 from tk_app_frames.switch_frame_controller import setup_switch_frame_controller, FrameAndVariables
 
 from constants import ROOT_DIR
@@ -17,18 +17,13 @@ from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 class EditConfigsFrame(BasicFrame):
     '''See and change individual fields of configs'''
-    def __init__(self, root: tk.Tk):
-        super().__init__(root)
-        self.root = root
-        self.root.title("Prepare")
-        self.W, self.H = root.winfo_screenwidth(), root.winfo_screenheight()
-        self.root.minsize(300, 100)
-        self.root.attributes("-topmost", True)
+    def __init__(self, master: tk.Misc, controller):
+        super().__init__(master, controller)
 
         tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
-        kb_publisher = KeypressPublisher()
-        self.stringvar_manager = ButtonKeyboardManager(self.root, kb_publisher)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
+        keypress_publisher: KeypressPublisher = controller.keypress_publisher
+        self.stringvar_manager = ButtonKeyboardManager(self, keypress_publisher)
 
         # Store (tk frame to render)-(tk variables to set and get values) pairs for each config
         self.configs = {
@@ -36,7 +31,7 @@ class EditConfigsFrame(BasicFrame):
             for key, config in _config_register.items()
             if (config_frame_and_variables:=self._frame_and_variables(config)) is not None
         }
-        setup_switch_frame_controller(self.configs, self.body, lambda: (self.update_root_geometry(), kb_publisher.on_cancel()))
+        setup_switch_frame_controller(self.configs, self.body, lambda: (self.update_root_geometry(), keypress_publisher.on_cancel()))
 
         # Add buttons to work with config files and the currently used config itself.
         self._last_used_path_to_config = "default_1366x768_config.json"
@@ -161,5 +156,5 @@ class EditConfigsFrame(BasicFrame):
 
 if __name__ == "__main__":
     tk_root = tk.Tk()
-    app = EditConfigsFrame(tk_root)
+    app = EditConfigsFrame(tk_root, None)
     tk_root.mainloop()

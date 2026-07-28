@@ -1,19 +1,21 @@
 import tkinter as tk
 
-class BasicFrame:
+class BasicFrame(tk.Frame):
     '''Vertically resizable frame with header, scrollable body, and footer'''
     
     MAX_HEIGHT = 555
     MAX_WIDTH = 555
 
-    def __init__(self, root: tk.Tk):
-        self.root = root
-        self.header = tk.Frame(root)
+    def __init__(self, master: tk.Misc, controller):
+        tk.Frame.__init__(self, master)
+        self.controller = controller
+        
+        self.header = tk.Frame(self)
         self.header.pack(fill="x", expand=False, padx=10, pady=10)
         middle_frame, self.body = self._create_body()
         middle_frame.configure(borderwidth=4, relief=tk.GROOVE, padx=2, pady=2)
         middle_frame.pack(fill="both", expand=True, padx=10)
-        self.footer = tk.Frame(root)
+        self.footer = tk.Frame(self)
         self.footer.pack(fill="x", expand=False, padx=10, pady=10)
 
 
@@ -29,7 +31,7 @@ class BasicFrame:
             '''Reset the scroll region to encompass the inner frame'''
             canvas.configure(scrollregion=canvas.bbox("all"))
 
-        middle_frame = tk.Frame(self.root, height=0)
+        middle_frame = tk.Frame(self, height=0)
 
         canvas = tk.Canvas(middle_frame, height=0, borderwidth=0, background="lightgray", highlightthickness=0)
         body_frame = tk.Frame(canvas, height=0)
@@ -55,7 +57,7 @@ class BasicFrame:
         
         `root.resizable(False, True)` is called to make the width locked and the height resizable.
         '''
-        self.root.update_idletasks()
+        self.update_idletasks()
 
         width = (
             self.body.winfo_reqwidth() + self._vsb.winfo_reqwidth() 
@@ -65,11 +67,11 @@ class BasicFrame:
 
         height = (
             self.body.winfo_reqheight() + self.header.winfo_reqheight() + self.footer.winfo_reqheight() 
-            + 10*4 + 6*2 + 0 # header and footer pady, middle borders, small margin
+            + 10*4 + 6*2 + 70 # header and footer pady, middle borders, crutch margin
         )
         height = min(height, BasicFrame.MAX_HEIGHT)
         
         # print(f"{width} x {height}")
 
-        self.root.geometry(f"{width}x{height}")
-        self.root.resizable(False, True)
+        self.winfo_toplevel().geometry(f"{width}x{height}")
+        self.winfo_toplevel().resizable(False, True)
