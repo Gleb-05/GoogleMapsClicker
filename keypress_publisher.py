@@ -1,5 +1,5 @@
 import keyboard
-from typing import Any
+from typing import Any, TypeVar
 from collections.abc import Callable
 
 
@@ -70,3 +70,148 @@ class KeypressPublisher():
             return
         self.cancel()
         self._clear()
+
+
+import tkinter as tk
+from tkinter import messagebox
+import time
+import pyautogui
+
+from constants import ATTENTION_HIGHLIGHT
+
+
+class TargetFunctionError(Exception):
+    '''Raise it at the end of handling exceptions in more complex target functions.'''
+
+
+class ButtonKeyboardManager():
+    '''
+    Using an instance of this class, build a command out of button's target_function 
+    that will support a centralized "cancel-proceed" keypress workflow (only one command can work at a time).
+    See KeypressPublisher for a list of "cancelling" and "proceeding" keys.
+   
+    Attributes:
+        master: for thread-safe `master.after(0, proceed_callback)`, since keyboard hooks works in a separate thread.
+        kb_publisher: an app-wide single instance of KeyboardPublisher.
+            Used for `self.kb_publisher.update_callbacks(proceed, cancel)` in the button command.
+        long_operation_time_sec (default = 3) : if target_function takes longer than that, 
+            an info messagebox will show when it's finished.
+    
+    Used like this:
+    ```python
+    root = tk.Tk()
+    kb_publisher = KeyboardPublisher()
+    button_kb_manager = ButtonKeyboardManager(root, kb_publisher)
+
+    entry = tk.Entry(root)
+    entry.pack()
+
+    label = tk.Label(root, text="")
+    label.pack()
+
+    def target_function():
+        input_value = entry.get()
+        output_value = f"entry says '{input_value}'"
+        
+    def set_feedback(value: str)
+        label.config(text=value)
+
+    button = tk.Button(root, text="do stuff")
+    button.pack()
+    button.configure(command=button_kb_manager.build_command(
+        button, target_function, set_feedback)
+    )
+
+    root.mainloop()
+    ```
+    '''
+
+    long_operation_time_sec = 3
+    T = TypeVar("ValueType")
+
+    def __init__(self, master: tk.Misc, kb_publisher : KeypressPublisher):
+        super().__init__()
+        self.master = master
+        self.kb_publisher = kb_publisher
+
+
+    def tk_after(self, hide_app_on_proceed):
+        '''Decorator to make callbacks from `cancel` and `proceed` button commands'''
+        def tk_after(operation: Callable[[], Any]):
+            '''operation is either cancel or proceed'''
+            def safe_f():
+                try:
+                    if hide_app_on_proceed: self.master.winfo_toplevel().iconify()
+                    operation()
+                except pyautogui.FailSafeException:
+                    messagebox.showinfo(message="GUI automation haulted")
+                except Exception:
+                    messagebox.showwarning("EMERGENCY", "unexpected error")
+                    raise
+                finally:
+                    if hide_app_on_proceed: self.master.winfo_toplevel().deiconify()
+            def inner():
+                self.master.after(0, safe_f)
+            return inner
+        return tk_after
+
+
+    def build_command(
+            self, 
+            button: tk.Button, 
+            target_function: Callable[[], T], 
+            set_feedback: Callable[[T],None] | None,
+            hide_app_on_proceed: bool = False
+        ):
+        '''
+        Returns a button_command. Can be combined with messagebox if the target_function requires warning or info.
+        Use: `button.configure(command=button_kb_manager.build_command(button, target_function, set_feedback)`
+
+        Returned command additionally supports a pyatogui failsafe. 
+        Quickly bring your cursor to one of the screen corners to hault target functions for GUI automation.
+        
+        Args:
+            button: would have `command=target_function` if not for the keypress workflow. 
+                Will be highlighted to signify that the choice between "cancel" and "proceed" is active.
+            
+            target_function: Most often returns a `value`, but can also return None. Takes no arguments.
+                If target_function includes exceptions, add `raise TargetFunctionException` at the end of them.
+                They will be caught during proceed callback to safely terminate it.  
+                *Generally, `target_function` is `lambda: _get_new_value(*args, **kwargs)`.
+                Sometimes, it is `helper_function_getter()` (returns `helper_function` that returns `new_value` when executed)*  
+
+            set_feedback (optional): If provided, shall put `value` from the `target_function` somewhere in the interface.
+                Shall take responsibility for converting the `value` into its suitable representation.
+                Examples: `text.insert("1.0", str(value))` or `variable.set(json.dumps(value))`.
+
+            hide_app_on_proceed (default=False): some target functions will require that the app is minimized (hidden)
+                and doesn't obstruct the screen. Those shall pass `True` to the `hide_app_on_proceed`.
+                The app will reappear once the target_function is done.
+        '''
+
+        bg = button["bg"]
+
+        def button_command():
+            button.configure(bg=ATTENTION_HIGHLIGHT)
+
+            @self.tk_after(False)
+            def cancel():
+                button.configure(bg=bg)
+            
+            @self.tk_after(hide_app_on_proceed)
+            def proceed():
+                button.configure(bg=bg)
+                _s = time.perf_counter()
+                try:
+                    value = target_function()
+                except TargetFunctionError:
+                    return
+                _e = time.perf_counter() - _s
+                if _e > ButtonKeyboardManager.long_operation_time_sec:
+                    messagebox.showinfo("Executing function", "Operation finished")  # UX for longer operations
+                if set_feedback is not None:
+                    set_feedback(value)
+            
+            self.kb_publisher.update_callbacks(proceed, cancel)
+
+        return button_command

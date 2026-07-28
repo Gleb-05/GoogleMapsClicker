@@ -1,6 +1,4 @@
-import time
 import json
-import keyboard
 import pyautogui
 from dataclasses import Field, field, dataclass, fields
 import tkinter as tk
@@ -8,9 +6,9 @@ from tkinter import messagebox
 from typing import ClassVar, Any
 from collections.abc import Callable
 
-from constants import ATTENTION_HIGHLIGH
+from constants import ATTENTION_HIGHLIGHT
 from config_registry import ConfigRegistryMixin
-from keypress_publisher import KeypressPublisher
+from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
 @dataclass(frozen=True)
@@ -128,78 +126,20 @@ class ConfigRecomputeMixin():
         return lambda : r_dict[r_func_name]
 
 
-class StringVarManager():
-    '''
-    Having multiple StringVars, choose one at a time to change its value using an arbitrary helper function (triggered by specific key presses).
-
-    Attributes:
-        :(not to be accessed directly)
-        root: for thread safety, since keyboard is listening in a separate thread.
-        long_operation_time_sec (default = 3) : if changing the value takes longer than that, 
-            an info messagebox will show on operation finish.
-    '''
-    def __init__(self, master : tk.Misc,  kb_publisher : KeypressPublisher):
-        super().__init__()
-        self.master = master
-        self.kb_publisher = kb_publisher
-        self.long_operation_time_sec = 3
-
-    def tk_after(self, f: Callable[[], Any]):
-        def safe_f():
-            try:
-                f()
-            except pyautogui.FailSafeException:
-                messagebox.showinfo(message="GUI automation haulted")
-            except Exception:
-                messagebox.showwarning("EMERGENCY", "unexpected error")
-                raise
-        def inner():
-            self.master.after(0, safe_f)
-        return inner
-    
-    def configure(self, variable: tk.StringVar, new_value_getter: Callable[[], Any]):
-        '''
-        Generally, `new_value_getter` is `lambda: _get_new_value(*args, **kwargs)` 
-        
-        *Sometimes, it is `helper_function_getter()` (returns `helper_function` that returns `new_value` when executed)*
-        
-        - target: StringVar whose value is changed on proceeding with the operation..
-        - new_value_getter: when executed (with no arguments), its return is to be put into the target StringVar.
-        '''
-        var_value = variable.get()  # TODO variable reverts to its first value on cancel
-
-        def command():
-            variable.set("AWAITS SHIFT / ESC")
-
-            @self.tk_after
-            def cancel():
-                variable.set(var_value)
-            
-            @self.tk_after
-            def proceed():
-                variable.set(var_value)
-                _s = time.perf_counter()
-                value = new_value_getter()
-                _e = time.perf_counter() - _s
-                if _e > self.long_operation_time_sec:
-                    messagebox.showinfo("Changing value", "Operation finished")  # UX for longer operations
-                variable.set(json.dumps(value))
-
-            self.kb_publisher.update_callbacks(proceed, cancel)
-
-        return command
-
-
 def get_tk_fields(config: ConfigRegistryMixin):
     """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
     return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
 
 
-def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: StringVarManager) -> tk.StringVar:
+def build_field_editor(
+        config_field: Field, 
+        master: tk.Misc, 
+        button_kb_manager: ButtonKeyboardManager
+    ) -> tk.StringVar:
     '''
     Using a `config_field` and its ConfigTkMeta, construct tk.Frame for display and edit and pack it into `master`.
     Return `tk.StringVar` to manage its value from the main app.
-    `stringvar_manager` is used for entries that can be changed using a helper function.
+    `button_kb_manager` is used for entries that can be changed using a helper function.
 
     Notice that everything revolves around `json.dumps` and `json.loads`, that is, strings.
     This approach allows to greatly simplify widget selection, effectively converging it to tk.StringVar.
@@ -219,29 +159,31 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
 
     variable = tk.StringVar(value=json.dumps(config_field.default))
 
+    def _set_feedback(value):
+        variable.set(json.dumps(value))
+
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
     if recompute_meta:
         conditions = (
             f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
             "\nProceed with recomputing once you are satisfied with all config values listed."
         )
-        tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGH).pack(anchor=tk.NW)
+        tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGHT).pack(anchor=tk.NW)
 
         entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
         entry.pack(side=tk.LEFT, anchor=tk.S)
-        btn_txt = "recompute"
 
-        def _warn_and_request():
+        btn_txt = "recompute"
+        btn = tk.Button(entry_frame, text = btn_txt)
+        btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
+
+        def _button_command():
             # TODO maybe add support for functions with arguments. need a modal window to get them though. 
             messagebox.showwarning("BEFORE PROCEEDING", recompute_meta.recompute_function_doc)
-            cmd = stringvar_manager.configure(variable, recompute_meta.recompute_function_getter())
+            cmd = button_kb_manager.build_command(btn, recompute_meta.recompute_function_getter(), _set_feedback)
             cmd()
-        
-        tk.Button(
-            entry_frame,
-            text = btn_txt,
-            command = _warn_and_request
-        ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+
+        btn.configure(command=_button_command)    
 
         before_proceeding = "complete preparations that are displayed when the button is pressed"
         tk.Button(
@@ -264,11 +206,9 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
 
     if meta.xy_reading:
         btn_txt = "set from cursor coordinates"
-        tk.Button(
-            entry_frame, 
-            text=btn_txt, 
-            command=stringvar_manager.configure(variable, lambda: _get_xy_read(meta.xy_read))
-            ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+        btn = tk.Button(entry_frame, text=btn_txt)
+        btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
+        btn.configure(command=button_kb_manager.build_command(btn, lambda: _get_xy_read(meta.xy_read), _set_feedback))
         before_proceeding = "move the cursor to where you want to read the coordinates"
         tk.Button(
             entry_frame,

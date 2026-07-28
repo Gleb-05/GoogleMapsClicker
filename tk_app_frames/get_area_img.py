@@ -4,8 +4,8 @@ import pyautogui
 from tk_app_frames.BasicFrame import BasicFrame
 
 from usr_get_area_img import get_dd_rect_img
-from function_to_tk_entries import build_function_editor, ButtonManager
-from keypress_publisher import KeypressPublisher
+from function_to_tk_entries import build_function_editor
+from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
 def throw_error():
@@ -32,11 +32,15 @@ class GetAreaImgFrame(BasicFrame):
         debug_text = tk.Text(self.header, width=300, height=10)
         debug_text.insert("1.0", "Debug text")
         debug_text.pack(expand=True)
+        def set_feedback(value):
+            debug_text.delete("1.0", tk.END)
+            debug_text.insert("1.0", str(value))
+
         kb_publisher = KeypressPublisher()
-        self.button_manager = ButtonManager(self.root, kb_publisher, debug_text)
+        self.button_manager = ButtonKeyboardManager(self.root, kb_publisher)
 
         for target_function in [get_dd_rect_img, throw_error, long_func]:
-            build_function_editor(target_function, self.body, self.button_manager)
+            build_function_editor(target_function, self.body, self.button_manager, set_feedback)
 
         self.update_root_geometry()
 

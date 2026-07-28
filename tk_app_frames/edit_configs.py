@@ -11,8 +11,8 @@ from utils import CustomError
 import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
 from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
-from config_to_tk_entries import get_tk_fields, build_field_editor, StringVarManager
-from keypress_publisher import KeypressPublisher
+from config_to_tk_entries import get_tk_fields, build_field_editor
+from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
 class EditConfigsFrame(BasicFrame):
@@ -28,7 +28,7 @@ class EditConfigsFrame(BasicFrame):
         tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
         kb_publisher = KeypressPublisher()
-        self.stringvar_manager = StringVarManager(self.root, kb_publisher)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
+        self.stringvar_manager = ButtonKeyboardManager(self.root, kb_publisher)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
 
         # Store (tk frame to render)-(tk variables to set and get values) pairs for each config
         self.configs = {
