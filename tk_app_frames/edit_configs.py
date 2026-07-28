@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 from tk_app_frames.BasicFrame import BasicFrame
-from tk_app_frames.SwitchFrameController import setup_switch_frame_controller, FrameAndVariables
+from tk_app_frames.switch_frame_controller import setup_switch_frame_controller, FrameAndVariables
 
 from constants import ROOT_DIR
 from utils import CustomError
