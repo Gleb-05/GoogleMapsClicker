@@ -1,10 +1,21 @@
 import tkinter as tk
+import time
+import pyautogui
 from tk_app_frames.BasicFrame import BasicFrame
 
 from usr_get_area_img import get_dd_rect_img
 from function_to_tk_entries import build_function_editor, ButtonManager
+from keypress_publisher import KeypressPublisher
 
 
+def throw_error():
+    "calibrate tkmanager-kbpub relationship"
+    raise ValueError("whatever")
+
+def long_func():
+    "test pyautogui corner error"
+    for _ in range(10):
+        pyautogui.moveTo(20,20, duration=1)
 
 class GetAreaImgFrame(BasicFrame):
     '''See and change individual fields of configs'''
@@ -21,9 +32,10 @@ class GetAreaImgFrame(BasicFrame):
         debug_text = tk.Text(self.header, width=300, height=10)
         debug_text.insert("1.0", "Debug text")
         debug_text.pack(expand=True)
-        self.button_manager = ButtonManager(debug_text)
+        kb_publisher = KeypressPublisher()
+        self.button_manager = ButtonManager(self.root, kb_publisher, debug_text)
 
-        for target_function in [get_dd_rect_img]:
+        for target_function in [get_dd_rect_img, throw_error, long_func]:
             build_function_editor(target_function, self.body, self.button_manager)
 
         self.update_root_geometry()

@@ -4,8 +4,7 @@ import pyautogui
 import pyperclip
 from PIL import ImageChops, Image
 import numpy as np
-import keyboard
-from abc import ABC, abstractmethod
+
 
 class CustomError(Exception):
     """
@@ -151,35 +150,3 @@ py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen, (p
 Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`.
 For consistency, if the return value is still None after multiple calls, raise the `...Exception`
 """
-
-
-class KeyboardControlManager(ABC):
-    '''
-    Listen for "cancelling" and "proceeding" key presses with `keyboard.hook` to control special user actions.
-
-    For example, reading cursor coordinates requires something beyond button press or mouse click.
-
-    "cancelling": "esc" <br>
-    "proceeding": "shift", "right shift", "left shift", "num lock"
-    '''
-    
-    def doc(self, btn_txt, before_proceeding="complete preparations that the operation requires"):
-        _doc = "For entries with buttons saying '{}'," \
-        "\n- press the button to initiate the operation and choose between proceeding and cancelling," \
-        "\n- to proceed, press Shift (or NumLk)" \
-        "\n- before proceeding, {}" \
-        "\n- to cancel, press Esc."
-        return _doc.format(btn_txt, before_proceeding)
-
-    def __init__(self):
-        keyboard.hook(self._on_key)  # CAUTION - runs in a separate thread
-
-    @abstractmethod
-    def _on_key(self, event: keyboard.KeyboardEvent):
-        raise NotImplementedError()
-
-    def cancelling(self, event: keyboard.KeyboardEvent) -> bool:
-        return event.name == "esc"
-
-    def proceeding(self, event: keyboard.KeyboardEvent) -> bool:
-        return event.name in ["shift", "right shift", "left shift", "num lock"]

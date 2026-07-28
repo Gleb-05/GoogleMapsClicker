@@ -12,7 +12,7 @@ import usr_get_area_img  # crutch to get all necessary configs
 # from usr_get_area_img import C
 from config_registry import _config_register, ConfigRegistryMixin, dump_config, load_config_from_dict, load_config
 from config_to_tk_entries import get_tk_fields, build_field_editor, StringVarManager
-
+from keypress_publisher import KeypressPublisher
 
 
 class EditConfigsFrame(BasicFrame):
@@ -27,7 +27,8 @@ class EditConfigsFrame(BasicFrame):
 
         tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
-        self.stringvar_manager = StringVarManager(self.root)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
+        kb_publisher = KeypressPublisher()
+        self.stringvar_manager = StringVarManager(self.root, kb_publisher)  # maybe move from EditConfigsFrame to somewhere higher in hierarchy? plus not necessary to use exactly root
 
         # Store (tk frame to render)-(tk variables to set and get values) pairs for each config
         self.configs = {
@@ -35,7 +36,7 @@ class EditConfigsFrame(BasicFrame):
             for key, config in _config_register.items()
             if (config_frame_and_variables:=self._frame_and_variables(config)) is not None
         }
-        setup_switch_frame_controller(self.configs, self.body, self.update_root_geometry)
+        setup_switch_frame_controller(self.configs, self.body, lambda: (self.update_root_geometry(), kb_publisher.on_cancel()))
 
         # Add buttons to work with config files and the currently used config itself.
         self._last_used_path_to_config = "default_1366x768_config.json"

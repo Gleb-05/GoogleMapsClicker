@@ -10,7 +10,7 @@ from collections.abc import Callable
 
 from constants import ATTENTION_HIGHLIGH
 from config_registry import ConfigRegistryMixin
-from utils import KeyboardControlManager
+from keypress_publisher import KeypressPublisher
 
 
 @dataclass(frozen=True)
@@ -128,73 +128,66 @@ class ConfigRecomputeMixin():
         return lambda : r_dict[r_func_name]
 
 
-class StringVarManager(KeyboardControlManager):
+class StringVarManager():
     '''
     Having multiple StringVars, choose one at a time to change its value using an arbitrary helper function (triggered by specific key presses).
 
     Attributes:
         :(not to be accessed directly)
         root: for thread safety, since keyboard is listening in a separate thread.
-        target: StringVar whose value is changed on proceeding with the operation..
-        target_value: improve user experience, signal that the operation was initialized.
-        new_value_getter: when executed (with no arguments), its return is to be put into the target StringVar.
         long_operation_time_sec (default = 3) : if changing the value takes longer than that, 
             an info messagebox will show on operation finish.
     '''
-    def __init__(self, root : tk.Misc):
+    def __init__(self, master : tk.Misc,  kb_publisher : KeypressPublisher):
         super().__init__()
-        self.root = root
-        self.target : tk.StringVar | None = None
-        self.target_value: str | None = None
-        self.new_value_getter : Callable[[], Any] | None = None
+        self.master = master
+        self.kb_publisher = kb_publisher
         self.long_operation_time_sec = 3
 
-    def _nullify(self):
-        self.target = None
-        self.target_value = None
-        self.new_value_getter = None
-
-    def request(self, variable: tk.StringVar, new_value_getter: Callable[[], Any]):
+    def tk_after(self, f: Callable[[], Any]):
+        def safe_f():
+            try:
+                f()
+            except pyautogui.FailSafeException:
+                messagebox.showinfo(message="GUI automation haulted")
+            except Exception:
+                messagebox.showwarning("EMERGENCY", "unexpected error")
+                raise
+        def inner():
+            self.master.after(0, safe_f)
+        return inner
+    
+    def configure(self, variable: tk.StringVar, new_value_getter: Callable[[], Any]):
         '''
-        Do `command = lambda: request(...)` for a button next to the entry.
-        With request, the target variable `variable` and what to do on proceed `new_value_getter` is specified.
-
         Generally, `new_value_getter` is `lambda: _get_new_value(*args, **kwargs)` 
         
         *Sometimes, it is `helper_function_getter()` (returns `helper_function` that returns `new_value` when executed)*
-        '''
-        if self.target is not None:
-            # new button was pressed immediately after, restore value of previously pressed button
-            self.target.set(self.target_value)
-        self.target = variable
-        self.target_value = variable.get()
-        self.target.set("AWAITS SHIFT / ESC")
-        self.new_value_getter = new_value_getter
-
-    def _on_key(self, event: keyboard.KeyboardEvent):
-        '''
-        if target tk variable was not set using `request` - nothing.
-        else if Esc - cancel the operation.
-        else if Shift or NumLk - proceed with target.set(json.dumps(new_value_getter())).
-        '''
-        if self.target is None:
-            return
-
-        if self.cancelling(event):
-            self.target.set(self.target_value)  # undo `target.set` in `request`
-            self._nullify()
-            return
         
-        if self.proceeding(event):
-            _s = time.perf_counter()
-            value = self.new_value_getter()
-            _e = time.perf_counter() - _s
-            if _e > self.long_operation_time_sec:
-                messagebox.showinfo("Changing value", "Operation finished")  # UX for longer operations
-            # why _target - self.target turns into null before root.after is evaluated
-            _target = self.target
-            self.root.after(0, lambda: _target.set(json.dumps(value)))  # thread-save
-            self._nullify()
+        - target: StringVar whose value is changed on proceeding with the operation..
+        - new_value_getter: when executed (with no arguments), its return is to be put into the target StringVar.
+        '''
+        var_value = variable.get()  # TODO variable reverts to its first value on cancel
+
+        def command():
+            variable.set("AWAITS SHIFT / ESC")
+
+            @self.tk_after
+            def cancel():
+                variable.set(var_value)
+            
+            @self.tk_after
+            def proceed():
+                variable.set(var_value)
+                _s = time.perf_counter()
+                value = new_value_getter()
+                _e = time.perf_counter() - _s
+                if _e > self.long_operation_time_sec:
+                    messagebox.showinfo("Changing value", "Operation finished")  # UX for longer operations
+                variable.set(json.dumps(value))
+
+            self.kb_publisher.update_callbacks(proceed, cancel)
+
+        return command
 
 
 def get_tk_fields(config: ConfigRegistryMixin):
@@ -241,7 +234,8 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
         def _warn_and_request():
             # TODO maybe add support for functions with arguments. need a modal window to get them though. 
             messagebox.showwarning("BEFORE PROCEEDING", recompute_meta.recompute_function_doc)
-            stringvar_manager.request(variable, recompute_meta.recompute_function_getter())
+            cmd = stringvar_manager.configure(variable, recompute_meta.recompute_function_getter())
+            cmd()
         
         tk.Button(
             entry_frame,
@@ -253,7 +247,7 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt, before_proceeding))
+            command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
         ).pack(side=tk.LEFT, anchor=tk.W)
 
         return variable
@@ -273,13 +267,13 @@ def build_field_editor(config_field: Field, master: tk.Misc, stringvar_manager: 
         tk.Button(
             entry_frame, 
             text=btn_txt, 
-            command=lambda: stringvar_manager.request(variable, lambda: _get_xy_read(meta.xy_read))
+            command=stringvar_manager.configure(variable, lambda: _get_xy_read(meta.xy_read))
             ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
         before_proceeding = "move the cursor to where you want to read the coordinates"
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", stringvar_manager.doc(btn_txt, before_proceeding))
+            command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
             ).pack(side=tk.LEFT, anchor=tk.W)
 
     return variable
