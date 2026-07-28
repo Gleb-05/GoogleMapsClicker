@@ -1,7 +1,9 @@
 {
-  "app": {
+  "size": {
     "SCREEN_W": 1366,
-    "SCREEN_H": 768,
+    "SCREEN_H": 768
+  },
+  "app": {
     "LANG": "eng"
   },
   "gui_place": {

@@ -5,7 +5,7 @@ import pyperclip
 
 from utils import py_reload, py_locateCenter, CustomError
 from wait_contexts import wait_for_screen_change, wait_for_animation_end, wait_for_screen_image
-from config_app import C_app
+from config_app import C_size
 from gui.core_configs.scroll import SCROLLBAR_REGION
 from gui.core_configs import C_place, C_search, C_sidepanel
 from gui.scroll import total_scroll_down, scroll_to_next_card
@@ -128,7 +128,7 @@ def extract_place_link():
 
 
 def extract_place_pluscode():
-    PLACE_PLUSCODE_REGION = (20, C_search.SEARCH_Y, 50-20, C_app.SCREEN_H-C_search.SEARCH_Y-10)
+    PLACE_PLUSCODE_REGION = (20, C_search.SEARCH_Y, 50-20, C_size.SCREEN_H-C_search.SEARCH_Y-10)
 
     pyautogui.moveTo(PLACE_LINKBTN_REGION[:2])  # for scroll to work, cursor should be in a good position
     pluscode_xy = None
@@ -139,7 +139,7 @@ def extract_place_pluscode():
         if pluscode_xy is not None:
             break
         # sometimes pluscode row will be further down, requiring an additional scroll down
-        py_scroll(300 - C_app.SCREEN_H, C_sidepanel.SIDEPANEL_CHANGE_REGION)
+        py_scroll(300 - C_size.SCREEN_H, C_sidepanel.SIDEPANEL_CHANGE_REGION)
     if pluscode_xy is None:
         raise pyautogui.ImageNotFoundException
     pyautogui.click(pluscode_xy)

@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from config_app import C_size
 from keypress_publisher import KeypressPublisher
 from tk_app_frames.switch_frame_controller import setup_switch_frame_controller, FrameAndVariables
 from tk_app_frames.get_area_img import GetAreaImgFrame
@@ -13,7 +14,8 @@ class MainApp(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
-        W, H = self.winfo_screenwidth(), self.winfo_screenheight()
+        C_size.SCREEN_W = self.winfo_screenwidth()
+        C_size.SCREEN_H = self.winfo_screenheight()
         self.minsize(300, 100)
         self.attributes("-topmost", True)
 

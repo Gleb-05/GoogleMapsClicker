@@ -4,11 +4,9 @@ from config_to_tk_entries import ConfigTkMeta
 
 @dataclass
 class Config(ConfigRegistryMixin):
-    "Configurations that impact the whole app"
+    "Configurations that impact the whole app" 
+    # TODO this one should be persisted - change saving and loading procedure.
     REGISTER_KEY = "app"
-    
-    SCREEN_W : int = 1366 # TODO inherit winfo_screenwidth from tk app, don't leave constant!
-    SCREEN_H : int = 768  # TODO same with winfo_screenheight
 
     LANG : str = field(
         default='eng',
@@ -17,6 +15,17 @@ class Config(ConfigRegistryMixin):
             option_list=['eng']
         )}
     )
+
+@dataclass
+class SizeConfig(ConfigRegistryMixin):
+    '''Register winfo width and height to contextualize the rest of the config'''
+    # maybe revisit this piece of code. can't get rid of it for now
+    REGISTER_KEY = "size"
+    SCREEN_W : int = 1366
+    SCREEN_H : int = 768
+
+C_size = SizeConfig()
+C_size.register()
 
 C_app = Config()
 C_app.register()
