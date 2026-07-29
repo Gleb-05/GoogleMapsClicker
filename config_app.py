@@ -1,12 +1,18 @@
-from dataclasses import dataclass, field
-from config_registry import ConfigRegistryMixin
-from config_to_tk_entries import ConfigTkMeta
+import os
+import json
+from tkinter import filedialog
+from tkinter import messagebox
+from dataclasses import dataclass, field, asdict
+
+from constants import USR_CONFIGS_DIR, _PREFERENCES_PATH
+from utils import is_inside, CustomError
+from config_registry import LoadFromJsonMixin, ConfigRegistryMixin, load_config
+from config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 
 @dataclass
-class Config(ConfigRegistryMixin):
-    "Configurations that impact the whole app" 
-    # TODO this one should be persisted - change saving and loading procedure.
-    REGISTER_KEY = "app"
+class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
+    "Configurations that impact the whole app"
+    RECOMPUTE_FUNCTIONS = {}
 
     LANG : str = field(
         default='eng',
@@ -15,6 +21,69 @@ class Config(ConfigRegistryMixin):
             option_list=['eng']
         )}
     )
+
+    DEFAULT_CONFIG : str = field(
+        default="default_1366x768_config.json",
+        metadata={ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Choose a config file to load on app startup",
+        ), ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(
+            recompute_function_doc="Select from a filedialog",
+            recompute_function_getter=ConfigRecomputeMixin.recompute_getter(
+                RECOMPUTE_FUNCTIONS,
+                "get_config_name"
+            ),
+            recompute_causes=[]
+        )}
+    )
+    @property
+    def CONFIG_PATH(self) -> str:
+        '''USR_CONFIGS_DIR / DEFAULT_CONFIG'''
+        return os.path.join(USR_CONFIGS_DIR, self.DEFAULT_CONFIG)
+
+C_app = Config()
+'''Preferences'''
+
+def load_preferences_once():
+    '''Before the app starts, call it to make sure that user preferences are loaded correctly'''
+    with open(_PREFERENCES_PATH, encoding="utf-8") as f:
+        try:
+            data : dict = json.load(f)
+            load_preferences_from_dict(data)
+            load_config(C_app.CONFIG_PATH)  # important byproduct of preferences!
+        except (json.JSONDecodeError, CustomError) as e:
+            messagebox.showerror("ERROR ON LOADING PREFERENCES", f"default values for the preferences and configurations will be used\n\n{e}")
+
+def load_preferences_from_dict(config_dict: dict[str,dict]):
+    C_app._update(config_dict)  # pylint: disable=protected-access ; subset of intended usecase
+
+def save_preferences():
+    try:
+        # maybe refactor to be derived from dump_config
+        with open(_PREFERENCES_PATH, "w", encoding="utf-8") as f:
+            json.dump(asdict(C_app), f, indent=2, ensure_ascii=False
+                # cls = ConfigEncoder
+            )
+    except TypeError as e:
+        raise CustomError(
+            original_exception=e,
+            attention="LoadFromJsonMixin descendant *must* use JSON-serializable fields",
+            fix="Taking the simple nature of this app into account, please switch to JSON-serializable field types. " \
+            "For example, IntEnum instead of bare Enum."
+        ) from e
+
+def get_config_name():
+    filename = filedialog.askopenfilename(
+        title="Default config file",
+        defaultextension=".json",
+        filetypes=[("json", ["*.json","*.JSON"])],
+        initialdir=USR_CONFIGS_DIR,
+    )
+    if is_inside(filename, USR_CONFIGS_DIR):
+        return os.path.basename(filename)
+    return C_app.DEFAULT_CONFIG
+
+C_app.add_recompute(get_config_name)
+
 
 @dataclass
 class SizeConfig(ConfigRegistryMixin):
@@ -26,6 +95,3 @@ class SizeConfig(ConfigRegistryMixin):
 
 C_size = SizeConfig()
 C_size.register()
-
-C_app = Config()
-C_app.register()

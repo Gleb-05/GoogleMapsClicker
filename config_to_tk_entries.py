@@ -7,7 +7,7 @@ from typing import ClassVar, Any
 from collections.abc import Callable
 
 from constants import ATTENTION_HIGHLIGHT
-from config_registry import ConfigRegistryMixin
+from config_registry import LoadFromJsonMixin
 from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
@@ -56,6 +56,11 @@ class ConfigRecomputeMeta():
     - .recompute_causes - list of names of fields the current one depends on
 
     Additionaly, a KEY: ClassVar[str] = "recompute" is specified for consistency.
+
+    Useful readonly (not to be changed) properties to filter configs by:
+    - keyboard_indepentent - if `recompute_causes` are empty, the config will be considered
+      as such that doesn't require additional keyboard control. 
+      `recompute_function_getter` will be assigned to button command immediately
     '''
     KEY: ClassVar[str] = "recompute"
     '''`metadata = { ConfigRecomputeMeta.KEY: ConfigRecomputeMeta(...) }` is the way to augment the dataclass field().'''
@@ -63,6 +68,10 @@ class ConfigRecomputeMeta():
     recompute_function_getter: Callable[[], Callable]
     '''Returns `lambda: recompute_function`'''
     recompute_causes: list[str]
+
+    @property
+    def keyboard_independent(self):
+        return len(self.recompute_causes) == 0
 
 
 @dataclass
@@ -80,7 +89,7 @@ class ConfigRecomputeMixin():
 
     ```
     @dataclass
-    class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
+    class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
         RECOMPUTE_FUNCTIONS = {}
         c1 : int = field(...)
         c2 : float = field(
@@ -126,13 +135,14 @@ class ConfigRecomputeMixin():
         return lambda : r_dict[r_func_name]
 
 
-def get_tk_fields(config: ConfigRegistryMixin):
+def get_tk_fields(config: LoadFromJsonMixin):
     """For a given config, return all fields with ConfigTkMeta.KEY in metadata"""
     return [f for f in fields(config) if ConfigTkMeta.KEY in f.metadata]
 
 
 def build_field_editor(
         config_field: Field, 
+        config_field_value: Any,
         master: tk.Misc, 
         button_kb_manager: ButtonKeyboardManager
     ) -> tk.StringVar:
@@ -157,18 +167,19 @@ def build_field_editor(
     entry_frame = tk.Frame(field_frame)
     entry_frame.pack(fill="x", expand=True)
 
-    variable = tk.StringVar(value=json.dumps(config_field.default))
+    variable = tk.StringVar(value=json.dumps(config_field_value))
 
     def _set_feedback(value):
         variable.set(json.dumps(value))
 
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
     if recompute_meta:
-        conditions = (
-            f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
-            "\nProceed with recomputing once you are satisfied with all config values listed."
-        )
-        tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGHT).pack(anchor=tk.NW)
+        if len(recompute_meta.recompute_causes) > 0:
+            conditions = (
+                f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
+                "\nProceed with recomputing once you are satisfied with all config values listed."
+            )
+            tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGHT).pack(anchor=tk.NW)
 
         entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
         entry.pack(side=tk.LEFT, anchor=tk.S)
@@ -176,6 +187,12 @@ def build_field_editor(
         btn_txt = "recompute"
         btn = tk.Button(entry_frame, text = btn_txt)
         btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
+
+        if recompute_meta.keyboard_independent:
+            btn.configure(text="change")
+            recompute_f = recompute_meta.recompute_function_getter()
+            btn.configure(command=lambda: _set_feedback(recompute_f()))
+            return variable
 
         def _button_command():
             # TODO maybe add support for functions with arguments. need a modal window to get them though. 

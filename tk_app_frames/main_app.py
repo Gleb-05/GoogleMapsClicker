@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from config_app import C_size
+from config_app import C_size, load_preferences_once
 from keypress_publisher import KeypressPublisher
 from tk_app_frames.switch_frame_controller import setup_switch_frame_controller, FrameAndVariables
 from tk_app_frames.get_area_img import GetAreaImgFrame
@@ -12,6 +12,7 @@ class MainApp(tk.Tk):
     # https://stackoverflow.com/questions/7546050/switch-between-two-frames-in-tkinter
 
     def __init__(self, *args, **kwargs):
+        load_preferences_once()
         tk.Tk.__init__(self, *args, **kwargs)
 
         C_size.SCREEN_W = self.winfo_screenwidth()

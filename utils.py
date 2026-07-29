@@ -4,6 +4,7 @@ import pyautogui
 import pyperclip
 from PIL import ImageChops, Image
 import numpy as np
+from pathlib import Path
 
 
 class CustomError(Exception):
@@ -150,3 +151,12 @@ py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen, (p
 Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`.
 For consistency, if the return value is still None after multiple calls, raise the `...Exception`
 """
+
+
+def is_inside(path: str, directory: str) -> bool:
+    '''Check if path is within the directory'''
+    try:
+        Path(path).resolve().relative_to(Path(directory).resolve())
+        return True
+    except ValueError:
+        return False
