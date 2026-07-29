@@ -19,6 +19,7 @@ class MainApp(tk.Tk):
         C_size.SCREEN_H = self.winfo_screenheight()
         self.minsize(300, 100)
         self.attributes("-topmost", True)
+        self.resizable(False, True)
 
         self.keypress_publisher = KeypressPublisher()
 

@@ -1,3 +1,10 @@
+"""
+To be launched separately.
+Abandoned due to unstable behavior and too much dependency on image matching. 
+Should work without changes on 1366x768 display though.
+Maybe make it operational by switching from image matching to console manipulations (easily configurable).
+"""
+
 import threading
 import traceback
 import tkinter as tk

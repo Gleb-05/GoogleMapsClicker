@@ -1,5 +1,4 @@
 import tkinter as tk
-import time
 import pyautogui
 from tk_app_frames.basic_frame import BasicFrame
 
@@ -8,14 +7,16 @@ from function_to_tk_entries import build_function_editor
 from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
-def throw_error():
-    "calibrate tkmanager-kbpub relationship"
-    raise ValueError("whatever")
+# keep those functions close for expanding target_functions_list
 
-def long_func():
-    "test pyautogui corner error"
-    for _ in range(10):
-        pyautogui.moveTo(20,20, duration=1)
+# def throw_error():
+#     "calibrate tkmanager-kbpub relationship"
+#     raise ValueError("whatever")
+
+# def long_func():
+#     "test pyautogui corner error"
+#     for _ in range(10):
+#         pyautogui.moveTo(20,20, duration=1)
 
 class GetAreaImgFrame(BasicFrame):
     '''See and change individual fields of configs'''
@@ -31,7 +32,7 @@ class GetAreaImgFrame(BasicFrame):
             debug_text.delete("1.0", tk.END)
             debug_text.insert("1.0", str(value))
         set_feedback = None  # for now, debugging is unnecessary.
-        #  TODO pass debug flag through the controller and expand target function list accordingly
+        #  TODO pass debug flag through the controller and expand target function list accordingly?
 
         keypress_publisher: KeypressPublisher = controller.keypress_publisher
         self.button_manager = ButtonKeyboardManager(self, keypress_publisher)

@@ -74,4 +74,3 @@ class BasicFrame(tk.Frame):
         # print(f"{width} x {height}")
 
         self.winfo_toplevel().geometry(f"{width}x{height}")
-        self.winfo_toplevel().resizable(False, True)

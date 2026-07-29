@@ -144,7 +144,11 @@ WHAT WILL HAPPEN:
 
 C = Config()
 C.register()
-
+get_dd_rect_img_C_trim = [
+    "AREA_WIDTH_AND_HEIGHT_DD",
+    "SCALE_LEFTUP_XY",
+    "SCALE_RIGHTDOWN_XY"
+]
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
     """
@@ -192,7 +196,13 @@ def yx_dd_str_to_float(yx_dd: str):
     return (float(c) for c in yx_dd.split(","))
 
 
-def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims_dd : bool = True, satellite : bool = False):
+def get_dd_rect_img_extended(
+        leftup_yx_dd: str, 
+        rightdown_yx_dd: str, 
+        use_const_area_dims_dd : bool = False, 
+        satellite : bool = True,
+        satellite_hide_labels : bool = False
+    ):
     """
     Return an image that shows a rectangular region of the map.
     `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
@@ -222,7 +232,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     cx = lu_x+w/2
     cy = lu_y+h/2
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
-    if satellite:
+    if satellite_hide_labels:
         # map_toggle_sat_labels()
         # TODO enable later - for now disabled to simplify config by omitting inspect console interactions
         pass
@@ -230,7 +240,7 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     if use_const_area_dims_dd:
         area_width_dd, area_height_dd = C.AREA_WIDTH_AND_HEIGHT_DD
     else:
-        # takes more time, brings little accuracy
+        # takes more time, as accurate as possible thanks to starting at the center of the region
         area_width_dd, area_height_dd = get_area_dd_wh()
 
     r_width = estimate_r_dim(w, area_width_dd)
@@ -259,6 +269,26 @@ def get_dd_rect_img(leftup_yx_dd: str, rightdown_yx_dd: str, use_const_area_dims
     tab_close()
 
     return final_img
+
+
+def get_dd_rect_img(
+        leftup_yx_dd: str, 
+        rightdown_yx_dd: str, 
+        satellite : bool = True,
+    ):
+    '''
+    Return an image that shows a rectangular region of the map.
+    `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
+    Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
+
+    The image is constructed by combining entire areas visible on the screen at any given moment.
+    For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
+    
+    Satellite imagery (mapview overlay still active) is used by default.
+    Pass `satellite = False` to capture regular mapview.
+    '''
+    get_dd_rect_img_extended(**locals(), use_const_area_dims_dd=False, satellite_hide_labels=False)
+
 
 
 def get_area_scale():
@@ -404,7 +434,7 @@ class disp(IntEnum):
     ZER = 0
 
 
-def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = C.AREA_REGION):  # pylint: disable=dangerous-default-value
+def drag_area(xd=disp.ZER, yd=disp.ZER, area_region : tuple[int,int,int,int] | None = None):
     """
     For currently displayed area at (x,y), perform dragging to view area at (x+xd, y+yd).
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `xd` (horizontal) and `yd` (vertical) displacements, respectively.
@@ -412,6 +442,10 @@ def drag_area(xd=disp.ZER, yd=disp.ZER, area_region = C.AREA_REGION):  # pylint:
     If `xd == 1`, for example, then `drag_area` will show an area to the right of the current area.
     *It is already accounted for that for a positive displacement the drag should be negative.*
     """
+    # pylint was right - can't leave changing properties as default values
+    if area_region is None:
+        area_region = C.AREA_REGION
+    
     area_width = area_region[2]
     area_height = area_region[3]
 

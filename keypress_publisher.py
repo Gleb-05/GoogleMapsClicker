@@ -135,25 +135,32 @@ class ButtonKeyboardManager():
         self.kb_publisher = kb_publisher
 
 
-    def tk_after(self, hide_app_on_proceed):
+    def tk_after(self, operation: Callable[[], Any]):
         '''Decorator to make callbacks from `cancel` and `proceed` button commands'''
-        def tk_after(operation: Callable[[], Any]):
-            '''operation is either cancel or proceed'''
-            def safe_f():
-                try:
-                    if hide_app_on_proceed: self.master.winfo_toplevel().iconify()
-                    operation()
-                except pyautogui.FailSafeException:
-                    messagebox.showinfo(message="GUI automation haulted")
-                except Exception:
-                    messagebox.showwarning("EMERGENCY", "unexpected error")
-                    raise
-                finally:
-                    if hide_app_on_proceed: self.master.winfo_toplevel().deiconify()
-            def inner():
-                self.master.after(0, safe_f)
-            return inner
-        return tk_after
+        toplevel = self.master.winfo_toplevel()
+        def safe_f():
+            err = None
+            msgbox_kwargs = {}
+            try:
+                operation()
+            except pyautogui.FailSafeException as e:
+                err = e
+                msgbox_kwargs = dict(message="GUI automation haulted")
+            except TimeoutError as e:
+                err = e
+                msgbox_kwargs = dict(message=f"{e}\n\nMost likely, the browser didn't receive focus or froze for too long")
+            except Exception as e:
+                err = e
+                msgbox_kwargs = dict(title="EMERGENCY", message=f"unexpected error\n\n{e}")
+                raise
+            finally:
+                if err is not None:
+                    # messagebox has to be before toplevel.after, otherwise one of them doesnt appear
+                    messagebox.showwarning(**msgbox_kwargs)
+                toplevel.after(10, toplevel.deiconify)  # in case of `hide_app_on_proceed is True`
+        def inner():
+            self.master.after(0, safe_f)
+        return inner
 
 
     def build_command(
@@ -190,16 +197,22 @@ class ButtonKeyboardManager():
         '''
 
         bg = button["bg"]
+        toplevel = self.master.winfo_toplevel()
 
         def button_command():
             button.configure(bg=ATTENTION_HIGHLIGHT)
 
-            @self.tk_after(False)
+            @self.tk_after
             def cancel():
                 button.configure(bg=bg)
             
-            @self.tk_after(hide_app_on_proceed)
+            @self.tk_after
             def proceed():
+                if hide_app_on_proceed:
+                    toplevel.withdraw()
+                    toplevel.iconify()  # steals focus without the withdraw
+                    toplevel.update()
+                
                 button.configure(bg=bg)
                 _s = time.perf_counter()
                 try:

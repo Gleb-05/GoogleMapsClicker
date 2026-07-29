@@ -1,4 +1,5 @@
-import threading
+"launched separately during active development of new functionality"
+
 import traceback
 import tkinter as tk
 import pyautogui
@@ -8,7 +9,7 @@ from gui.layers import map_toggle_sat_labels
 from test.test_usr_get_area_img import TestDragArea
 
 from gui.search import center_on_search_result
-from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd
+from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img_extended, estimate_area_width_and_height_dd
 from gui.map import map_get_coords_at_cursor
 from config_registry import dump_config
 
@@ -34,10 +35,10 @@ class DebugFrame:
             "get_area_dd_wh": get_area_dd_wh,
             "estimate_area_width_and_height_dd": estimate_area_width_and_height_dd,
             "get_area_img": lambda: get_area_img("48,2"),
-            "get_dd_rect_img_small_map": lambda: get_dd_rect_img(*C.REGION_1),
-            "get_dd_rect_img_small_sat": lambda: get_dd_rect_img(*C.REGION_1, satellite=True),
-            "get_dd_rect_img_map": lambda: get_dd_rect_img(*C.REGION_2),
-            "get_dd_rect_img_sat": lambda: get_dd_rect_img(*C.REGION_2, satellite=True),
+            "get_dd_rect_img_extended_small_map": lambda: get_dd_rect_img_extended(*C.REGION_1, satellite=False),
+            "get_dd_rect_img_extended_small_sat": lambda: get_dd_rect_img_extended(*C.REGION_1),
+            "get_dd_rect_img_extended_map": lambda: get_dd_rect_img_extended(*C.REGION_2, satellite=False),
+            "get_dd_rect_img_extended_sat": lambda: get_dd_rect_img_extended(*C.REGION_2),
             "test_drag_area": TestDragArea.drag_shift,
             "test_area_deforms": TestDragArea.area_deforms,
             "map_get_coords_at_cursor": map_get_coords_at_cursor,

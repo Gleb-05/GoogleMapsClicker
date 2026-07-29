@@ -12,9 +12,11 @@ from config_registry import ConfigRegistryMixin, dump_config, load_config_from_d
 from config_to_tk_entries import get_tk_fields, build_field_editor
 from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
-# crutch - trim down the configs JUST to those in get_dd_rect_img
+# trim down the configs JUST to those used by get_dd_rect_img (for now)
+# mega crutch - pick out configs that are not needed for get_dd_rect_img by hand
+# maybe standardize this? add a special screen to view configs relevant to a given function
 from config_app import C_app, load_preferences_from_dict
-from usr_get_area_img import C as C_areaimg
+from usr_get_area_img import C as C_areaimg, get_dd_rect_img_C_trim
 from gui.core_configs import C_sidepanel
 from gui.map import C as C_map
 from gui.addressbar import C as C_addressbar
@@ -37,7 +39,7 @@ class EditConfigsFrame(BasicFrame):
             for C in configs
             if (config_frame_and_variables:=self._frame_and_variables(C)) is not None
         }
-        # crutch - preferences shouldn't be a part of config processing
+        # preferences shouldn't be a part of config processing - handle separately
         preferences_fav = {"Preferences": self._frame_and_variables(C_app)}
         self.preferences = preferences_fav["Preferences"].variables
         setup_switch_frame_controller(
@@ -63,6 +65,10 @@ class EditConfigsFrame(BasicFrame):
         tk_fields = get_tk_fields(config)
         if len(tk_fields) == 0:
             return None
+        # maybe standardize this? add a special screen to view configs relevant to a given function
+        if config is C_areaimg:
+            tk_field = [field for field in tk_fields if field.name not in get_dd_rect_img_C_trim]
+        
         field_values = [getattr(config, field.name) for field in tk_fields]
         config_frame = tk.Frame(self.body)
         variables : dict[str, tk.StringVar] = {}
