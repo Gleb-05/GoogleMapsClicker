@@ -2,9 +2,6 @@ import tkinter as tk
 
 class BasicFrame(tk.Frame):
     '''Vertically resizable frame with header, scrollable body, and footer'''
-    
-    MAX_HEIGHT = 555
-    MAX_WIDTH = 555
 
     def __init__(self, master: tk.Misc, controller):
         tk.Frame.__init__(self, master)
@@ -47,30 +44,18 @@ class BasicFrame(tk.Frame):
 
         body_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
         return middle_frame, body_frame
-    
 
-    def update_root_geometry(self):
-        '''
-        After BasicFrame contents are updated, 
-        resize window to fit `body.winfo_reqwidth` 
-        and combined height of header, body and footer.
-        
-        `root.resizable(False, True)` is called to make the width locked and the height resizable.
-        '''
-        self.update_idletasks()
 
+    def custom_reqwidth(self):
         width = (
             self.body.winfo_reqwidth() + self._vsb.winfo_reqwidth() 
             + 10*2 + 6*2 + 2 # middle padx, middle borders, small margin
         )
-        width = min(width, BasicFrame.MAX_WIDTH)
+        return width
 
+    def custom_reqheight(self):
         height = (
             self.body.winfo_reqheight() + self.header.winfo_reqheight() + self.footer.winfo_reqheight() 
-            + 10*4 + 6*2 + 70 # header and footer pady, middle borders, crutch margin
+            + 10*4 + 6*2 + 2 # header and footer pady, middle borders, small margin
         )
-        height = min(height, BasicFrame.MAX_HEIGHT)
-        
-        # print(f"{width} x {height}")
-
-        self.winfo_toplevel().geometry(f"{width}x{height}")
+        return height

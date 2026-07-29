@@ -27,7 +27,7 @@ class EditConfigs(BasicFrame):
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
 
-        tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
+        tk.Frame(self.body, width=controller.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
         keypress_publisher: KeypressPublisher = controller.keypress_publisher
         self.button_kb_manager = ButtonKeyboardManager(self, keypress_publisher)
@@ -45,7 +45,10 @@ class EditConfigs(BasicFrame):
         setup_switch_frame_controller(
             {**preferences_fav, **self.configs}, # patch the dict to make configs and preferences share the switch...controller
             self.body, 
-            lambda: (self.update_root_geometry(), keypress_publisher.on_cancel())
+            # make sure that 
+            # - window resizes on switching the inner frames
+            # - if a button listens to the keyboard, it stops on config switch
+            on_switch = lambda : (controller.update_root_geometry(self), keypress_publisher.on_cancel())
         )
 
         self._last_default_config_path = C_app.DEFAULT_CONFIG
@@ -57,9 +60,7 @@ class EditConfigs(BasicFrame):
         tk.Button(self.footer, text="Save changes", command=self._save_changes).pack(side="right", padx=5)
         tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right")
         tk.Button(self.footer, text="Save preferences", command=self._save_preferences).pack(side="left")
-
-        self.update_root_geometry()
-
+    
 
     def _frame_and_variables(self, config: ConfigRegistryMixin) -> FrameAndVariables | None:
         tk_fields = get_tk_fields(config)

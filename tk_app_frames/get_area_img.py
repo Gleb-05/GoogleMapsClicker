@@ -23,7 +23,7 @@ class GetAreaImg(BasicFrame):
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
         
-        tk.Frame(self.body, width=BasicFrame.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
+        tk.Frame(self.body, width=controller.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
         debug_text = tk.Text(self.header, width=300, height=10)
         debug_text.insert("1.0", "Debug text")
@@ -41,8 +41,6 @@ class GetAreaImg(BasicFrame):
 
         for target_function in target_functions_list:
             build_function_editor(target_function, self.body, self.button_manager, set_feedback)
-
-        self.update_root_geometry()
 
 
 if __name__ == "__main__":
