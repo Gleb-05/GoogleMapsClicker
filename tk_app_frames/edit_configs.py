@@ -68,7 +68,7 @@ class EditConfigs(BasicFrame):
             return None
         # maybe standardize this? add a special screen to view configs relevant to a given function
         if config is C_areaimg:
-            tk_field = [field for field in tk_fields if field.name not in get_dd_rect_img_C_trim]
+            tk_fields = [field for field in tk_fields if field.name not in get_dd_rect_img_C_trim]
         
         field_values = [getattr(config, field.name) for field in tk_fields]
         config_frame = tk.Frame(self.body)
