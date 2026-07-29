@@ -8,23 +8,22 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
   - windows: `venv\Scripts\Activate.ps1`
   - linux: `source venv/bin/activate`
 - Install required dependencies inside venv: `pip install -r requirements.txt`
-- Run `python prepare.py` and choose relevant functions from the dropdown menu.
+- Run `python run.py`.
+- Choose between `Get Area Img` and `Edit Configs`:
+  - `Get Area Img` exposes a single function: `get_dd_rect_img`. It allows to compose large map regions.
+  - `Edit Configs` allows to tailor the app to your needs. Mainly to different display sizes.
+    - configs can be saved to files, and you can choose which config to use by default in preferences.
 
-**THE CODE WAS WRITTEN FOR A 1366x768 DISPLAY, CHANGING ALL CONSTANTS BY HAND MAY BE DIFFICULT WITHOUT DIRECTIONS, USE WITH CAUTION**
-
-What to use first:
-- `get_dd_rect_img_small_map` - get map view of fields around Beynes France
-- `get_dd_rect_img_small_sat` - get satellite view of fields around Beynes France
-- `get_dd_rect_img_map` - get map view of fields around the Camp militaire de Mailly
-- `get_dd_rect_img_sat` - get satellite view of fileds around the Camp militaire de Mailly
-
+See examples of using `get_dd_rect_img`.
 In [`map_regions`](./map_regions) both map and sat view of Beynes France can be found.
 
-## disclaimer
+## Disclaimers
 
-For now prepare.py is controlled directly from code and includes everything there is. A better interface is on the way.
+DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES TO CHANGE THEM
 
-The architecture itself needs to be updated. There should be one config object that can be saved and loaded for computers with different screen sizes and settings. The app should be refactored to rely on this object.
+Consider that the app is intentionally top-level, meaning it won't disappear when you click outside it. Minimize by hand when needed.
+
+Consider that many buttons in the middle of the app do not work immediately. After being clicked, they change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk). Minimize the app before pressing num lk at your own discretion. The app will minimize automatically if the button requires it internally.
 
 # Brief overview of functionality
 
@@ -45,6 +44,11 @@ Interesting:
   - animation end
   - appearance of an image
 - To decrease dependency on exact screen dimensions and positions of GUI elements within it, more and more functions rely on the console. Most buttons can be clicked from the console, most values can be extracted as attributes from the console.
+- A single config registry is created to manage config values used in methods all over the codebase.
+  - Configs (say, for different displays) and preferences (shall be persisted) are differentiated, but can be changed through the same interface of `Edit Configs`.
+- Sometimes clicking or pressing a button is not enough. [`KeypressPublisher` and `ButtonKeyboardManager`](./z_app_components/keypress_publisher.py) work together to make sure that:
+  - Many buttons can safely wait for the key press.
+  - Only one action will be executed if a "proceed" key is pressed.
 
 More can be found in docstrings and `.md` files
 
