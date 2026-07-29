@@ -178,6 +178,13 @@ def construct_region(r_width: int = 1, r_height: int = 1):
     - the sidepanel is collapsed (will be expanded on function end)
     - the zoom level and the map type are selected
     """
+
+    if r_width == 0 or r_height == 0:
+        r_width = r_height = 0
+        # either zero width or zero height - impossible to iter_drag over the region
+        # one visible area is very unlikely to cover the region under expected usecases 
+        # - do NOT implement dragging in "strips"
+    
     final_img = np.zeros(((1+2*r_height)*C.AREA_HEIGHT, (1+2*r_width)*C.AREA_WIDTH, 3), dtype=np.uint8)
     for x,y in iter_drag_displacements(r_width, r_height):
         area = np.asarray(pyautogui.screenshot(region=C.AREA_REGION), dtype=np.uint8)
@@ -243,8 +250,7 @@ def get_dd_rect_img_extended(
         # takes more time, as accurate as possible thanks to starting at the center of the region
         area_width_dd, area_height_dd = get_area_dd_wh()
 
-    r_width = estimate_r_dim(w, area_width_dd)
-    r_height = estimate_r_dim(h, area_height_dd)
+    r_width, r_height = estimate_r_width_and_r_heigth((w,h), (area_width_dd, area_height_dd))
     print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*C.AREA_TIME_SEC/60:.2f}m")
     
     # TODO tab juggling
@@ -269,6 +275,20 @@ def get_dd_rect_img_extended(
     tab_close()
 
     return final_img
+
+
+def estimate_r_width_and_r_heigth(region_wh_dd : tuple[float,float], area_wh_dd: tuple[float,float]) -> tuple[int,int]:
+    """
+    Returns (r_width, r_height) tuple, to be passed to `construct_region`. Includes 0-dim edgecase. 
+    Provide (width, height) tuples describing the region to be covered and the area that's covered at a time.
+    """
+    w, h = region_wh_dd
+    area_w, area_h = area_wh_dd
+    r_width = estimate_r_dim(w, area_w)
+    r_height = estimate_r_dim(h, area_h)
+    if r_width == 0 or r_height == 0:
+        return 0, 0
+    return r_width, r_height
 
 
 def get_dd_rect_img(
@@ -327,6 +347,8 @@ def estimate_r_dim(region_dim_dd : float, area_dim_dd : float) -> int:
     Solution: `math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))`.
     
     This is an inverse of the `estimate_area_dim_dd_bounds` function.
+
+    *Note: be careful with the `area_dim_dd > r_dim` edgecase: solution becomes `r_dim = 0`*
     """
     return math.ceil((abs(region_dim_dd) - area_dim_dd) / (2*area_dim_dd))
 
@@ -501,6 +523,7 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
     """
     # begin at reference area
     rel_x, rel_y = 0, 0
+    print("iter core drag disp", r_width, r_height)
     assert r_width==1 or r_height==1, "iter_core_drag_displacements expects at least one of r_width or r_height to equal 1"
     assert r_width>=1 and r_height>=1, "iter_core_drag_displacements expects both argument to be equal or greater than 1"
     yield rel_x, rel_y
@@ -621,7 +644,7 @@ def iter_drag_displacements(r_width: int, r_height: int, do_drag_area: bool = Tr
     AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
     """
     x, y = r_width, r_height
-    if x == y == 0:
+    if x == 0 or y == 0:
         yield 0, 0
         return
 
