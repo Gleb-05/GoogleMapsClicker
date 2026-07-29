@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import time
 import pyautogui
-from config_registry import ConfigRegistryMixin
+from z_app_components.config_registry import ConfigRegistryMixin
 from utils import select_addressbar, py_paste
 from gui.sidepanel import collapse_sidepanel
 from wait_contexts import wait_for_screen_change, wait_for_animation_end

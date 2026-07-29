@@ -7,8 +7,8 @@ from typing import ClassVar, Any
 from collections.abc import Callable
 
 from constants import ATTENTION_HIGHLIGHT
-from config_registry import LoadFromJsonMixin
-from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
+from z_app_components.config_registry import LoadFromJsonMixin
+from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
 @dataclass(frozen=True)

@@ -1,10 +1,10 @@
 import tkinter as tk
 
-from config_app import C_size, load_preferences_once
-from keypress_publisher import KeypressPublisher
+from z_app_components.config_app import C_size, load_preferences_once
+from z_app_components.keypress_publisher import KeypressPublisher
 from tk_app_frames.switch_frame_controller import setup_switch_frame_controller, FrameAndVariables
-from tk_app_frames.get_area_img import GetAreaImgFrame
-from tk_app_frames.edit_configs import EditConfigsFrame
+from tk_app_frames.get_area_img import GetAreaImg
+from tk_app_frames.edit_configs import EditConfigs
 
 
 class MainApp(tk.Tk):
@@ -30,7 +30,7 @@ class MainApp(tk.Tk):
         container.pack(side="top", fill="both", expand=True)
 
         frames = {}
-        for F in (GetAreaImgFrame, EditConfigsFrame):
+        for F in (GetAreaImg, EditConfigs):
             page_name = F.__name__
             frame = F(master=container, controller=self)
             frames[page_name] = FrameAndVariables(frame, {})

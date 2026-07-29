@@ -3,8 +3,8 @@ import pyautogui
 from tk_app_frames.basic_frame import BasicFrame
 
 from usr_get_area_img import get_dd_rect_img
-from function_to_tk_entries import build_function_editor
-from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
+from z_app_components.function_to_tk_entries import build_function_editor
+from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
 # keep those functions close for expanding target_functions_list
@@ -18,7 +18,7 @@ from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 #     for _ in range(10):
 #         pyautogui.moveTo(20,20, duration=1)
 
-class GetAreaImgFrame(BasicFrame):
+class GetAreaImg(BasicFrame):
     '''See and change individual fields of configs'''
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
@@ -47,5 +47,5 @@ class GetAreaImgFrame(BasicFrame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = GetAreaImgFrame(root, None)
+    app = GetAreaImg(root, None)
     root.mainloop()

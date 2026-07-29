@@ -6,8 +6,8 @@ import pyautogui
 from PIL import Image
 import numpy as np
 
-from config_registry import ConfigRegistryMixin
-from config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
+from z_app_components.config_registry import ConfigRegistryMixin
+from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 # from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.core_configs import C_sidepanel

@@ -6,8 +6,8 @@ from dataclasses import dataclass, field, asdict
 
 from constants import USR_CONFIGS_DIR, _PREFERENCES_PATH
 from utils import is_inside, CustomError
-from config_registry import LoadFromJsonMixin, ConfigRegistryMixin, load_config
-from config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
+from z_app_components.config_registry import LoadFromJsonMixin, ConfigRegistryMixin, load_config
+from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 
 @dataclass
 class Config(LoadFromJsonMixin, ConfigRecomputeMixin):

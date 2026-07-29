@@ -7,22 +7,22 @@ from tk_app_frames.switch_frame_controller import setup_switch_frame_controller,
 
 from constants import USR_CONFIGS_DIR
 from utils import CustomError
-from config_app import save_preferences
-from config_registry import ConfigRegistryMixin, dump_config, load_config_from_dict, load_config, _get_from_registry
-from config_to_tk_entries import get_tk_fields, build_field_editor
-from keypress_publisher import KeypressPublisher, ButtonKeyboardManager
+from z_app_components.config_app import save_preferences
+from z_app_components.config_registry import ConfigRegistryMixin, dump_config, load_config_from_dict, load_config, _get_from_registry
+from z_app_components.config_to_tk_entries import get_tk_fields, build_field_editor
+from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 # trim down the configs JUST to those used by get_dd_rect_img (for now)
 # mega crutch - pick out configs that are not needed for get_dd_rect_img by hand
 # maybe standardize this? add a special screen to view configs relevant to a given function
-from config_app import C_app, load_preferences_from_dict
+from z_app_components.config_app import C_app, load_preferences_from_dict
 from usr_get_area_img import C as C_areaimg, get_dd_rect_img_C_trim
 from gui.core_configs import C_sidepanel
 from gui.map import C as C_map
 from gui.addressbar import C as C_addressbar
 
 
-class EditConfigsFrame(BasicFrame):
+class EditConfigs(BasicFrame):
     '''See and change individual fields of configs'''
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
@@ -205,5 +205,5 @@ class EditConfigsFrame(BasicFrame):
 
 if __name__ == "__main__":
     tk_root = tk.Tk()
-    app = EditConfigsFrame(tk_root, None)
+    app = EditConfigs(tk_root, None)
     tk_root.mainloop()

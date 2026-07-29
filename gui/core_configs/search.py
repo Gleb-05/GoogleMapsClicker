@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from config_registry import ConfigRegistryMixin
-from config_to_tk_entries import ConfigTkMeta
+from z_app_components.config_registry import ConfigRegistryMixin
+from z_app_components.config_to_tk_entries import ConfigTkMeta
 
 
 @dataclass

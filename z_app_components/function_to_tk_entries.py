@@ -5,7 +5,7 @@ from tkinter import messagebox
 from typing import Any
 from collections.abc import Callable
 
-from keypress_publisher import KeypressPublisher, ButtonKeyboardManager, TargetFunctionError
+from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager, TargetFunctionError
 
 
 def build_function_editor(

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from config_registry import ConfigRegistryMixin
+from z_app_components.config_registry import ConfigRegistryMixin
 
 
 @dataclass

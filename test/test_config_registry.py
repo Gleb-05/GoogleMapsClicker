@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 
 from utils import CustomError
-from config_registry import dump_config, load_config, _get_from_registry, ConfigRegistryMixin
+from z_app_components.config_registry import dump_config, load_config, _get_from_registry, ConfigRegistryMixin
 
 @dataclass
 class ConfigNokey(ConfigRegistryMixin):
