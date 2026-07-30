@@ -4,7 +4,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from dataclasses import dataclass, field, asdict
 
-from constants import USR_CONFIGS_DIR, _PREFERENCES_PATH
+from constants import USR_CONFIGS_DIR, PREFERENCES_PATH
 from utils import is_inside, CustomError
 from z_app_components.config_registry import LoadFromJsonMixin, ConfigRegistryMixin, load_config
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
@@ -45,7 +45,7 @@ C_app = Config()
 
 def load_preferences_once():
     '''Before the app starts, call it to make sure that user preferences are loaded correctly'''
-    with open(_PREFERENCES_PATH, encoding="utf-8") as f:
+    with open(PREFERENCES_PATH, encoding="utf-8") as f:
         try:
             data : dict = json.load(f)
             load_preferences_from_dict(data)
@@ -59,7 +59,7 @@ def load_preferences_from_dict(config_dict: dict[str,dict]):
 def save_preferences():
     try:
         # maybe refactor to be derived from dump_config
-        with open(_PREFERENCES_PATH, "w", encoding="utf-8") as f:
+        with open(PREFERENCES_PATH, "w", encoding="utf-8") as f:
             json.dump(asdict(C_app), f, indent=2, ensure_ascii=False
                 # cls = ConfigEncoder
             )

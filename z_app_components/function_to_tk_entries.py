@@ -6,7 +6,7 @@ from typing import Any
 from collections.abc import Callable
 
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager, TargetFunctionError
-
+from z_app_components.config_to_tk_entries import _add_jsonify_button
 
 def build_function_editor(
         target_function: Callable[..., Any], 
@@ -35,7 +35,7 @@ def build_function_editor(
     kwarg_stringvars : dict[str, tk.StringVar] = {}
     for argname, argvalue in f_signature.parameters.items():
         entry_frame = tk.Frame(field_frame)
-        entry_frame.pack(fill="x", expand=True)
+        entry_frame.pack(fill="x", expand=True, pady=(0,5))
 
         variable = tk.StringVar(value=json.dumps(argvalue.default) if argvalue.default is not inspect.Parameter.empty else None)
         kwarg_stringvars[argname] = variable
@@ -43,10 +43,13 @@ def build_function_editor(
         if argvalue.annotation is bool:
             option_list = [json.dumps(False),json.dumps(True)]
             menu = tk.OptionMenu(entry_frame, variable, *option_list)
-            menu.pack(side=tk.LEFT, anchor=tk.S)
+            menu.pack(side=tk.LEFT, anchor=tk.W)
         else:
             entry = tk.Entry(entry_frame, textvariable=variable)
-            entry.pack(side=tk.LEFT, anchor=tk.S)
+            entry.pack(side=tk.LEFT, anchor=tk.W)
+
+        if argvalue.annotation is str:
+            _add_jsonify_button(entry_frame, variable)
 
         tk.Label(
             text=f"{argname} ({argvalue.annotation.__name__})", **{**kw_label_make, "master": entry_frame}

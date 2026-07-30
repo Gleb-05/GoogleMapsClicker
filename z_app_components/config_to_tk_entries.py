@@ -172,55 +172,33 @@ def build_field_editor(
     def _set_feedback(value):
         variable.set(json.dumps(value))
 
+    # Choose:
+
+    # - recomputing
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
     if recompute_meta:
-        if len(recompute_meta.recompute_causes) > 0:
-            conditions = (
-                f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
-                "\nProceed with recomputing once you are satisfied with all config values listed."
-            )
-            tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGHT).pack(anchor=tk.NW)
-
-        entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
-        entry.pack(side=tk.LEFT, anchor=tk.S)
-
-        btn_txt = "recompute"
-        btn = tk.Button(entry_frame, text = btn_txt)
-        btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
-
-        if recompute_meta.keyboard_independent:
-            btn.configure(text="change")
-            recompute_f = recompute_meta.recompute_function_getter()
-            btn.configure(command=lambda: _set_feedback(recompute_f()))
-            return variable
-
-        def _button_command():
-            # TODO maybe add support for functions with arguments. need a modal window to get them though. 
-            messagebox.showwarning("BEFORE PROCEEDING", recompute_meta.recompute_function_doc)
-            cmd = button_kb_manager.build_command(btn, recompute_meta.recompute_function_getter(), _set_feedback)
-            cmd()
-
-        btn.configure(command=_button_command)    
-
-        before_proceeding = "complete preparations that are displayed when the button is pressed"
-        tk.Button(
-            entry_frame,
-            text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
-        ).pack(side=tk.LEFT, anchor=tk.W)
-
+        _process_recompute_meta(recompute_meta, config_field, entry_frame, variable, button_kb_manager, _set_feedback)
         return variable
-    
+
+    # - option selection
     if (isbool:=config_field.type is bool) or meta.option_listing:
         option_list = [json.dumps(False),json.dumps(True)] if isbool else [json.dumps(o) for o in meta.option_list]
         menu = tk.OptionMenu(entry_frame, variable, *option_list)
         menu.pack(side=tk.LEFT, anchor=tk.S)
-
         return variable
 
+    # - regular entry
     entry = tk.Entry(entry_frame, textvariable=variable)
     entry.pack(side=tk.LEFT, anchor=tk.S)
 
+    # Augment:
+
+    # - jsonify button
+    if config_field.type is str:
+        _add_jsonify_button(entry_frame, variable)
+        return variable
+
+    # - xy_read button
     if meta.xy_reading:
         btn_txt = "set from cursor coordinates"
         btn = tk.Button(entry_frame, text=btn_txt)
@@ -232,6 +210,7 @@ def build_field_editor(
             text=" ? ",
             command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
             ).pack(side=tk.LEFT, anchor=tk.W)
+        return variable
 
     return variable
 
@@ -239,3 +218,70 @@ def build_field_editor(
 def _get_xy_read(xy_read: int | slice):
     x,y = pyautogui.position()
     return [x,y][xy_read]
+
+
+def _process_recompute_meta(
+        recompute_meta: ConfigRecomputeMeta, 
+        config_field: Field, 
+        entry_frame: tk.Frame, 
+        variable: tk.StringVar, 
+        button_kb_manager: ButtonKeyboardManager, 
+        _set_feedback: Callable
+    ):
+    '''
+    Builds non-editable entry for a field with recompute_meta and binds a button to keyboard listening. 
+    Separated into its own function without much consideration.
+    '''
+
+    if len(recompute_meta.recompute_causes) > 0:
+        conditions = (
+            f"{config_field.name} shall be recomputed if one of the following config values was changed: {recompute_meta.recompute_causes}." +
+            "\nProceed with recomputing once you are satisfied with all config values listed."
+        )
+        tk.Label(entry_frame, wraplength=400, justify="left", text=conditions, bg=ATTENTION_HIGHLIGHT).pack(anchor=tk.NW)
+
+    entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
+    entry.pack(side=tk.LEFT, anchor=tk.S)
+
+    btn_txt = "recompute"
+    btn = tk.Button(entry_frame, text = btn_txt)
+    btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
+
+    if recompute_meta.keyboard_independent:
+        btn.configure(text="change")
+        recompute_f = recompute_meta.recompute_function_getter()
+        btn.configure(command=lambda: _set_feedback(recompute_f()))
+        return #variable
+
+    def _button_command():
+        # TODO maybe add support for functions with arguments. need a modal window to get them though. 
+        messagebox.showwarning("BEFORE PROCEEDING", recompute_meta.recompute_function_doc)
+        cmd = button_kb_manager.build_command(btn, recompute_meta.recompute_function_getter(), _set_feedback)
+        cmd()
+
+    btn.configure(command=_button_command)    
+
+    before_proceeding = "complete preparations that are displayed when the button is pressed"
+    tk.Button(
+        entry_frame,
+        text=" ? ",
+        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
+    ).pack(side=tk.LEFT, anchor=tk.W)
+
+
+def _add_jsonify_button(entry_frame: tk.Frame, variable: tk.StringVar):
+    tk.Button(
+        entry_frame,
+        text="jsonify",
+        command=lambda var=variable: var.set(json.dumps(var.get())),  # counter lambda's closure on variable
+        ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
+    tk.Button(
+        entry_frame,
+        text=" ? ",
+        command=lambda: messagebox.showinfo(
+            "Jsonify string values", 
+            "For buttons saying 'jsonify':\n" \
+            "- Provide a string value to the entry next to the button.\n" \
+            "- Once satisfied with the value, click 'jsonify'\n" \
+            "The button will change contents of the entry. Providing a jsonified version of the string immediately is possible but less practical.")
+        ).pack(side=tk.LEFT, anchor=tk.W)

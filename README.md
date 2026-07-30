@@ -23,7 +23,9 @@ DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES T
 
 Consider that the app is intentionally top-level, meaning it won't disappear when you click outside it. Minimize by hand when needed.
 
-Consider that many buttons in the middle of the app do not work immediately. After being clicked, they change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk). Minimize the app before pressing num lk at your own discretion. The app will minimize automatically if the button requires it internally.
+Consider that many buttons in the middle of the app (a frame with a grooved border) do not work immediately. After being clicked, they change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk). Minimize the app before pressing num lk at your own discretion. The app will minimize automatically if the button requires it internally.
+
+Consider that all entries operate on a json representation of the values they store. Inernally, get and set of a given entry is *jsonified* (`value = json.loads(entry.get())` and `entry.set(json.dumps(value))`). For most entries, values can be provided as is without thinkin about the json. But, since strings require escape sequences that are difficult to replicate, entries with string values have an additional `jsonify` button nearby for convenience.
 
 # Brief overview of functionality
 
