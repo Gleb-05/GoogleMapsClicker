@@ -32,6 +32,14 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
     # feels like the Config has objects with different purposes. Though one-point access IS convenient.
 
+    # This config is "decision", others are "measurement". Differentiate?
+    # Show it first in ui by literally moving up in the Config definition.
+    AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
+        default = False,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Draw edges for individual areas combined within a region?"
+        )}
+    )
 
     # The (visible) area should be safely (10px) beside interactive ui elements
     # TODO consider a function to define AREA_REGION
@@ -104,14 +112,6 @@ WHAT WILL HAPPEN:
                 RECOMPUTE_FUNCTIONS, 
                 "recompute_area_width_and_height_dd"),
             recompute_causes=["AREA_LEFTUP_X", "AREA_LEFTUP_Y", "AREA_RIGHTDOWN_X", "AREA_RIGHTDOWN_Y"]
-        )}
-    )
-
-    # TODO this config is "decision", others are "measurement". Differentiate?
-    AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
-        default = False,
-        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Draw edges for individual areas combined within a region?"
         )}
     )
 

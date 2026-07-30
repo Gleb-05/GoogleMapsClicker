@@ -3,9 +3,6 @@
     "SCREEN_W": 1366,
     "SCREEN_H": 768
   },
-  "app": {
-    "LANG": "eng"
-  },
   "gui_place": {
     "PLACE_TYPE_HTML": "/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button",
     "PLACE_NAME_HTML": "/html/body/div[1]/div[2]/div[9]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/h1/text()"
@@ -38,6 +35,7 @@
     "DD_SAT_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
   },
   "get_area_img": {
+    "AREA_EDGES": false,
     "AREA_LEFTUP_X": 110,
     "AREA_LEFTUP_Y": 145,
     "AREA_RIGHTDOWN_X": 1314,
@@ -46,7 +44,6 @@
       0.012115772764788004,
       0.0040135544595252485
     ],
-    "AREA_EDGES": false,
     "SCALE_LEFTUP_XY": [
       1142,
       752

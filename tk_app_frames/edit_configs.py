@@ -40,8 +40,9 @@ class EditConfigs(BasicFrame):
             if (config_frame_and_variables:=self._frame_and_variables(C)) is not None
         }
         # preferences shouldn't be a part of config processing - handle separately
-        preferences_fav = {"Preferences": self._frame_and_variables(C_app)}
-        self.preferences = preferences_fav["Preferences"].variables
+        _pref_key = "Preferences"
+        preferences_fav = {_pref_key: self._frame_and_variables(C_app)}
+        self.preferences = preferences_fav[_pref_key].variables
         setup_switch_frame_controller(
             frame_and_variables_dict={**preferences_fav, **self.configs}, # patch the dict to make configs and preferences share the switch...controller
             master=self.body, 
@@ -54,15 +55,39 @@ class EditConfigs(BasicFrame):
             )
         )
 
+        # patch C_app frame with an exclusive button
         self._last_default_config_path = C_app.DEFAULT_CONFIG
+        tk.Button(
+            master=preferences_fav[_pref_key].frame, 
+            text="Save preferences", 
+            command=self._save_preferences
+            ).pack(anchor="center", pady=(0,10))
 
-        # Add buttons to work with config files and the currently used config itself.
+        # Buttons to work with config files and the currently used config itself.
+
         self._last_used_path_to_config = "default_1366x768_config.json"
-        # TODO add confirm messagebox for things that dont require filedialog
-        tk.Button(self.footer, text="Save to file", command=self._save_to_file).pack(side="right")
-        tk.Button(self.footer, text="Save changes", command=self._save_changes).pack(side="right", padx=5)
-        tk.Button(self.footer, text="Load from file", command=self._load_from_file).pack(side="right")
-        tk.Button(self.footer, text="Save preferences", command=self._save_preferences).pack(side="left")
+
+        tk.Button(self.footer, text=" ? ", command=lambda:
+            messagebox.showinfo(
+                title="Manage app configurations and your preferences.",
+                message="The app uses one configuration object. You can change it using either files or the interface. Preferences use a separate object `C_app`.\n\n" \
+                "Note that changes made with the interface apply only while the app runs. Namely:\n" \
+                "- Save changes - save values from the interface to the object.\n" \
+                "- Discard changes - use values from the object to replace those in the interface.\n\n" \
+                "Operations with config files:\n" \
+                "- Save to file - save values from the interface to the object AND a chosen file. Once you find good config values, save them in order not to loose them when the app closes.\n" \
+                "- Load from file - use values from a chosen file to replace those in the interface AND the object. That's exactly where files with good config values help.\n\n" \
+                "Preferences are persisted across app runs. See:\n" \
+                "- Save preferences - a button exclusive to the 'Preferences' frame. " \
+                "When clicked, saves values from the interface to both the `C_app` and the preferences file (not to be used directly).\n" \
+                "- DEFAULT_CONFIG specifies the file from which configuration values are loaded at application startup." \
+                "CAUTION: if changed, 'Load from file' is applied immediately, updating both the interface and the config object.")
+            ).pack(side="right", padx=5)
+
+        tk.Button(self.footer, text="Save to file", command=self.save_to_file).pack(side="right")
+        tk.Button(self.footer, text="Save changes", command=self.save_changes_okcancel).pack(side="right", padx=5)
+        tk.Button(self.footer, text="Discard changes", command=self.discard_changes_okcancel).pack(side="right")
+        tk.Button(self.footer, text="Load from file", command=self.load_from_file).pack(side="left")
     
 
     def _frame_and_variables(self, config: ConfigRegistryMixin) -> FrameAndVariables | None:
@@ -79,6 +104,15 @@ class EditConfigs(BasicFrame):
         for tk_field, value in zip(tk_fields, field_values):
             variables[tk_field.name] = build_field_editor(tk_field, value, config_frame, self.button_kb_manager) 
         return FrameAndVariables(config_frame, variables)
+
+
+    def save_changes_okcancel(self):
+        proceed = messagebox.askokcancel(
+            title="Proceed with save changes?", 
+            message="New config values will overwrite values in use with no way to restore them")
+        if not proceed:
+            return
+        self._save_changes()
 
 
     def _save_changes(self, show_messagebox = True):
@@ -121,14 +155,29 @@ class EditConfigs(BasicFrame):
         '''
         try:
             preferences = {fieldname: json.loads(tkvar.get()) for fieldname, tkvar in self.preferences.items()}
-            load_preferences_from_dict(preferences)
-            save_preferences()
 
-            if C_app.DEFAULT_CONFIG != self._last_default_config_path:
+            if preferences['DEFAULT_CONFIG'] != self._last_default_config_path:
+                proceed = messagebox.askokcancel(
+                    title="Proceed with save preferences?", 
+                    message="Config values in use will be replaced by values from DEFAULT_CONFIG. " \
+                    "If the current config values work, make sure you save them to a file")
+                if not proceed:
+                    self.preferences['DEFAULT_CONFIG'].set(json.dumps(self._last_default_config_path))
+                    return
+                load_preferences_from_dict(preferences)
+                save_preferences()
                 self._last_default_config_path = C_app.DEFAULT_CONFIG
                 load_config(C_app.CONFIG_PATH)
-                self._reload_variables(show_messagebox=False)
-
+                self._reload_variables()
+            else:
+                proceed = messagebox.askokcancel(
+                    title="Proceed with save preferences?", 
+                    message="New preferences will overwrite the existing ones with no way to restore them")
+                if not proceed:
+                    return
+                load_preferences_from_dict(preferences)
+                save_preferences()
+            
             messagebox.showinfo(message="PREFERENCES SAVED")
 
         except (json.JSONDecodeError) as e:
@@ -150,7 +199,7 @@ class EditConfigs(BasicFrame):
         )
  
 
-    def _save_to_file(self):
+    def save_to_file(self):
         '''Update config registry and save to file of choice'''
         if self._save_changes(show_messagebox=False) is False:  # new config values were rejected
             return
@@ -173,7 +222,7 @@ class EditConfigs(BasicFrame):
             messagebox.showerror("UNUSUAL ERROR ON FILESAVE", str(e))
 
 
-    def _load_from_file(self):
+    def load_from_file(self):
         '''From file of choice load new config values and pass them to tk variables'''
         path_to_config = self._get_config_name("Load config from json file", save=False)
         if len(path_to_config) == 0:  # selection was cancelled
@@ -184,6 +233,8 @@ class EditConfigs(BasicFrame):
             self._reload_variables()
             self._last_used_path_to_config = path_to_config
 
+            messagebox.showinfo(message="LOAD of config values from file SUCCESSFUL")
+
         except CustomError as e:
             messagebox.showerror("ERROR ON CONFIG LOAD", str(e.original_e))
             print(e)  # for developers
@@ -193,7 +244,7 @@ class EditConfigs(BasicFrame):
             messagebox.showerror("UNUSUAL ERROR ON FILELOAD", str(e))
 
 
-    def _reload_variables(self, show_messagebox=True):
+    def _reload_variables(self):
         '''
         Iterate over tk variables across all the frames and set values from _config_register into them.
         Call AFTER _config_register is updated.
@@ -202,9 +253,16 @@ class EditConfigs(BasicFrame):
             for field, tkvar in fav.variables.items():
                 config = _get_from_registry(key)  # another exception to _get_from_registry use
                 tkvar.set(json.dumps(getattr(config, field)))
-        if show_messagebox:
-            messagebox.showinfo(message="LOAD SUCCESSFUL")
 
+
+    def discard_changes_okcancel(self):
+        proceed = messagebox.askokcancel(
+            title="Proceed with discard changes?", 
+            message="All config values will be restored to their previous values")
+        if not proceed:
+            return
+        self._reload_variables()
+        messagebox.showinfo(message="Config values RESTORED")
 
 
 if __name__ == "__main__":
