@@ -4,7 +4,11 @@ from typing import NamedTuple, Any
 from collections.abc import Callable
 
 class FrameAndVariables(NamedTuple):
-    '''Variables tightly coupled with a frame that contains them'''
+    '''
+    Variables tightly coupled with a frame that contains them
+    
+    *If no logic depends on it, do `variables={}` if Frames are more important.*
+    '''
     frame: tk.Frame
     variables: dict[str, tk.StringVar]  # maybe replace tk.StringVar with a (.get .set) Protocol for custom wrappers around tk widgets?
 
@@ -12,36 +16,46 @@ class FrameAndVariables(NamedTuple):
 def setup_switch_frame_controller(
         frame_and_variables_dict: dict[str, FrameAndVariables], 
         master: tk.Misc, 
-        callback_on_switched_frame: Callable[[tk.Frame], Any] | None = None, 
-        on_switch: Callable[[], Any] | None = None):
+        callback_on_switched_frame: Callable[[str, FrameAndVariables], Any] | None = None, 
+        on_switch: Callable[[], Any] | None = None
+    ):
     """
     Having multiple tk frames to switch between (coupled with tk variables within them), set up a controller: 
     display one frame at a time and switch between them using an option menu.
 
     Args:
-        frame_and_variables_dict: constructed beforehand, must have FrameAndVariables as values. 
-            If no logic depends on it, do `variables={}` if Frames are more important.
-        master: passed to option menu at creation.
-        callback_on_switched_frame: optional callable that is invoked after the frames are switched.
-            Can return Any and accepts one Frame `active_frame`.
-            This is an opportunity to have one orchestrator define `on_swith` 
-            that expects certain behavior from the frames being displayed,
-            and in turn have different behaviors where needed across frames in `frame_and_variables_dict`
-        on_switch: optional callable, invoked after the frame are switched.
+        frame_and_variables_dict:
+            Shall have keys that are unique string codes (usually classnames) for each frame,
+            and values that are FrameAndVariables constructed beforehand.
+
+        master: 
+            passed to option menu at creation for packing.
+
+        on_switch: 
+            optional callable, invoked after the frames are switched.
             Takes no arguments and returns Any.
+
+        callback_on_switched_frame: 
+            optional callable, invoked after the frames are switched.
+            Can return Any, must accept keyword arguments `active_name` and `active_fav`.
+            Will be invoked with the current key-value pair from `frame_and_variables_dict`, that is,
+            a name (usually classname of currently displayed frame) and corresponding FrameAndVariables.
+            This is an opportunity to have one orchestrator define `callback_on_switched_frame` 
+            that expects certain behavior from the frames being displayed,
+            and in turn have different behaviors where needed across frames inside `frame_and_variables_dict`
     """
     frame_names = list(frame_and_variables_dict.keys())
-    current_frame_name = frame_names[0]
+    current_frame_name = frame_names[0]  # keep track of which fav is displayed internally here
 
     # set up OptionMenu to switch between frames
     def switch_frame(name):
         nonlocal current_frame_name
         frame_and_variables_dict[current_frame_name].frame.pack_forget()
-        current_frame = frame_and_variables_dict[name].frame
-        current_frame.pack(fill="both", expand=True)
+        fav = frame_and_variables_dict[name]
+        fav.frame.pack(fill="both", expand=True)
         current_frame_name = name
         if callback_on_switched_frame is not None:
-            callback_on_switched_frame(current_frame)  # TODO WHAT IS THE NAME OF THIS DEPENDENCY INJECTION
+            callback_on_switched_frame(active_name=name, active_fav=fav)  # WHAT IS THE NAME OF THIS DEPENDENCY INJECTION
         if on_switch is not None:
             on_switch()
     option_menu_highlight = tk.Frame(master, background="white")
@@ -63,4 +77,7 @@ def setup_switch_frame_controller(
 
     frame_and_variables_dict[current_frame_name].frame.pack(fill="both", expand=True)
     if callback_on_switched_frame is not None:
-        callback_on_switched_frame(frame_and_variables_dict[current_frame_name].frame)
+        callback_on_switched_frame(active_name=current_frame_name, active_fav=frame_and_variables_dict[current_frame_name])
+    if on_switch is not None:
+        on_switch()
+    

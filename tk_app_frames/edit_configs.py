@@ -43,12 +43,15 @@ class EditConfigs(BasicFrame):
         preferences_fav = {"Preferences": self._frame_and_variables(C_app)}
         self.preferences = preferences_fav["Preferences"].variables
         setup_switch_frame_controller(
-            {**preferences_fav, **self.configs}, # patch the dict to make configs and preferences share the switch...controller
-            self.body, 
+            frame_and_variables_dict={**preferences_fav, **self.configs}, # patch the dict to make configs and preferences share the switch...controller
+            master=self.body, 
             # make sure that 
-            # - window resizes on switching the inner frames
+            # - window resizes on switching the inner frames (works because parent BasicFrame provides custom_req... picked up by update_root_geometry)
             # - if a button listens to the keyboard, it stops on config switch
-            on_switch = lambda : (controller.update_root_geometry(self), keypress_publisher.on_cancel())
+            on_switch = lambda : (
+                controller.update_root_geometry(active_fav=FrameAndVariables(self, {})), 
+                keypress_publisher.on_cancel()
+            )
         )
 
         self._last_default_config_path = C_app.DEFAULT_CONFIG

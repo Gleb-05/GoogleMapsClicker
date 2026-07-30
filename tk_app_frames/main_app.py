@@ -14,6 +14,8 @@ class MainApp(tk.Tk):
     MAX_HEIGHT = 555
     MAX_WIDTH = 555
 
+    FRAMES = (GetAreaImg, EditConfigs)
+
     def __init__(self, *args, **kwargs):
         load_preferences_once()
         tk.Tk.__init__(self, *args, **kwargs)
@@ -33,7 +35,7 @@ class MainApp(tk.Tk):
         self.switch_container.pack(side="top", fill="both", expand=True)
 
         frames = {}
-        for F in (GetAreaImg, EditConfigs):
+        for F in self.FRAMES:
             page_name = F.__name__
             frame = F(master=self.switch_container, controller=self)
             frames[page_name] = FrameAndVariables(frame, {})
@@ -41,21 +43,25 @@ class MainApp(tk.Tk):
         setup_switch_frame_controller(frames, switch_controller_frame, self.update_root_geometry)
 
 
-    def update_root_geometry(self, active_frame: tk.Frame):
+    def update_root_geometry(self, active_fav: FrameAndVariables, active_name: str = ""):
         '''
         Function provided as callback for `setup_switch_frame_controller`.
         
         After mainapp contents are updated, resize to fit active frame.
-        If `active_frame` provides `custom_reqwidth` and `custom_reqheight` - use them.
+        If `active_frame` provides `custom_reqwidth` and `custom_reqheight` - use them (see example in BasicFrame).
         Otherwise, use `winfo_reqwidth` and `winfo_reqheight`.
         '''
         self.update_idletasks()
-
-        magic_height = 70  # that much is taken by controller frame and i am too tired to check
+        active_frame = active_fav.frame
 
         if hasattr(active_frame, "custom_reqwidth") and hasattr(active_frame, "custom_reqheight"):
+            # custom_reqheight will generally compensate for canvas or other elements
+            # that don't take part in tk reqheight calculations.
+            mainapp_height = self.winfo_reqheight() - active_frame.winfo_reqheight()
+            height = min(mainapp_height + active_frame.custom_reqheight(), MainApp.MAX_HEIGHT)
+            # the app is constructed by packing frames vertically. mainapp is defined by its contents.
+            # for that reason, mainapp_width is expected to always be 0. Other values would be a bug.
             width = min(active_frame.custom_reqwidth(), MainApp.MAX_WIDTH)
-            height = min(magic_height + active_frame.custom_reqheight(), MainApp.MAX_HEIGHT)
         else:
             width = min(self.winfo_reqwidth(), MainApp.MAX_WIDTH)
             height = min(self.winfo_reqheight(), MainApp.MAX_HEIGHT)
