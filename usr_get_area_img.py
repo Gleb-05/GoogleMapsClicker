@@ -233,6 +233,9 @@ def get_dd_rect_img_extended(
     
     t_start = time.perf_counter()
 
+
+    leftup_yx_dd = leftup_yx_dd.replace(" ", "")
+    rightdown_yx_dd = leftup_yx_dd.replace(" ", "")
     lu_y, lu_x = yx_dd_str_to_float(leftup_yx_dd)
     rd_y, rd_x = yx_dd_str_to_float(rightdown_yx_dd)
     w = rd_x - lu_x
