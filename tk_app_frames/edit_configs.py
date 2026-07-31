@@ -159,8 +159,8 @@ class EditConfigs(BasicFrame):
             if preferences['DEFAULT_CONFIG'] != self._last_default_config_path:
                 proceed = messagebox.askokcancel(
                     title="Proceed with save preferences?", 
-                    message="Config values in use will be replaced by values from DEFAULT_CONFIG. " \
-                    "If the current config values work, make sure you save them to a file")
+                    message="Config values in use will be replaced by values from DEFAULT_CONFIG.\n" \
+                    "If the current config values work, make sure you save them to a file before saving preferences")
                 if not proceed:
                     self.preferences['DEFAULT_CONFIG'].set(json.dumps(self._last_default_config_path))
                     return

@@ -156,8 +156,8 @@ class ButtonKeyboardManager():
             finally:
                 if err is not None:
                     # messagebox has to be before toplevel.after, otherwise one of them doesnt appear
-                    messagebox.showwarning(**msgbox_kwargs)
-                toplevel.after(10, toplevel.deiconify)  # in case of `hide_app_on_proceed is True`
+                    toplevel.after(0, lambda: messagebox.showwarning(**msgbox_kwargs))
+                toplevel.after(100, toplevel.deiconify)  # in case of `hide_app_on_proceed is True`
         def inner():
             self.master.after(0, safe_f)
         return inner
@@ -210,6 +210,7 @@ class ButtonKeyboardManager():
             def proceed():
                 if hide_app_on_proceed:
                     toplevel.withdraw()
+                    toplevel.update_idletasks()
                     toplevel.iconify()  # steals focus without the withdraw
                     toplevel.update()
                 

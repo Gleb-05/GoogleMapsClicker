@@ -1,11 +1,13 @@
-from dataclasses import dataclass, field
+import os
 import time
 import math
+from dataclasses import dataclass, field
 from enum import IntEnum
 import pyautogui
 from PIL import Image
 import numpy as np
 
+from constants import ROOT_DIR
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 # from gui.layers import map_toggle_sat_labels
@@ -261,11 +263,14 @@ def get_dd_rect_img_extended(
 
     final_img = construct_region(r_width, r_height)
 
-    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(
+    img_filename = (
         f"region_{leftup_yx_dd}_{rightdown_yx_dd}_" +
         f"{'sat' if satellite else 'map'}_" +
         time.strftime(r'%d.%m.%Y_%H.%M.%S') +
-        ".png")
+        ".png"
+    )
+    img_path = os.path.join(ROOT_DIR, img_filename)
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(img_path)
 
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
@@ -298,8 +303,9 @@ def get_dd_rect_img(
     ):
     '''
     Return an image that shows a rectangular region of the map.
-    `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region.
-    Both arguments should be a string defining a comma-separated pair of decimal degree coordinates.
+    `leftup_yx_dd` and `rightdown_yx_dd` define the corners of the region. 
+    Leftclicking on a map brings up a context menu from where coordinates of the corners can be copied into the app.
+    Both arguments then are a string defining a comma-separated pair of decimal degree coordinates.
 
     The image is constructed by combining entire areas visible on the screen at any given moment.
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
@@ -307,7 +313,7 @@ def get_dd_rect_img(
     Satellite imagery (mapview overlay still active) is used by default.
     Pass `satellite = False` to capture regular mapview.
     '''
-    get_dd_rect_img_extended(**locals(), use_const_area_dims_dd=False, satellite_hide_labels=False)
+    get_dd_rect_img_extended(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=False)
 
 
 
@@ -523,7 +529,6 @@ def iter_core_drag_displacements(r_width: int, r_height: int, do_drag_area: bool
     """
     # begin at reference area
     rel_x, rel_y = 0, 0
-    print("iter core drag disp", r_width, r_height)
     assert r_width==1 or r_height==1, "iter_core_drag_displacements expects at least one of r_width or r_height to equal 1"
     assert r_width>=1 and r_height>=1, "iter_core_drag_displacements expects both argument to be equal or greater than 1"
     yield rel_x, rel_y

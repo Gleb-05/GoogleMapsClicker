@@ -1,5 +1,4 @@
 import tkinter as tk
-import pyautogui
 from tk_app_frames.basic_frame import BasicFrame
 
 from usr_get_area_img import get_dd_rect_img
@@ -11,10 +10,13 @@ from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboar
 
 # def throw_error():
 #     "calibrate tkmanager-kbpub relationship"
-#     raise ValueError("whatever")
+#     import time
+#     time.sleep(1)
+#     raise TimeoutError("whatever")
 
 # def long_func():
 #     "test pyautogui corner error"
+#     import pyautogui
 #     for _ in range(10):
 #         pyautogui.moveTo(20,20, duration=1)
 

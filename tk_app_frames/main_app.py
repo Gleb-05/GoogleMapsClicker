@@ -20,6 +20,7 @@ class MainApp(tk.Tk):
         load_preferences_once()
         tk.Tk.__init__(self, *args, **kwargs)
 
+        self.title("Google Maps Clicker")
         C_size.SCREEN_W = self.winfo_screenwidth()
         C_size.SCREEN_H = self.winfo_screenheight()
         self.minsize(300, 100)
