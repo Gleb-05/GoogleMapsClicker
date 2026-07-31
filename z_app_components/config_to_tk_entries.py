@@ -1,3 +1,4 @@
+import os
 import json
 import pyautogui
 from dataclasses import Field, field, dataclass, fields
@@ -6,7 +7,8 @@ from tkinter import messagebox
 from typing import ClassVar, Any
 from collections.abc import Callable
 
-from constants import ATTENTION_HIGHLIGHT
+from constants import ATTENTION_HIGHLIGHT, IMG_DIR
+from utils import show_image_modal
 from z_app_components.config_registry import LoadFromJsonMixin
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
@@ -161,9 +163,9 @@ def build_field_editor(
     tk.Frame(field_frame, height=2, background="gray").pack(fill=tk.X, expand=True)
 
     meta: ConfigTkMeta = config_field.metadata.get(ConfigTkMeta.KEY)
-    kw_label_make = {"master": field_frame, "wraplength": 400, "justify":"left"}
-    tk.Label(text=f"{config_field.name}\n{meta.doc}",   **kw_label_make).pack(anchor=tk.W)
 
+    _add_description_labels_with_tricky_overlay(field_frame, meta.doc, config_field.name, master)
+        
     entry_frame = tk.Frame(field_frame)
     entry_frame.pack(fill="x", expand=True)
 
@@ -177,7 +179,7 @@ def build_field_editor(
     # - recomputing
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
     if recompute_meta:
-        _process_recompute_meta(recompute_meta, config_field, entry_frame, variable, button_kb_manager, _set_feedback)
+        _add_recompute_entry(recompute_meta, config_field, entry_frame, variable, button_kb_manager, _set_feedback)
         return variable
 
     # - option selection
@@ -220,7 +222,49 @@ def _get_xy_read(xy_read: int | slice):
     return [x,y][xy_read]
 
 
-def _process_recompute_meta(
+def _add_description_labels_with_tricky_overlay(field_frame: tk.Misc, metadoc: str, config_field_name: str, master):
+    '''
+    To field_frame, pack a frame with two labels:
+    - description: holds `meta.doc`. Intentionally starts with a newline, leaving enough space for a one-line title.
+    - title: holds `config_field.name`. Binded leftclick to dispaly a hint image.
+
+    Both labels are placed (not packed) to enable overlay.
+    '''
+    title_frame = tk.Frame(field_frame)
+    title_frame.pack(anchor=tk.W)
+    kw_label_make = {"wraplength": 400, "justify":"left"}
+
+    description_label = tk.Label(title_frame, text=f"\n{metadoc}", **kw_label_make)
+    description_label.place(x=0,y=0)
+
+    name_label = tk.Label(title_frame, text=config_field_name, **kw_label_make)
+    name_label.place(x=0,y=0)
+
+    config_hint_img_path = os.path.join(IMG_DIR, "config_hints", f"{config_field_name}.png")
+
+    def enigma_on_bind(e: tk.Event):
+        '''
+        No idea why, but doing `.bind(<Button-1>...` inside the `if os.path.isfile(...)` doesnt work. 
+        And yet `enigma_on_bind` works...
+        '''
+        path = config_hint_img_path
+        if os.path.isfile(path):
+            caption = "Image shows where to look. Orange lines mark the target."
+            show_image_modal(master.winfo_toplevel(), config_hint_img_path, config_field_name, caption)
+
+    if os.path.isfile(config_hint_img_path):
+        name_label.configure(cursor="hand2", text=f"{config_field_name} 🔍")
+    
+    name_label.bind("<Button-1>", enigma_on_bind)
+
+    # Things below work, and yet the same things inside `if os.path...` dont???
+    # name_label.bind("<Enter>", lambda e: print("entered name"))
+    # name_label.bind("<Button-1>", lambda e: print("name clicked"))
+
+    title_frame.configure(width=description_label.winfo_reqwidth(), height=description_label.winfo_reqheight())
+
+
+def _add_recompute_entry(
         recompute_meta: ConfigRecomputeMeta, 
         config_field: Field, 
         entry_frame: tk.Frame, 

@@ -11,7 +11,9 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
 - Run `python run.py`.
 - Choose between `Get Area Img` and `Edit Configs`:
   - `Get Area Img` exposes a single function: `get_dd_rect_img`. It allows to compose large map regions.
+    - If you want to hault any GUI operation, quickly move your cursor to one of the screen corners.
   - `Edit Configs` allows to tailor the app to your needs. Mainly to different display sizes.
+    - config titles with a magnifying glass can be clicked to view their hint images
     - configs can be saved to files, and you can choose which config to use by default in preferences.
 
 See examples of using `get_dd_rect_img`.

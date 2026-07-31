@@ -2,7 +2,8 @@ import time
 import functools
 import pyautogui
 import pyperclip
-from PIL import ImageChops, Image
+from PIL import ImageChops, Image, ImageTk
+import tkinter as tk
 import numpy as np
 from pathlib import Path
 
@@ -160,3 +161,61 @@ def is_inside(path: str, directory: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def show_image_modal(master: tk.Misc, image_path: str, title: str = "Image", caption: str = ""):
+    '''
+    Spawns a modal window with a single image. Closes it in 30 seconds.
+
+    Args:
+        master: makes windows overlay correctly, used in `modal = tk.Toplevel(master)` and `modal.transient(master)`
+        image_path: which image to show
+        title: title of the modal window
+        caption: optional caption put before the image
+    '''
+    max_w, max_h = 400, 300
+
+    modal = tk.Toplevel(master)
+    modal.title(title)
+    modal.transient(master)
+    modal.grab_set()  # Make modal
+
+    # spawn the modal over the parent, not topleft screen corner
+    modal.geometry(f"+{master.winfo_rootx() + 5}+{master.winfo_rooty() + 10}")
+
+    _caption = tk.Label(modal, text=caption, justify="left")
+    _caption.pack(fill="x")
+
+    label = tk.Label(modal)
+    try:
+        image = Image.open(image_path)
+        scale = min(max_w / image.width, max_h / image.height)
+        new_size = (int(image.width * scale), int(image.height * scale))
+        image = image.resize(new_size, Image.Resampling.LANCZOS)
+        _caption.configure(wraplength=image.width)
+
+        photo = ImageTk.PhotoImage(image)
+        label.configure(image=photo)
+        label.image = photo  # a reference to prevent photo from being garbage collected on function end
+    except Exception as e:
+        label.configure(text=f"Couldn't load {image_path}")
+        print(e)  # for developers
+
+    label.pack(padx=10, pady=10)
+    
+    # safeguard agains indefinite waiting
+    
+    def timeout_close():
+        if modal.winfo_exists():
+            modal.destroy()
+
+    timer_id = modal.after(30_000, timeout_close)
+
+    def close():
+        modal.after_cancel(timer_id)
+        modal.destroy()
+
+    modal.protocol("WM_DELETE_WINDOW", close)
+
+    # Wait until closed
+    modal.wait_window()

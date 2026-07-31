@@ -5,6 +5,7 @@ import tkinter as tk
 import pyautogui
 import keyboard
 
+from utils import show_image_modal
 from gui.layers import map_toggle_sat_labels
 from test.test_usr_get_area_img import TestDragArea
 
@@ -29,6 +30,7 @@ class DebugFrame:
 
         self.steps = {
             "show_xy": self.show_xy,
+            "show_image_modal": lambda: show_image_modal(self.root, "img/place_linkbtn.png"),
             "center_on_search_result": lambda: center_on_search_result("48,2"),
             "get_area_dd_wh": get_area_dd_wh,
             "estimate_area_width_and_height_dd": estimate_area_width_and_height_dd,

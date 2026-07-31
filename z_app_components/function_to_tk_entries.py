@@ -16,7 +16,7 @@ def build_function_editor(
     ) -> list[tk.StringVar]:
     '''
     Using `inspect.signature(target_function)` to fetch a docstring and generate entries for its arguments, 
-    construct tk.Frame and pack it into `master`.
+    construct tk.Frame for a given function and pack it into `master`.
     Return a list of variables that correspond to `target_function` arguments to manage them from the main app.
     `button_kb_manager` is used for each function to support execution on keypress.
     '''
@@ -55,6 +55,23 @@ def build_function_editor(
             text=f"{argname} ({argvalue.annotation.__name__})", **{**kw_label_make, "master": entry_frame}
             ).pack(side=tk.LEFT,anchor=tk.W)
 
+    _add_execute_kb_button(field_frame, kwarg_stringvars, target_function, button_kb_manager, set_feedback)
+
+    return list(kwarg_stringvars.values())
+
+
+def _add_execute_kb_button(
+        field_frame: tk.Misc, 
+        kwarg_stringvars: dict[str, tk.StringVar], 
+        target_function: Callable, 
+        button_kb_manager: ButtonKeyboardManager,
+        set_feedback: Callable
+    ):
+    '''
+    Packs an 'execute' button into field_frame. The button:
+    listens to the keyboard, binds to execute target_function with values from kwarg_stringvars, binds to set_feedback if returns anything.
+    Also adds a 'howto' button nearby.
+    '''
     btn_txt = "execute"
     btn = tk.Button(field_frame, text=btn_txt)
     btn.pack(side=tk.BOTTOM, anchor=tk.CENTER, padx=5)
@@ -67,7 +84,8 @@ def build_function_editor(
             raise TargetFunctionError from e
         return target_function(**kwargs)
 
-    _set_feedback = None if f_signature.return_annotation is inspect.Signature.empty else set_feedback
+    f_return_annotation = inspect.signature(target_function).return_annotation
+    _set_feedback = None if f_return_annotation is inspect.Signature.empty else set_feedback
 
     button_command = button_kb_manager.build_command(btn, _target_function, _set_feedback, hide_app_on_proceed=True)
     btn.configure(command=button_command)
@@ -75,7 +93,5 @@ def build_function_editor(
     tk.Button(
         field_frame,
         text=" ? ",
-        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt))
+        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt) + '\n- If you wish to hault the operation, quickly move your cursor to one of the screen corners and wait for the `GUI automation haulted` message.')
         ).pack(side=tk.BOTTOM, anchor=tk.CENTER)
-
-    return list(kwarg_stringvars.values())
