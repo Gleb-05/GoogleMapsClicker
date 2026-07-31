@@ -98,6 +98,7 @@ def inspect_use_console(command: str):
         pyautogui.hotkey('ctrl','shift','j')  
         time.sleep(0.3)
     # successful `clear()` command should give a purely white region here
+    # TODO replace wait_for_screen_image with evaluating color uniformity of a region - more robust
     with wait_for_screen_image(INSPECT_CLEAR_SUCCESS_REGION, "img/inspect_clear_success.png"):
         py_paste("clear()")
         pyautogui.press('enter')

@@ -18,8 +18,8 @@ class KeypressPublisher():
     def btn_doc(cls, btn_txt, before_proceeding="complete preparations that the operation requires"):
         _doc = "For buttons saying '{}'," \
         "\n- press the button to initiate the operation and choose between proceeding and cancelling," \
-        "\n- to proceed, press Shift (or NumLk)" \
         "\n- before proceeding, {}" \
+        "\n- to proceed, press Shift (or NumLk)" \
         "\n- to cancel, press Esc."
         return _doc.format(btn_txt, before_proceeding)
     
@@ -29,26 +29,32 @@ class KeypressPublisher():
     def __init__(self):
         self.proceed : Callable[[], Any] | None = None
         self.cancel  : Callable[[], Any] | None = None
+        self.last_str_caller = ""
 
         for key in self.cancel_keys:
             keyboard.on_press_key(key, self._on_cancel)
         for key in self.proceed_keys:
             keyboard.on_press_key(key, self._on_proceed)
 
-    def update_callbacks(self, proceed : Callable[[], Any], cancel : Callable[[], Any]):
+    def update_callbacks(self, proceed : Callable[[], Any], cancel : Callable[[], Any], str_caller : str):
         '''
         Provide two callbacks for KeypressPublisher to execute when either cancelling or proceeding keys are pressed.
+        Also pass `str(caller)`. It is used as a unique identifier to guard against back-to-back `update_callback` invocations.
         After execution, the hooks will be cleared, so the callbacks work only once.
         '''
+        if str_caller == self.last_str_caller:
+            return  # if the same obj asked to update the callbacks - ignore
         if self.cancel is not None:
-            self.cancel()
+            self.cancel()  # if some obj was already waiting for a key - invoke its `cancel` before replacing
         self.proceed = proceed
         self.cancel = cancel
+        self.last_str_caller = str_caller
 
     def _clear(self):
         '''Clear the hooks after any key press (the callbacks shall work only once)'''
         self.proceed = None
         self.cancel = None
+        self.last_str_caller = ""
 
     def _on_proceed(self, _ : keyboard.KeyboardEvent):
         '''Execute current `proceed` callback and clear the hooks.'''
@@ -199,33 +205,32 @@ class ButtonKeyboardManager():
         bg = button["bg"]
         toplevel = self.master.winfo_toplevel()
 
+        @self.tk_after
+        def cancel():
+            button.configure(bg=bg)
+
+        @self.tk_after
+        def proceed():
+            if hide_app_on_proceed:
+                toplevel.withdraw()
+                toplevel.update_idletasks()
+                toplevel.iconify()  # steals focus without the withdraw
+                toplevel.update()
+            
+            button.configure(bg=bg)
+            _s = time.perf_counter()
+            try:
+                value = target_function()
+            except TargetFunctionError:
+                return
+            _e = time.perf_counter() - _s
+            if _e > ButtonKeyboardManager.long_operation_time_sec:
+                messagebox.showinfo("Executing function", "Operation finished")  # UX for longer operations
+            if set_feedback is not None:
+                set_feedback(value)
+
         def button_command():
             button.configure(bg=ATTENTION_HIGHLIGHT)
-
-            @self.tk_after
-            def cancel():
-                button.configure(bg=bg)
-            
-            @self.tk_after
-            def proceed():
-                if hide_app_on_proceed:
-                    toplevel.withdraw()
-                    toplevel.update_idletasks()
-                    toplevel.iconify()  # steals focus without the withdraw
-                    toplevel.update()
-                
-                button.configure(bg=bg)
-                _s = time.perf_counter()
-                try:
-                    value = target_function()
-                except TargetFunctionError:
-                    return
-                _e = time.perf_counter() - _s
-                if _e > ButtonKeyboardManager.long_operation_time_sec:
-                    messagebox.showinfo("Executing function", "Operation finished")  # UX for longer operations
-                if set_feedback is not None:
-                    set_feedback(value)
-            
-            self.kb_publisher.update_callbacks(proceed, cancel)
+            self.kb_publisher.update_callbacks(proceed, cancel, str(button))
 
         return button_command

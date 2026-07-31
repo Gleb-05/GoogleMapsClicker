@@ -93,5 +93,5 @@ def _add_execute_kb_button(
     tk.Button(
         field_frame,
         text=" ? ",
-        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt) + '\n- If you wish to hault the operation, quickly move your cursor to one of the screen corners and wait for the `GUI automation haulted` message.')
+        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt) + '\n\nIf you wish to hault the operation, quickly move your cursor to one of the screen corners and wait for the `GUI automation haulted` message.')
         ).pack(side=tk.BOTTOM, anchor=tk.CENTER)
