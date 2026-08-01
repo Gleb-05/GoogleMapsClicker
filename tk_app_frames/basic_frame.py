@@ -43,8 +43,22 @@ class BasicFrame(tk.Frame):
         self._vsb = vsb  # crutch needed for update_root_geometry
 
         body_frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
-        return middle_frame, body_frame
 
+        # https://stackoverflow.com/questions/17355902/tkinter-binding-mousewheel-to-scrollbar
+        def on_mousewheel(event: tk.Event):
+            units = 0
+            if event.num == 5 or event.delta == -120:
+                units = 1  # 1 scrolls down
+            if event.num == 4 or event.delta == 120:
+                units = -1 # -1 scrolls up
+            canvas.yview_scroll(units, "units")
+
+        body_frame.bind('<Enter>', lambda event, canvas=canvas: 
+                        canvas.bind_all("<MouseWheel>", on_mousewheel))
+        body_frame.bind('<Leave>', lambda event, canvas=canvas: 
+                        canvas.unbind_all("<MouseWheel>"))
+
+        return middle_frame, body_frame
 
     def custom_reqwidth(self):
         width = (
