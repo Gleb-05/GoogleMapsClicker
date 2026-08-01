@@ -13,6 +13,7 @@ class KeypressPublisher():
     "proceeding": "shift", "right shift", "left shift", "num lock"
 
     For example, reading cursor coordinates requires something beyond button press or mouse click.
+    One instance of this class shall control all keyboard driven events of the app (singleton style).
     '''
 
     @classmethod
