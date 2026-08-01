@@ -30,6 +30,8 @@ Minimize the app before pressing proceed keys at your own discretion. The app wi
 
 Consider that all entries operate on a json representation of the values they store. That is, the app exposes all pure values to the user through `json.dumps` and extracts pure values from the interface through `json.loads`. Inernally, get and set of a given entry is manually *jsonified* (`entry.set(json.dumps(value))` and, as inverse, `value = json.loads(entry.get())`). The only exception is [tk.StringVar](z_app_components/JsonStringVar.py), made for better UX.
 
+The largest region yet (REGION_2 in usr_get_area_img Config) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 1.4 Gigabytes of memory and about half an hour to compose. It covers about 250 square kilometers, which seems like more than enough for research purposes. But be mindful of how heavy the resulting images are and how much time they take.
+
 # Brief overview of functionality
 
 general-purpose:
@@ -59,6 +61,11 @@ Interesting:
   - Only one operation will be executed if a "proceed" key is pressed, regardless of how many buttons were pressed.
 
 More can be found in docstrings and `.md` files
+
+# TODOs
+
+- Incremental coverage of large regions, with ability to choose starting areas using tqdm indexing and logging?
+- Read sets of region-defining decimal degree coordinates from a text file, estimate memory-time, begin execution after user confirmation?
 
 # Problem overview
 

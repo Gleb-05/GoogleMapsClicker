@@ -47,9 +47,8 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
 
-    # TODO also consider using xy_read = [(1,0),(0,1),(1,0),(0,1)] 
-    # pros: less space to define user behavior in configs (right now one action - one coordinate)
-    # cons: needs a custom widget that combines multiple int entries.
+    # TODO consider integrating toggling the fullscreen into `get_dd_rect_image` to cover more area at a time?
+    # 4 config values below would change then
 
     AREA_LEFTUP_X : int = field(
         default = 110,
@@ -79,6 +78,10 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
             xy_read=ConfigTkMeta.READ_Y
         )}
     )
+
+    # Maybe consider using xy_read = [(1,0),(0,1),(1,0),(0,1)] for coupled fields like above.
+    # pros: less space to define user behavior in configs (right now one action - one coordinate)
+    # cons: less clarity, needs a custom widget that combines multiple int entries.
 
     @property
     def AREA_WIDTH(self) -> int:
@@ -188,6 +191,8 @@ def construct_region(r_width: int = 1, r_height: int = 1):
         # - do NOT implement dragging in "strips"
     
     final_img = np.zeros(((1+2*r_height)*C.AREA_HEIGHT, (1+2*r_width)*C.AREA_WIDTH, 3), dtype=np.uint8)
+    # import sys
+    # print(sys.getsizeof(final_img))
     for x,y in iter_drag_displacements(r_width, r_height):
         area = np.asarray(pyautogui.screenshot(region=C.AREA_REGION), dtype=np.uint8)
         x0, y0 = x*C.AREA_WIDTH, y*C.AREA_HEIGHT
@@ -227,22 +232,14 @@ def get_dd_rect_img_extended(
     If `satellite` is False, a regular mapview is used. Satellite imagery (mapview overlay still active) is used if `satellite` is True.
     """
     # TODO i have no idea why, but google maps now often freezes,
-    # switching the tab forward and back seems to break the freeze.
+    # switching the tab forward and back (tab juggling) seems to break the freeze.
     tab_new()
     tab_switch(to_left=True)
     
     t_start = time.perf_counter()
 
+    w, h, cx, cy = _wh_and_center_xy_from_corners(leftup_yx_dd, rightdown_yx_dd)
 
-    leftup_yx_dd = leftup_yx_dd.replace(" ", "")
-    rightdown_yx_dd = leftup_yx_dd.replace(" ", "")
-    lu_y, lu_x = yx_dd_str_to_float(leftup_yx_dd)
-    rd_y, rd_x = yx_dd_str_to_float(rightdown_yx_dd)
-    w = rd_x - lu_x
-    h = rd_y - lu_y
-
-    cx = lu_x+w/2
-    cy = lu_y+h/2
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
     if satellite_hide_labels:
         # map_toggle_sat_labels()
@@ -258,7 +255,7 @@ def get_dd_rect_img_extended(
     r_width, r_height = estimate_r_width_and_r_heigth((w,h), (area_width_dd, area_height_dd))
     print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*C.AREA_TIME_SEC/60:.2f}m")
     
-    # TODO tab juggling
+    # TODO research and fix tab juggling
     tab_switch()
     # on tab_switch the 'sidepanel' label shows up. simple click solves the issue
     tab_switch(to_left=True)
@@ -278,11 +275,23 @@ def get_dd_rect_img_extended(
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
 
-    # TODO tab juggling
+    # TODO research and fix tab juggling
     tab_switch()
     tab_close()
 
     return final_img
+
+
+def _wh_and_center_xy_from_corners(leftup_yx_dd: str, rightdown_yx_dd: str, ):
+    leftup_yx_dd = leftup_yx_dd.replace(" ", "")
+    rightdown_yx_dd = rightdown_yx_dd.replace(" ", "")  # i'm buggin fr
+    lu_y, lu_x = yx_dd_str_to_float(leftup_yx_dd)
+    rd_y, rd_x = yx_dd_str_to_float(rightdown_yx_dd)
+    w = rd_x - lu_x
+    h = rd_y - lu_y
+    cx = lu_x+w/2
+    cy = lu_y+h/2
+    return w, h, cx, cy
 
 
 def estimate_r_width_and_r_heigth(region_wh_dd : tuple[float,float], area_wh_dd: tuple[float,float]) -> tuple[int,int]:
