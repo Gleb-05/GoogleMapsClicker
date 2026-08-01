@@ -158,15 +158,19 @@ def build_field_editor(
     This approach allows to greatly simplify widget selection, effectively converging it to tk.StringVar.
     Which can be linked to an Entry or an OptionMenu.
     '''
+    # A frame to hold everything
     field_frame = tk.Frame(master)
     field_frame.pack(fill=tk.X, expand=True, padx=10, pady=15)
 
-    tk.Frame(field_frame, height=2, background="gray").pack(fill=tk.X, expand=True)
+    # Gray separator
+    tk.Frame(field_frame, height=2, background="gray").pack(fill=tk.X, expand=True)  
 
     meta: ConfigTkMeta = config_field.metadata.get(ConfigTkMeta.KEY)
 
+    # Title, description
     _add_description_labels_with_tricky_overlay(field_frame, meta.doc, config_field.name, master)
-        
+
+    # A frame to hold everything related to an entry, horizontally
     entry_frame = tk.Frame(field_frame)
     entry_frame.pack(fill="x", expand=True)
 
@@ -175,7 +179,7 @@ def build_field_editor(
     def _set_feedback(value):
         variable.set(json.dumps(value))
 
-    # Choose:
+    # Choose entry:
 
     # - recomputing
     recompute_meta : ConfigRecomputeMeta | None = config_field.metadata.get(ConfigRecomputeMeta.KEY, None)
@@ -314,4 +318,3 @@ def _add_recompute_entry(
         text=" ? ",
         command=lambda: messagebox.showinfo("Keyboard control after button press", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
     ).pack(side=tk.LEFT, anchor=tk.W)
-
