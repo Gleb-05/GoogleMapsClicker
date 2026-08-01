@@ -20,7 +20,7 @@ import numpy as np
 from constants import ROOT_DIR
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
-# from gui.layers import map_toggle_sat_labels
+from gui.layers import map_toggle_sat_labels
 from utils import tab_switch, tab_new, tab_close
 from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
@@ -252,9 +252,7 @@ def get_dd_rect_img_extended(
 
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
     if satellite_hide_labels:
-        # map_toggle_sat_labels()
-        # TODO enable later - for now disabled to simplify config by omitting inspect console interactions
-        pass
+        map_toggle_sat_labels()
 
     if use_const_area_dims_dd:
         area_width_dd, area_height_dd = C.AREA_WIDTH_AND_HEIGHT_DD
@@ -332,10 +330,10 @@ def get_dd_rect_img(
     The image is constructed by combining entire areas visible on the screen at any given moment.
     For that reason, `leftup_dd` and `rightdown_dd` can be approximate.
     
-    Satellite imagery (mapview overlay still active) is used by default.
+    Satellite imagery (labels hidden) is used by default.
     Pass `satellite = False` to capture regular mapview.
     '''
-    get_dd_rect_img_extended(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=False)
+    get_dd_rect_img_extended(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=True)
 
 
 

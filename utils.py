@@ -95,6 +95,17 @@ def is_no_change(img1, img2, threshold = 0.05, save_diff_img = False):
     Return `True` if mean of absolute pixel differences between images is lover than threshold.
 
     Pass save_diff_img to save an array of absolute pixel differences in its own image.
+
+    Example use:
+    ```
+    while True:
+        before = pyautogui.screenshot(region=region)
+        # something is done
+        current = pyautogui.screenshot(region=region)
+        if is_no_change(current, before):
+            time.sleep(0.3)
+            break
+    ```
     """
     arr1 = np.array(img1).astype(np.int16)
     arr2 = np.array(img2).astype(np.int16)
@@ -113,7 +124,7 @@ def py_reload(sleep_s: int = 5):
 
 
 def py_paste(text):
-    """Util to paste text instead of typing (typing may fail if current locale is different from target language)"""
+    """Paste text instead of typing (typing may fail if current locale is different from target language)"""
     pyperclip.copy(text)
     time.sleep(0.01)
     pyautogui.hotkey('ctrl', 'v')

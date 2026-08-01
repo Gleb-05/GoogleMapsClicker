@@ -16,14 +16,16 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
     - config titles with a magnifying glass can be clicked to view their hint images
     - configs can be saved to files, and you can choose which config to use by default in preferences.
 
-See examples of using `get_dd_rect_img`.
+See examples of using `get_dd_rect_img` (dd = decimal degrees).
 In [`map_regions`](./map_regions) both map and sat view of Beynes France can be found.
 
 *During active development, use `python -m tk_app_frames.debug` to check things out quickly.*
 
 ## Disclaimers
 
-DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES TO CHANGE THEM
+DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES (and illustrations) TO CHANGE THEM
+
+dd = decimal degrees
 
 Consider that the app is intentionally top-level, meaning it won't disappear when you click outside it. Minimize by hand when needed.
 

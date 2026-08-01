@@ -3,6 +3,7 @@ import pyautogui
 import pyperclip
 
 from utils import py_paste
+from z_app_components.config_app import C_app
 from gui.contextmenu import contextmenu_click_option
 from wait_contexts import wait_for_screen_change, wait_for_screen_image, wait_for_animation_end
 
@@ -89,25 +90,29 @@ def inspect_use_console(command: str):
     By utilizing the console, many gui-specific actions can be successfully omitted, 
     and with that many constant become unnecessary to create! Which raises compatibility with different resolution devices.
     """
-    _x = 504  # fullscreen_x_correction
-    INSPECT_CLEAR_SUCCESS_REGION = (_x+482-5, 202-2, 70+10, 20+5)
-    INSPECT_CONSOLE_OUTPUT_XY=_x+490,230
+    # get rid of all the constants let's gooo
+    # _x = 504  # fullscreen_x_correction
+    # INSPECT_CLEAR_SUCCESS_REGION = (_x+482-5, 202-2, 70+10, 20+5)  # waiting for console clear on entire screen
+    # INSPECT_CONSOLE_OUTPUT_XY=_x+490,230  # waiting for output on entire screen
     
     # open console
-    with wait_for_animation_end(region=None):
-        pyautogui.hotkey('ctrl','shift','j')  
-        time.sleep(0.3)
-    # successful `clear()` command should give a purely white region here
-    # TODO replace wait_for_screen_image with evaluating color uniformity of a region - more robust
-    with wait_for_screen_image(INSPECT_CLEAR_SUCCESS_REGION, "img/inspect_clear_success.png"):
+    if not C_app.DEVPANEL_OPEN:
+        # why interval=1? One console warning takes some sweet time to show up: The service worker navigation preload request was cancelled before 'preloadResponse' settled. If you intend to use 'preloadResponse', use waitUntil() or respondWith() to wait for the promise to settle.
+        with wait_for_animation_end(region=None, interval=1):
+            pyautogui.hotkey('ctrl','shift','j')  
+            C_app.DEVPANEL_OPEN = not C_app.DEVPANEL_OPEN  # linked to ctrl+shift+j and ctrl+shift+i. move this relationship to util function?
+            time.sleep(0.3)
+    # wait until console is clear
+    with wait_for_animation_end(region=None, interval=0.3):
         py_paste("clear()")
         pyautogui.press('enter')
+    # execute command
     py_paste(command)
-    inspect_console_output_region = *INSPECT_CONSOLE_OUTPUT_XY, 20, 20
-    with wait_for_screen_change(inspect_console_output_region):
+    with wait_for_screen_change(region=None, interval=0.3):
         pyautogui.press('enter')
     time.sleep(0.1)
     # close console
     with wait_for_animation_end(region=None):
         pyautogui.hotkey('ctrl','shift','j')  
+        C_app.DEVPANEL_OPEN = not C_app.DEVPANEL_OPEN
         time.sleep(0.3)

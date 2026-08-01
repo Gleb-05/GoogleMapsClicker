@@ -23,6 +23,7 @@ class MainApp(tk.Tk):
         self.title("Google Maps Clicker")
         C_size.SCREEN_W = self.winfo_screenwidth()
         C_size.SCREEN_H = self.winfo_screenheight()
+        self.geometry("+{}+{}".format(C_size.SCREEN_W - self.MAX_WIDTH - 50, 50))
         self.minsize(300, 100)
         self.attributes("-topmost", True)
         self.resizable(False, True)

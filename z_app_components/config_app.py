@@ -11,7 +11,7 @@ from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeM
 
 @dataclass
 class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
-    "Configurations that impact the whole app"
+    "Configurations and states that impact the whole app"
     RECOMPUTE_FUNCTIONS = {}
 
     LANG : str = field(
@@ -39,6 +39,10 @@ class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
     def CONFIG_PATH(self) -> str:
         '''USR_CONFIGS_DIR / DEFAULT_CONFIG'''
         return os.path.join(USR_CONFIGS_DIR, self.DEFAULT_CONFIG)
+
+    # there are states to keep track of in order to choose which state-changing functions to execute
+    DEVPANEL_OPEN = False
+    '''Remember whether chrome devtools panel is open. Used for Inspect (ctrl shift i) and Console (ctrl shift j)'''
 
 C_app = Config()
 '''Preferences'''
