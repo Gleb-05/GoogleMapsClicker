@@ -1,3 +1,8 @@
+"""
+Expose one useful and stable function `get_dd_rect_img` to the user.
+Part of the main app.
+"""
+
 import tkinter as tk
 from tk_app_frames.basic_frame import BasicFrame
 
@@ -49,9 +54,3 @@ class GetAreaImg(BasicFrame):
 
         for target_function in FUNCTIONS:
             build_function_editor(target_function, self.body, self.button_manager, set_feedback)
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = GetAreaImg(root, None)
-    root.mainloop()

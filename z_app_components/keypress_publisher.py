@@ -8,6 +8,7 @@ class KeypressPublisher():
     '''
     Listen for "cancelling" and "proceeding" key presses with `keyboard.hook` to execute 
     `proceed` and `cancel` callbacks. Those shall be set via the `update_callbacks` method.
+    Be careful, since keyboard callbacks execute in a separate thread, asynchronously.
 
     "cancelling": "esc" <br>
     "proceeding": "shift", "right shift", "left shift", "num lock"
@@ -144,7 +145,7 @@ class ButtonKeyboardManager():
 
 
     def tk_after(self, operation: Callable[[], Any]):
-        '''Decorator to make callbacks from `cancel` and `proceed` button commands'''
+        '''Decorator to make thread-safe callbacks from `cancel` and `proceed` button commands'''
         toplevel = self.master.winfo_toplevel()
         def safe_f():
             err = None
@@ -174,6 +175,8 @@ class ButtonKeyboardManager():
                 else:
                     toplevel.deiconify()  # in case of `hide_app_on_proceed is True`
         def inner():
+            # keyboard executes callbacks in a separate thread,
+            # so to make the operation belong to tk again, it has to be called with `.after`
             self.master.after(0, safe_f)
         return inner
 
@@ -223,7 +226,7 @@ class ButtonKeyboardManager():
             if hide_app_on_proceed:
                 toplevel.withdraw()
                 toplevel.update_idletasks()
-                toplevel.iconify()  # steals focus without the withdraw
+                toplevel.iconify()  # needs .withdraw, else doesnt give up focus
                 toplevel.update()
             
             button.configure(bg=bg)

@@ -1,3 +1,8 @@
+"""
+Cornerstone of user-configs interfacing.
+Part of the main app.
+"""
+
 import json
 import tkinter as tk
 from tkinter import messagebox
@@ -263,9 +268,3 @@ class EditConfigs(BasicFrame):
             return
         self._reload_variables()
         messagebox.showinfo(message="Config values RESTORED")
-
-
-if __name__ == "__main__":
-    tk_root = tk.Tk()
-    app = EditConfigs(tk_root, None)
-    tk_root.mainloop()

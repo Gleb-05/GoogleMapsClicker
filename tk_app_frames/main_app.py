@@ -67,8 +67,3 @@ class MainApp(tk.Tk):
             width = min(self.winfo_reqwidth(), MainApp.MAX_WIDTH)
             height = min(self.winfo_reqheight(), MainApp.MAX_HEIGHT)
         self.geometry(f"{width}x{height}")
-
-
-if __name__ == "__main__":
-    app = MainApp()
-    app.mainloop()

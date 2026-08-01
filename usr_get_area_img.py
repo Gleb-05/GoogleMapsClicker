@@ -1,3 +1,13 @@
+"""
+Make large high-resolution google maps images. 
+For that: 
+interact with google maps gui, 
+drag visible areas around in a pattern, 
+compose areas into one large map region.
+
+See `get_dd_rect_img_extended` - the main method of this file.
+"""
+
 import os
 import time
 import math

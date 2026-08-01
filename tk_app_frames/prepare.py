@@ -1,4 +1,10 @@
-import threading
+"""
+To be launched separately.
+Was created to run before extract_place_info to make coordinates of different gui elements 
+more consistent across app launches.
+Abandoned together with extract_place_info.
+"""
+
 import traceback
 import time
 import tkinter as tk
@@ -43,7 +49,7 @@ class PrepareFrame:
         self.debug_text.insert("1.0", "Debug text")
         self.debug_text.pack(expand=True)
 
-        threading.Thread(target=self.listen_hotkey, daemon=True).start()
+        self.listen_hotkey()
 
     def execute_selected_step(self):
         try:
@@ -56,8 +62,7 @@ class PrepareFrame:
 
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)
-        keyboard.add_hotkey("alt+f2", self.execute_selected_step)  # fallback option
-        keyboard.wait()  # Keep the thread alive
+        keyboard.add_hotkey("shift", self.execute_selected_step)  # fallback option
 
     def show_xy(self):
         x, y = pyautogui.position()

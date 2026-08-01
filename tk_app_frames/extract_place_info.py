@@ -2,10 +2,9 @@
 To be launched separately.
 Abandoned due to unstable behavior and too much dependency on image matching. 
 Should work without changes on 1366x768 display though.
-Maybe make it operational by switching from image matching to console manipulations (easily configurable).
+Maybe make it more robust and working by switching from image matching to console manipulations (easily configurable).
 """
 
-import threading
 import traceback
 import tkinter as tk
 import keyboard
@@ -17,7 +16,7 @@ from gui.scroll import total_scroll_down, scroll_to_next_card
 from usr_extract_place_info import process_search_queries, extract_place_info_safe
 
 
-class DebugFrame:
+class ExtractPlaceInfoFrame:
     """
     Combine pieces of functionality necessary to navigate the google maps page
     to extract information about multiple places.
@@ -27,7 +26,7 @@ class DebugFrame:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Prepare")
+        self.root.title("Extract place info")
         self.W, self.H = root.winfo_screenwidth(), root.winfo_screenheight()
         self.root.geometry("300x250+{}+{}".format(self.W-400, 100))
         self.root.attributes("-topmost", True)
@@ -42,8 +41,6 @@ class DebugFrame:
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
         tk.OptionMenu(root, self.step_var, *self.steps_names).pack(pady=10)
-
-
         
         instruction = "Press NumLk (or alt+f2) after moving your cursor to a suitable position."
         tk.Label(root, text=instruction, wraplength=300).pack(expand=True)
@@ -52,7 +49,7 @@ class DebugFrame:
         self.debug_text.insert("1.0", "Debug text")
         self.debug_text.pack(expand=True)
 
-        threading.Thread(target=self.listen_hotkey, daemon=True).start()
+        self.listen_hotkey()
 
     def execute_selected_step(self):
         try:
@@ -65,11 +62,10 @@ class DebugFrame:
 
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)
-        keyboard.add_hotkey("alt+f2", self.execute_selected_step)  # fallback option
-        keyboard.wait()  # Keep the thread alive
+        keyboard.add_hotkey("shift", self.execute_selected_step)  # fallback option
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = DebugFrame(root)
+    app = ExtractPlaceInfoFrame(root)
     root.mainloop()

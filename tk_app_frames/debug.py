@@ -1,4 +1,7 @@
-"launched separately during active development of new functionality"
+"""
+To be launched separately with `python -m tk_app_frames.debug` 
+during active development of new functionality.
+"""
 
 import traceback
 import tkinter as tk
@@ -24,7 +27,7 @@ class DebugFrame:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Prepare")
+        self.root.title("Debug")
         self.W, self.H = root.winfo_screenwidth(), root.winfo_screenheight()
         self.root.geometry("300x250+{}+{}".format(self.W-400, 100))
         self.root.attributes("-topmost", True)
@@ -75,7 +78,7 @@ class DebugFrame:
 
     def listen_hotkey(self):
         keyboard.add_hotkey("num lock", self.execute_selected_step)
-        keyboard.add_hotkey("alt+f2", self.execute_selected_step)  # fallback option
+        keyboard.add_hotkey("shift", self.execute_selected_step)  # fallback option
 
     def show_xy(self):
         x, y = pyautogui.position()

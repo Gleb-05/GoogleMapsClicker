@@ -1,3 +1,10 @@
+"""
+Abandoned due to unstable behavior and too much dependency on image matching. 
+Called in tk_app_frames/extract_place_info.
+
+See `extract_place_info` - the main method of this file.
+"""
+
 import time
 import csv
 import pyautogui
@@ -22,6 +29,25 @@ But for a new machine, the guesswork behind the constants is too large to also i
 Working with page elements through the console seems more reliable.
 This usr_ file shall be refactored accordingly.
 """
+
+
+def extract_place_info():
+    """
+    When place webpage is opened, get:
+    - place_name
+    - place_type
+    - place_pluscode
+    - place_link (google maps shortened link to the place)
+    """
+    # order matters:
+    # link doesnt scroll the page, pluscode does,
+    # and both name and type use inspect window and work slower
+    place_link = extract_place_link()
+    place_pluscode = extract_place_pluscode()
+    place_name = inspect_find_and_copy_first(C_place.PLACE_NAME_HTML)
+    place_type = inspect_find_and_copy_first(C_place.PLACE_TYPE_HTML)
+
+    return place_name, place_type, place_pluscode, place_link
 
 
 def process_search_queries():
@@ -83,25 +109,6 @@ def iter_search_results():
             if last_card:
                 break
             last_card = scroll_to_next_card()
-
-
-def extract_place_info():
-    """
-    When place webpage is opened, get:
-    - place_name
-    - place_type
-    - place_pluscode
-    - place_link (google maps shortened link to the place)
-    """
-    # order matters:
-    # link doesnt scroll the page, pluscode does,
-    # and both name and type use inspect window and work slower
-    place_link = extract_place_link()
-    place_pluscode = extract_place_pluscode()
-    place_name = inspect_find_and_copy_first(C_place.PLACE_NAME_HTML)
-    place_type = inspect_find_and_copy_first(C_place.PLACE_TYPE_HTML)
-
-    return place_name, place_type, place_pluscode, place_link
 
 
 def extract_place_link():

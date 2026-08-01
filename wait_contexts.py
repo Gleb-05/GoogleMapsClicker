@@ -65,7 +65,10 @@ def wait_for_animation_end(
         timeout : float = 10, 
         interval : float = 0.1, 
         timeout_msg="Animation took too long"):
-    """Wait until given pyautogui region stops changing between intervaled comparisons. Example: when does scroll end"""
+    """
+    Wait until given pyautogui region stops changing between intervaled comparisons. 
+    Example: when does scroll or page load end
+    """
     yield
     start = time.time()
     while True:
