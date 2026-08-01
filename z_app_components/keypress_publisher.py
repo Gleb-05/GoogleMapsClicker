@@ -1,6 +1,7 @@
 import keyboard
 from typing import Any, TypeVar
 from collections.abc import Callable
+from utils import print_err_trace
 
 
 class KeypressPublisher():
@@ -161,9 +162,16 @@ class ButtonKeyboardManager():
                 raise
             finally:
                 if err is not None:
-                    # messagebox has to be before toplevel.after, otherwise one of them doesnt appear
-                    toplevel.after(0, lambda: messagebox.showwarning(**msgbox_kwargs))
-                toplevel.after(100, toplevel.deiconify)  # in case of `hide_app_on_proceed is True`
+                    toplevel.after(0, lambda: (
+                        messagebox.showwarning(**msgbox_kwargs),
+                        toplevel.deiconify())
+                    )
+                    # Sometimes either messagebox or toplevel did not appear.
+                    # I rewrote this part multiple times, trying to make one show and the other deiconify without conflict.
+                    # Now they are together in toplevel.after, but the error might still occur.
+                    print_err_trace(err, "Error on operation wrapped in ButtonKeyboardManager.tk_after")
+                else:
+                    toplevel.deiconify()  # in case of `hide_app_on_proceed is True`
         def inner():
             self.master.after(0, safe_f)
         return inner
@@ -221,7 +229,8 @@ class ButtonKeyboardManager():
             _s = time.perf_counter()
             try:
                 value = target_function()
-            except TargetFunctionError:
+            except TargetFunctionError as e:
+                print_err_trace(e, "Target function error on 'proceed'")
                 return
             _e = time.perf_counter() - _s
             if _e > ButtonKeyboardManager.long_operation_time_sec:

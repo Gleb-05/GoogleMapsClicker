@@ -1,4 +1,5 @@
 import time
+import traceback
 import functools
 import pyautogui
 import pyperclip
@@ -6,6 +7,7 @@ from PIL import ImageChops, Image, ImageTk
 import tkinter as tk
 import numpy as np
 from pathlib import Path
+from constants import ATTENTION_HIGHLIGHT
 
 
 class CustomError(Exception):
@@ -24,6 +26,15 @@ class CustomError(Exception):
         ctx = ", ".join(f"{k}={v}" for k, v in self.context.items())
         return f"{type(self.original_e).__name__}: {self.original_e} ({ctx})"
 
+def print_err_trace(err: BaseException, message: str = "Expected error"):
+    '''
+    Prints `OK: {message}` and calls `traceback.print_exception`.
+    Useful on expected errors that are handled and do not raise.
+    '''
+    print('OK: ' + message)
+    for trace in traceback.format_exception(type(err), err, err.__traceback__):
+        for line in trace.split('\n')[:-1]:
+            print('  --' + line)
 
 def select_addressbar(hide_suggestions=True):
     """
@@ -163,7 +174,7 @@ def is_inside(path: str, directory: str) -> bool:
         return False
 
 
-def show_image_modal(master: tk.Misc, image_path: str, title: str = "Image", caption: str = ""):
+def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image", caption: str = ""):
     '''
     Spawns a modal window with a single image. Closes it in 30 seconds.
 
@@ -175,15 +186,19 @@ def show_image_modal(master: tk.Misc, image_path: str, title: str = "Image", cap
     '''
     max_w, max_h = 400, 300
 
-    modal = tk.Toplevel(master)
+    modal = tk.Toplevel(master, background=ATTENTION_HIGHLIGHT)
     modal.title(title)
     modal.transient(master)
     modal.grab_set()  # Make modal
+    modal.focus_set() # Black window title
 
-    # spawn the modal over the parent, not topleft screen corner
-    modal.geometry(f"+{master.winfo_rootx() + 5}+{master.winfo_rooty() + 10}")
+    # spawn the modal over the parent, not topleft screen corner. 
+    # crutch - rel values taken from main_app
+    x_rel = 3
+    y_rel = 70
+    modal.geometry(f"+{master.winfo_rootx() + x_rel}+{master.winfo_rooty() + y_rel}")
 
-    _caption = tk.Label(modal, text=caption, justify="left")
+    _caption = tk.Label(modal, text=caption, justify="left", background=ATTENTION_HIGHLIGHT)
     _caption.pack(fill="x")
 
     label = tk.Label(modal)
@@ -199,7 +214,7 @@ def show_image_modal(master: tk.Misc, image_path: str, title: str = "Image", cap
         label.image = photo  # a reference to prevent photo from being garbage collected on function end
     except Exception as e:
         label.configure(text=f"Couldn't load {image_path}")
-        print(e)  # for developers
+        print_err_trace(e)
 
     label.pack(padx=10, pady=10)
     

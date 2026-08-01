@@ -14,6 +14,11 @@ from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboar
 #     time.sleep(1)
 #     raise TimeoutError("whatever")
 
+# def throw_timeout():
+#     from wait_contexts import wait_for_screen_change
+#     with wait_for_screen_change((10,10,10,10), 3):
+#         pass
+
 # def long_func():
 #     "test pyautogui corner error"
 #     import pyautogui
@@ -21,9 +26,12 @@ from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboar
 #         pyautogui.moveTo(20,20, duration=1)
 
 class GetAreaImg(BasicFrame):
-    '''See and change individual fields of configs'''
+    '''Work with the google map to make images'''
+
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
+
+        FUNCTIONS = [get_dd_rect_img]
         
         tk.Frame(self.body, width=controller.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
@@ -39,9 +47,7 @@ class GetAreaImg(BasicFrame):
         keypress_publisher: KeypressPublisher = controller.keypress_publisher
         self.button_manager = ButtonKeyboardManager(self, keypress_publisher)
 
-        target_functions_list = [get_dd_rect_img]
-
-        for target_function in target_functions_list:
+        for target_function in FUNCTIONS:
             build_function_editor(target_function, self.body, self.button_manager, set_feedback)
 
 
