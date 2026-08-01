@@ -25,9 +25,10 @@ DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES T
 
 Consider that the app is intentionally top-level, meaning it won't disappear when you click outside it. Minimize by hand when needed.
 
-Consider that many buttons in the middle of the app (a frame with a grooved border) do not work immediately. After being clicked, they change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk). Minimize the app before pressing num lk at your own discretion. The app will minimize automatically if the button requires it internally.
+Consider that many buttons in the middle of the app (a frame with a grooved border) do not work immediately, because operations they execute require some preparation. After being clicked, buttons change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk) the User has to choose from. <br>
+Minimize the app before pressing proceed keys at your own discretion. The app will minimize automatically if the button requires it internally.
 
-Consider that all entries operate on a json representation of the values they store. Inernally, get and set of a given entry is *jsonified* (`value = json.loads(entry.get())` and `entry.set(json.dumps(value))`). For most entries, values can be provided as is without thinkin about the json. But, since strings require escape sequences that are difficult to replicate, entries with string values have an additional `jsonify` button nearby for convenience.
+Consider that all entries operate on a json representation of the values they store. That is, the app exposes all pure values to the user through `json.dumps` and extracts pure values from the interface through `json.loads`. Inernally, get and set of a given entry is manually *jsonified* (`entry.set(json.dumps(value))` and, as inverse, `value = json.loads(entry.get())`). The only exception is [tk.StringVar](z_app_components/JsonStringVar.py), made for better UX.
 
 # Brief overview of functionality
 
@@ -50,9 +51,12 @@ Interesting:
 - To decrease dependency on exact screen dimensions and positions of GUI elements within it, more and more functions rely on the console. Most buttons can be clicked from the console, most values can be extracted as attributes from the console.
 - A single config registry is created to manage config values used in methods all over the codebase.
   - Configs (say, for different displays) and preferences (shall be persisted) are differentiated, but can be changed through the same interface of `Edit Configs`.
-- Sometimes clicking or pressing a button is not enough. [`KeypressPublisher` and `ButtonKeyboardManager`](./z_app_components/keypress_publisher.py) work together to make sure that:
-  - Many buttons can safely wait for the key press.
-  - Only one action will be executed if a "proceed" key is pressed.
+- Sometimes mouse clicking or pressing a button is not enough. [`KeypressPublisher` and `ButtonKeyboardManager`](./z_app_components/keypress_publisher.py) work together to make sure that:
+  - User has the ability to choose an operation and do stuff before it's executed using special buttons.
+  - One button - one operation.
+  - After the button is pressed, it begins to wait for a key press.
+  - Many buttons can be configured to safely wait for the key press.
+  - Only one operation will be executed if a "proceed" key is pressed, regardless of how many buttons were pressed.
 
 More can be found in docstrings and `.md` files
 

@@ -6,7 +6,7 @@ from typing import Any
 from collections.abc import Callable
 
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager, TargetFunctionError
-from z_app_components.config_to_tk_entries import _add_jsonify_button
+from z_app_components.json_string_var import JsonStringVar
 
 def build_function_editor(
         target_function: Callable[..., Any], 
@@ -37,7 +37,12 @@ def build_function_editor(
         entry_frame = tk.Frame(field_frame)
         entry_frame.pack(fill="x", expand=True, pady=(0,5))
 
-        variable = tk.StringVar(value=json.dumps(argvalue.default) if argvalue.default is not inspect.Parameter.empty else None)
+        if argvalue.annotation is str:
+            variable = JsonStringVar()
+        else:
+            variable = tk.StringVar()
+
+        variable.set(json.dumps(argvalue.default) if argvalue.default is not inspect.Parameter.empty else json.dumps(""))
         kwarg_stringvars[argname] = variable
 
         if argvalue.annotation is bool:
@@ -47,9 +52,6 @@ def build_function_editor(
         else:
             entry = tk.Entry(entry_frame, textvariable=variable)
             entry.pack(side=tk.LEFT, anchor=tk.W)
-
-        if argvalue.annotation is str:
-            _add_jsonify_button(entry_frame, variable)
 
         tk.Label(
             text=f"{argname} ({argvalue.annotation.__name__})", **{**kw_label_make, "master": entry_frame}
@@ -93,5 +95,5 @@ def _add_execute_kb_button(
     tk.Button(
         field_frame,
         text=" ? ",
-        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt) + '\n\nIf you wish to hault the operation, quickly move your cursor to one of the screen corners and wait for the `GUI automation haulted` message.')
+        command=lambda: messagebox.showinfo("Keyboard control after button press", KeypressPublisher.btn_doc(btn_txt) + '\n\nIf you wish to hault the operation, quickly move your cursor to one of the screen corners and wait for the `GUI automation haulted` message.')
         ).pack(side=tk.BOTTOM, anchor=tk.CENTER)

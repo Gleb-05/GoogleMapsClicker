@@ -10,6 +10,7 @@ from collections.abc import Callable
 from constants import ATTENTION_HIGHLIGHT, IMG_DIR
 from utils import show_image_modal
 from z_app_components.config_registry import LoadFromJsonMixin
+from z_app_components.json_string_var import JsonStringVar
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
@@ -189,16 +190,18 @@ def build_field_editor(
         menu.pack(side=tk.LEFT, anchor=tk.S)
         return variable
 
+    # - string variable
+    if config_field.type is str:
+        variable = JsonStringVar()
+        entry = tk.Entry(entry_frame, textvariable=variable)
+        entry.pack(side=tk.LEFT, anchor=tk.S)
+        return variable
+
     # - regular entry
     entry = tk.Entry(entry_frame, textvariable=variable)
     entry.pack(side=tk.LEFT, anchor=tk.S)
 
-    # Augment:
-
-    # - jsonify button
-    if config_field.type is str:
-        _add_jsonify_button(entry_frame, variable)
-        return variable
+    # Augment regular entry:
 
     # - xy_read button
     if meta.xy_reading:
@@ -210,7 +213,7 @@ def build_field_editor(
         tk.Button(
             entry_frame,
             text=" ? ",
-            command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
+            command=lambda: messagebox.showinfo("Keyboard control after button press", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
             ).pack(side=tk.LEFT, anchor=tk.W)
         return variable
 
@@ -309,23 +312,6 @@ def _add_recompute_entry(
     tk.Button(
         entry_frame,
         text=" ? ",
-        command=lambda: messagebox.showinfo("HOWTO", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
+        command=lambda: messagebox.showinfo("Keyboard control after button press", KeypressPublisher.btn_doc(btn_txt, before_proceeding))
     ).pack(side=tk.LEFT, anchor=tk.W)
 
-
-def _add_jsonify_button(entry_frame: tk.Frame, variable: tk.StringVar):
-    tk.Button(
-        entry_frame,
-        text="jsonify",
-        command=lambda var=variable: var.set(json.dumps(var.get())),  # counter lambda's closure on variable
-        ).pack(side=tk.LEFT, anchor=tk.W, padx=5)
-    tk.Button(
-        entry_frame,
-        text=" ? ",
-        command=lambda: messagebox.showinfo(
-            "Jsonify string values", 
-            "For buttons saying 'jsonify':\n" \
-            "- Provide a string value to the entry next to the button.\n" \
-            "- Once satisfied with the value, click 'jsonify'\n" \
-            "The button will change contents of the entry. Providing a jsonified version of the string immediately is possible but less practical.")
-        ).pack(side=tk.LEFT, anchor=tk.W)

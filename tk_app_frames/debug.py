@@ -12,6 +12,7 @@ from test.test_usr_get_area_img import TestDragArea
 from gui.search import center_on_search_result
 from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img_extended, estimate_area_width_and_height_dd
 from gui.map import map_get_coords_at_cursor
+from z_app_components.json_string_var import JsonStringVar
 
 
 class DebugFrame:
@@ -51,6 +52,11 @@ class DebugFrame:
         
         instruction = "Press NumLk (or alt+f2) after moving your cursor to a suitable position."
         tk.Label(root, text=instruction, wraplength=300).pack(expand=True)
+
+        var = JsonStringVar()
+        entry = tk.Entry(root, textvariable=var)
+        entry.pack()
+        tk.Button(root, text="print entry", command=lambda: print(var.get())).pack()
         
         self.debug_text = tk.Text(root, width=300)
         self.debug_text.insert("1.0", "Debug text")
