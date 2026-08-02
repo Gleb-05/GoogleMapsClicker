@@ -100,6 +100,7 @@ def is_no_change(img1, img2, threshold = 0.05, save_diff_img = False):
 
     return mean_diff < threshold
 
+
 def distance_to_white(left_x, left_y, from_down, threshold=250):
     """
     For a vertical area starting at `left_x, left_y`, return relative distance to the first pixel with all channels greater than `threshold`.
@@ -120,6 +121,25 @@ def distance_to_white(left_x, left_y, from_down, threshold=250):
             return -y-1 if from_down else y+1
         
     return None
+
+
+def pad_bottom(main_arr: np.ndarray, pad_arr: np.ndarray):
+    """
+    Return `np.concatenate((main_arr, pad_arr), axis=0)`.
+    `pad_arr` is either horizontally repeated or cut off to fill the width of the bottom of `main_arr`.
+    """
+    if main_arr.ndim != 3 or pad_arr.ndim != 3:
+        raise ValueError("Both arrays must be 3D (height-width-color)")
+
+    target_width = main_arr.shape[1]
+    pad_width = pad_arr.shape[1]
+    if pad_width == 0:
+        raise ValueError("pad_arr must have non-zero width")
+
+    reps = (target_width + pad_width - 1) // pad_width  # 
+    adjusted_pad = np.tile(pad_arr, (1, reps, 1))[:, :target_width]
+
+    return np.concatenate((main_arr, adjusted_pad), axis=0)
 
 # endregion
 

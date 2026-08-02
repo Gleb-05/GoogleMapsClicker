@@ -1,4 +1,3 @@
-
 # get_area_img development
 
 ## iter_drag... methods
@@ -223,3 +222,32 @@ Finally, by using two regions, two upper and two lower bounds are obtained for b
 Let the distance from the point to `u1` be `u`, and from the point to `l1` be `l`. Then, solving for `u + l = (u1-l1); u / l = (u - (u1-u2)) / (l - (l2-l1))` will provide a solution. The point will be at `u1 - (u1-l1)*(u1-u2) / (u1-u2 + l2-l1)`.
 
 This concludes the cascade of functions that leads to `area_width_dd` and `area_height_dd` constants that will work almost anywhere in France.
+
+
+# Scale
+
+In case different devices have different distance-per-pixel covered, images are padded at the bottom with a scale seen in bottom right corner of google maps.
+
+In essence, the following code is used (see `construct_region`):
+
+```python
+import numpy as np
+from PIL import Image
+from utils import pad_bottom
+
+base_path = "base.png"
+pad_path = "pad.png"
+save_path = "final_img"
+
+# Image.MAX_IMAGE_PIXELS = 500_000_000  # CAREFUL: ignores PIL.Image.DecompressionBombError, use on files your TRUST
+base = np.asarray(Image.open(base_path), dtype=np.uint8)[:,:,:3]
+pad = np.asarray(Image.open(pad_path), dtype=np.uint8)[:,:,:3]
+
+final_img = pad_bottom(base, pad)
+pil_img = Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB")
+pil_img.save(save_path + ".png")
+
+# careful - thumbnail changes the image inplace
+pil_img.thumbnail((3000, 3000), Image.Resampling.LANCZOS)
+pil_img.save(save_path + "_thumbnail.png")
+```

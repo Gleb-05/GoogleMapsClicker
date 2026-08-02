@@ -21,7 +21,7 @@ from constants import ROOT_DIR
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 from gui.layers import map_toggle_sat_labels
-from utils import tab_switch, tab_new, tab_close
+from utils import tab_switch, tab_new, tab_close, pad_bottom
 from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
@@ -43,6 +43,9 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     """Camp militaire de Mailly leftup_yx_dd and rightdown_yx_dd"""
     # maybe move REGION_1 and REGION_2 away from fields that are intended to be changed?
     # feels like the Config has objects with different purposes. Though one-point access IS convenient.
+
+    THUMBNAIL_ENABLED_AT = 5000
+    '''If either width or height of the final image exceeds this value, a thubmnail will be created'''
 
     # This config is "decision", others are "measurement". Differentiate?
     # Show it first in ui by literally moving up in the Config definition.
@@ -228,11 +231,14 @@ def get_dd_rect_img(
     img_filename = (
         f"region_{leftup_yx_dd}_{rightdown_yx_dd}_" +
         f"{'sat' if satellite else 'map'}_" +
-        time.strftime(r'%d.%m.%Y_%H.%M.%S') +
-        ".png"
+        time.strftime(r'%d.%m.%Y_%H.%M.%S')
     )
     img_path = os.path.join(ROOT_DIR, img_filename)
-    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save(img_path)
+    pil_image = Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB")
+    pil_image.save(img_path + ".png")
+    if pil_image.width >= C.THUMBNAIL_ENABLED_AT or pil_image.height >= C.THUMBNAIL_ENABLED_AT:
+        pil_image.thumbnail((3000, 3000), Image.Resampling.LANCZOS)
+        pil_image.save(img_path + "_thumbnail.png")
 
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
@@ -299,8 +305,7 @@ def construct_region(r_width: int = 1, r_height: int = 1):
         fir = final_img[y0:y1, x0:x1]  # final image region
         if C.AREA_EDGES:
             fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
-    # scale = get_area_scale()
-    # TODO scale
+    final_img = pad_bottom(final_img, np.asarray(get_area_scale(), dtype=np.uint8))
     expand_sidepanel()
     return final_img
 
