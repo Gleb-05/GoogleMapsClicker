@@ -13,6 +13,7 @@ from gui.layers import map_toggle_sat_labels
 from test.test_usr_get_area_img import TestDragArea
 
 from gui.search import center_on_search_result
+from gui.map import drag_map_idempotent
 from usr_get_area_img import C, get_area_img, get_area_dd_wh, get_dd_rect_img, estimate_area_width_and_height_dd
 from gui.map import map_get_coords_at_cursor
 from z_app_components.json_string_var import JsonStringVar
@@ -34,6 +35,7 @@ class DebugFrame:
 
         self.steps = {
             "show_xy": self.show_xy,
+            "drag_map_idempotent": drag_map_idempotent,
             "show_image_modal": lambda: show_image_modal(self.root, "img/place_linkbtn.png"),
             "center_on_search_result": lambda: center_on_search_result("48,2"),
             "get_area_dd_wh": get_area_dd_wh,

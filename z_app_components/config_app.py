@@ -41,10 +41,13 @@ class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
         return os.path.join(USR_CONFIGS_DIR, self.DEFAULT_CONFIG)
 
     # there are states to keep track of in order to choose which state-changing functions to execute
+    # TODO move back to configs that are responsible for those states?
     DEVPANEL_OPEN = False
     '''Remember whether chrome devtools panel is open. Used for Inspect (ctrl shift i) and Console (ctrl shift j)'''
     SIDEPANEL_OPEN = None
     '''Remember if sidepanel is open (bool). "None" for now since no code yet addresses it'''
+    TAB_HOPPING_SPAWNED = False
+    '''Remember if get_area_img config spawned a tab for hopping. Check if True in `get_dd_rect_img`'''
 
 C_app = Config()
 '''Preferences'''

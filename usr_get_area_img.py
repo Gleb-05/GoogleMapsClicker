@@ -18,7 +18,7 @@ from PIL import Image
 import numpy as np
 
 from constants import ROOT_DIR
-from z_app_components.config_app import C_size
+from z_app_components.config_app import C_size, C_app
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 from gui.layers import map_toggle_sat_labels
@@ -26,7 +26,7 @@ from utils import tab_switch, tab_new, tab_close, pad_bottom
 from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
-from gui.map import drag_map, map_get_coords_at_cursor
+from gui.map import drag_map, drag_map_idempotent, map_get_coords_at_cursor
 from gui.addressbar import addressbar_center_at_dd
 
 @dataclass
@@ -48,8 +48,16 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     THUMBNAIL_ENABLED_AT = 5000
     '''If either width or height of the final image exceeds this value, a thubmnail will be created'''
 
-    # This config is "decision", others are "measurement". Differentiate?
-    # Show it first in ui by literally moving up in the Config definition.
+    # "decision" config - Show it first in ui by literally moving up in the Config definition.
+    TAB_HOPPING : bool = field(
+        default = True,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="If google maps frequently freezes, tab hopping may fix it. With TAB_HOPPING set to True," \
+            "`get_dd_rect_img` will swith the tab forward and back sometimes."
+        )}
+    )
+
+    # another "decision" config
     AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
         default = False,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
@@ -164,6 +172,7 @@ WHAT WILL HAPPEN:
 C = Config()
 C.register()
 get_dd_rect_img_C_trim = [
+    "TAB_HOPPING",  # it seems False reliably causes errors - hide this choice from users, leave default True
     "AREA_WIDTH_AND_HEIGHT_DD",
 ]
 
@@ -196,11 +205,17 @@ def get_dd_rect_img(
     
     Then, if `satellite_hide_labels` is True, devtools will open and take some time to address the button that removes labels (roads, places) from satellite imagery.
     If it's False, those labels (usually seen in regulat mapview) stay visible, obstructing some parts of satellite imagery.
+
+    If google maps often freezes, TAB_HOPPING should be set to True (default)
+    On False, suspiciously stable errors emerge (see what functions are followed by `if C.TAB_HOPPING...` here)
     """
-    # TODO i have no idea why, but google maps now often freezes,
-    # switching the tab forward and back (tab juggling) seems to break the freeze.
-    tab_new()
-    tab_switch(to_left=True)
+    if C.TAB_HOPPING:
+        if not C_app.TAB_HOPPING_SPAWNED:
+            tab_new()
+            C_app.TAB_HOPPING_SPAWNED = True
+        else:
+            tab_switch()
+        tab_switch(to_left=True)
     
     t_start = time.perf_counter()
 
@@ -208,22 +223,24 @@ def get_dd_rect_img(
 
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
     if satellite and satellite_hide_labels:
-        map_toggle_sat_labels()
-
+        map_toggle_sat_labels()  # usually causes freeze
+        if C.TAB_HOPPING:
+            tab_switch()
+            tab_switch(to_left=True)
+            drag_map_idempotent()  # solves the 'sidepanel' label showing up
+    
     if use_const_area_dims_dd:
+        # saves a little time. more importantly, saves from potential screen freezing
         area_width_dd, area_height_dd = C.AREA_WIDTH_AND_HEIGHT_DD
     else:
-        # takes more time, as accurate as possible thanks to starting at the center of the region
-        area_width_dd, area_height_dd = get_area_dd_wh()
+        area_width_dd, area_height_dd = get_area_dd_wh()  # usually `map_get_coords_at_cursor` inside causes freeze
+        if C.TAB_HOPPING:
+            tab_switch()
+            tab_switch(to_left=True)
+            drag_map_idempotent()
 
     r_width, r_height = estimate_r_width_and_r_heigth((w,h), (area_width_dd, area_height_dd))
     print(f"{r_width}x{r_height} => ETA {(1+2*r_width)*(1+2*r_height)*C.AREA_TIME_SEC/60:.2f}m")
-    
-    # TODO research and fix tab juggling
-    tab_switch()
-    # on tab_switch the 'sidepanel' label shows up. simple click solves the issue
-    tab_switch(to_left=True)
-    pyautogui.click(duration=0.1)
 
     final_img = construct_region(r_width, r_height)
 
@@ -241,10 +258,6 @@ def get_dd_rect_img(
 
     t_end = time.perf_counter()
     print(f"get_dd_rect_img: {r_width}x{r_height} region - {t_end-t_start:.6f} sec")
-
-    # TODO research and fix tab juggling
-    tab_switch()
-    tab_close()
 
     return final_img
 

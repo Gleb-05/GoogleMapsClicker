@@ -39,6 +39,7 @@
     "DD_SAT_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
   },
   "get_area_img": {
+    "TAB_HOPPING": true,
     "AREA_EDGES": false,
     "AREA_LEFTUP_X": 110,
     "AREA_LEFTUP_Y": 145,

@@ -3,6 +3,7 @@ import time
 import pyautogui
 import pyperclip
 
+from z_app_components.config_app import C_size
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta
 from wait_contexts import wait_for_screen_change, wait_for_animation_end
@@ -47,6 +48,21 @@ def drag_map(x_from, y_from, x_to, y_to, drag_duration=0.3):
         # time.sleep to prevent inertia from moving areas further - already accounted for
     pyautogui.mouseUp()
     time.sleep(0.1)
+
+
+def drag_map_idempotent():
+    '''
+    Goes to center of the screen and performs dragging that ends exactly where it started.
+    Brings focus back to google maps without triggering anything (much safer than clicking).
+    '''
+    pyautogui.moveTo(C_size.SCREEN_W // 2, C_size.SCREEN_H // 2)
+    pyautogui.mouseDown()
+    pyautogui.moveRel(4, 0)
+    time.sleep(0.1)
+    pyautogui.moveRel(1, 0)
+    pyautogui.moveRel(-1, 0)
+    pyautogui.mouseUp()
+    time.sleep(0.3)
 
 
 def map_get_coords_at_cursor():
