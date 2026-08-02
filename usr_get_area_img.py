@@ -5,7 +5,7 @@ interact with google maps gui,
 drag visible areas around in a pattern, 
 compose areas into one large map region.
 
-See `get_dd_rect_img_extended` - the main method of this file.
+See `get_dd_rect_img` - the main method of this file.
 """
 
 import os
@@ -165,67 +165,18 @@ get_dd_rect_img_C_trim = [
     "SCALE_RIGHTDOWN_XY"
 ]
 
-def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
-    """
-    Return an image that shows a rectangular region of the map. At the center of the region is a marker found by searching `area_query`.
-
-    `area_query` is typically a pair of decimal lat-long coordinates, like *(48.643650, 1.921213)*.
-
-    The screen visible around the marker is called an AREA.
-    AREA_WIDTH and AREA_HEIGHT constants define an area unobstructed by the elements of google maps interface.
-
-    `r_width` and `r_height` extend the area horizontally and vertically. They determine the final region to be captured.
-    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
-    """
-    center_on_search_result(area_query)   
-    final_img = construct_region(r_width, r_height)
-    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
-    return final_img
-
-
-def construct_region(r_width: int = 1, r_height: int = 1):
-    """
-    Construct a rectangular region by screenshotting visible areas in a hamilton path and combining the screenshots.
-    The path covers everything from area at `(-r_width, -r_height)` to area at `(r_width, r_height)`, relative to a center area.
-
-    `construct_region` should be called when 
-    - the screen shows the center area of the rectangular region
-    - the sidepanel is collapsed (will be expanded on function end)
-    - the zoom level and the map type are selected
-    """
-
-    if r_width == 0 or r_height == 0:
-        r_width = r_height = 0
-        # either zero width or zero height - impossible to iter_drag over the region
-        # one visible area is very unlikely to cover the region under expected usecases 
-        # - do NOT implement dragging in "strips"
-    
-    final_img = np.zeros(((1+2*r_height)*C.AREA_HEIGHT, (1+2*r_width)*C.AREA_WIDTH, 3), dtype=np.uint8)
-    # import sys
-    # print(sys.getsizeof(final_img))
-    for x,y in iter_drag_displacements(r_width, r_height):
-        area = np.asarray(pyautogui.screenshot(region=C.AREA_REGION), dtype=np.uint8)
-        x0, y0 = x*C.AREA_WIDTH, y*C.AREA_HEIGHT
-        x1, y1 = x0 + C.AREA_WIDTH, y0 + C.AREA_HEIGHT
-        final_img[y0:y1, x0:x1] = area
-        fir = final_img[y0:y1, x0:x1]  # final image region
-        if C.AREA_EDGES:
-            fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
-    expand_sidepanel()
-    return final_img
-
 
 def yx_dd_str_to_float(yx_dd: str):
     """Return a tuple of floats from a string defining a comma-separated pair of decimal degree coordinates"""
     return (float(c) for c in yx_dd.split(","))
 
 
-def get_dd_rect_img_extended(
+def get_dd_rect_img(
         leftup_yx_dd: str, 
         rightdown_yx_dd: str, 
         use_const_area_dims_dd : bool = False, 
         satellite : bool = True,
-        satellite_hide_labels : bool = False
+        satellite_hide_labels : bool = True
     ):
     """
     Return an image that shows a rectangular region of the map.
@@ -237,9 +188,12 @@ def get_dd_rect_img_extended(
 
     If `use_const_area_dims_dd` is True, the number of areas to cover the region 
     is estimated using AREA_WIDTH_AND_HEIGHT_DD constant (the constant can be recomputed, see edit_configs).
-    Otherwise, `get_dd_rect_image` will take around 10sec to compute the dimensions of the area in decimal degrees.
+    Otherwise, `get_dd_rect_image` will take around 5sec to compute the dimensions of the area in decimal degrees.
 
-    If `satellite` is False, a regular mapview is used. Satellite imagery (mapview overlay still active) is used if `satellite` is True.
+    If `satellite` is False, a regular mapview is used. Satellite imagery is used if `satellite` is True.
+    
+    Then, if `satellite_hide_labels` is True, devtools will open and take some time to address the button that removes labels (roads, places) from satellite imagery.
+    If it's False, those labels (usually seen in regulat mapview) stay visible, obstructing some parts of satellite imagery.
     """
     # TODO i have no idea why, but google maps now often freezes,
     # switching the tab forward and back (tab juggling) seems to break the freeze.
@@ -251,7 +205,7 @@ def get_dd_rect_img_extended(
     w, h, cx, cy = _wh_and_center_xy_from_corners(leftup_yx_dd, rightdown_yx_dd)
 
     addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
-    if satellite_hide_labels:
+    if satellite and satellite_hide_labels:
         map_toggle_sat_labels()
 
     if use_const_area_dims_dd:
@@ -290,7 +244,7 @@ def get_dd_rect_img_extended(
     return final_img
 
 
-def _wh_and_center_xy_from_corners(leftup_yx_dd: str, rightdown_yx_dd: str, ):
+def _wh_and_center_xy_from_corners(leftup_yx_dd: str, rightdown_yx_dd: str):
     leftup_yx_dd = leftup_yx_dd.replace(" ", "")
     rightdown_yx_dd = rightdown_yx_dd.replace(" ", "")  # i'm buggin fr
     lu_y, lu_x = yx_dd_str_to_float(leftup_yx_dd)
@@ -304,8 +258,9 @@ def _wh_and_center_xy_from_corners(leftup_yx_dd: str, rightdown_yx_dd: str, ):
 
 def estimate_r_width_and_r_heigth(region_wh_dd : tuple[float,float], area_wh_dd: tuple[float,float]) -> tuple[int,int]:
     """
-    Returns (r_width, r_height) tuple, to be passed to `construct_region`. Includes 0-dim edgecase. 
     Provide (width, height) tuples describing the region to be covered and the area that's covered at a time.
+    Returns (r_width, r_height) tuple describing how much areas are needed to cover a region.
+    Tuple is to be passed to `construct_region`. Includes 0-dim edgecase. 
     """
     w, h = region_wh_dd
     area_w, area_h = area_wh_dd
@@ -316,7 +271,41 @@ def estimate_r_width_and_r_heigth(region_wh_dd : tuple[float,float], area_wh_dd:
     return r_width, r_height
 
 
-def get_dd_rect_img(
+def construct_region(r_width: int = 1, r_height: int = 1):
+    """
+    Construct a rectangular region by screenshotting visible areas in a hamilton path and combining the screenshots.
+    The path covers everything from area at `(-r_width, -r_height)` to area at `(r_width, r_height)`, relative to a center area.
+
+    `construct_region` should be called when 
+    - the screen shows the center area of the rectangular region
+    - the sidepanel is collapsed (will be expanded on function end)
+    - the zoom level and the map type are selected
+    """
+
+    if r_width == 0 or r_height == 0:
+        r_width = r_height = 0
+        # either zero width or zero height - impossible to iter_drag over the region
+        # one visible area is very unlikely to cover the region under expected usecases 
+        # - do NOT implement dragging in "strips"
+    
+    final_img = np.zeros(((1+2*r_height)*C.AREA_HEIGHT, (1+2*r_width)*C.AREA_WIDTH, 3), dtype=np.uint8)
+    # import sys
+    # print(sys.getsizeof(final_img))
+    for x,y in iter_drag_displacements(r_width, r_height):
+        area = np.asarray(pyautogui.screenshot(region=C.AREA_REGION), dtype=np.uint8)
+        x0, y0 = x*C.AREA_WIDTH, y*C.AREA_HEIGHT
+        x1, y1 = x0 + C.AREA_WIDTH, y0 + C.AREA_HEIGHT
+        final_img[y0:y1, x0:x1] = area
+        fir = final_img[y0:y1, x0:x1]  # final image region
+        if C.AREA_EDGES:
+            fir[0, :] = fir[-1, :] = fir[:, 0] = fir[:, -1] = (0, 0, 0)
+    # scale = get_area_scale()
+    # TODO scale
+    expand_sidepanel()
+    return final_img
+
+
+def get_dd_rect_img_tk(
         leftup_yx_dd: str, 
         rightdown_yx_dd: str, 
         satellite : bool = True,
@@ -333,8 +322,29 @@ def get_dd_rect_img(
     Satellite imagery (labels hidden) is used by default.
     Pass `satellite = False` to capture regular mapview.
     '''
-    get_dd_rect_img_extended(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=True)
+    get_dd_rect_img(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=True)
 
+
+def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):
+    """
+    Returns an image that shows a rectangular region of the map, dimensions `(1 + 2 * r_width, 1 + 2 * r_height)`.
+    At the center of the region is a marker found by searching `area_query`.
+
+    A simpler version of get_dd_rect_img that drops decimal degree calculations. 
+    Expects that the searchbar is open (requires sidepanel not collapsed, and SEARCH_Y is correct).
+
+    `area_query` is typically a pair of decimal lat-long coordinates, like *(48.643650, 1.921213)*.
+
+    The screen visible around the marker is called an AREA.
+    AREA_WIDTH and AREA_HEIGHT constants define an area unobstructed by the elements of google maps interface.
+
+    `r_width` and `r_height` extend the area horizontally and vertically. They determine the final region to be captured.
+    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
+    """
+    center_on_search_result(area_query)   
+    final_img = construct_region(r_width, r_height)
+    Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB").save("area_img.png")
+    return final_img
 
 
 def get_area_scale():
@@ -364,6 +374,8 @@ def get_area_dd_wh():
     time.sleep(0.3)
     return area_width_dd, area_height_dd
 
+
+# region fix dd dims  (recompute_area_width_and_height_dd)
 
 def estimate_r_dim(region_dim_dd : float, area_dim_dd : float) -> int:
     """
@@ -467,6 +479,10 @@ def recompute_area_width_and_height_dd() -> tuple[float,float]:
 
 C.add_recompute(recompute_area_width_and_height_dd)
 
+# endregion
+
+
+# region dragging logic
 
 class disp(IntEnum):
     """
@@ -480,6 +496,38 @@ class disp(IntEnum):
     POS = 1
     NEG = -1
     ZER = 0
+
+
+def iter_drag_displacements(r_width: int, r_height: int, do_drag_area: bool = True):
+    """Starting from the reference area at the Center, yield coordinates `(x, y)` for all surrounding areas 
+    within a rectangle defined as follows:
+    - Center: `c_x = r_width` and `c_y = r_height`
+    - Top-left corner: `(c_x - r_width, c_y - r_height)`
+    - Width:  `2 * r_width + 1`
+    - Height: `2 * r_height + 1`
+
+    The coordinates are positive indices starting from 0, meaning that they can be used to arrange the yielded areas in a correct order.
+
+    Pass `do_drag_area = True` to move the visible area of google maps (*do `drag_area(xd, yd)` immediately*) during the generation of coordinates.
+
+    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
+    """
+    x, y = r_width, r_height
+    if x == 0 or y == 0:
+        yield 0, 0
+        return
+
+    core_width, core_height = core_dimensions(r_width, r_height)
+    for core_rel_x, core_rel_y in iter_core_drag_displacements(core_width, core_height, do_drag_area):
+        yield x + core_rel_x, y + core_rel_y
+
+    # iter_core concludes at relative (0, -core_height - 1) where iter_enclose picks up
+    y_offset = core_height + 1
+    while y_offset <= r_height:
+        enclose_width = r_width - (r_height - y_offset)
+        for enclose_rel_x, enclose_rel_y in iter_enclose_drag_displacement(enclose_width, y_offset, do_drag_area):
+            yield x + enclose_rel_x, y + enclose_rel_y
+        y_offset += 1
 
 
 def drag_area(xd=disp.ZER, yd=disp.ZER, area_region : tuple[int,int,int,int] | None = None):
@@ -653,34 +701,4 @@ def iter_enclose_drag_displacement(r_width: int, r_height: int = 0, do_drag_area
     while rel_x > 1:
         yield move(disp.NEG, disp.ZER)
 
-
-def iter_drag_displacements(r_width: int, r_height: int, do_drag_area: bool = True):
-    """Starting from the reference area at the Center, yield coordinates `(x, y)` for all surrounding areas 
-    within a rectangle defined as follows:
-    - Center: `c_x = r_width` and `c_y = r_height`
-    - Top-left corner: `(c_x - r_width, c_y - r_height)`
-    - Width:  `2 * r_width + 1`
-    - Height: `2 * r_height + 1`
-
-    The coordinates are positive indices starting from 0, meaning that they can be used to arrange the yielded areas in a correct order.
-
-    Pass `do_drag_area = True` to do `drag_area(xd, yd)` immediately during the generation of coordinates.
-
-    AREA_WIDTH and AREA_HEIGHT are assumed as units for `r_width` and `r_height`, respectively.
-    """
-    x, y = r_width, r_height
-    if x == 0 or y == 0:
-        yield 0, 0
-        return
-
-    core_width, core_height = core_dimensions(r_width, r_height)
-    for core_rel_x, core_rel_y in iter_core_drag_displacements(core_width, core_height, do_drag_area):
-        yield x + core_rel_x, y + core_rel_y
-
-    # iter_core concludes at relative (0, -core_height - 1) where iter_enclose picks up
-    y_offset = core_height + 1
-    while y_offset <= r_height:
-        enclose_width = r_width - (r_height - y_offset)
-        for enclose_rel_x, enclose_rel_y in iter_enclose_drag_displacement(enclose_width, y_offset, do_drag_area):
-            yield x + enclose_rel_x, y + enclose_rel_y
-        y_offset += 1
+# endregion

@@ -8,9 +8,10 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
   - windows: `venv\Scripts\Activate.ps1`
   - linux: `source venv/bin/activate`
 - Install required dependencies inside venv: `pip install -r requirements.txt`
+- Open google maps in a new chrome window as the only tab.
 - Run `python run.py`.
 - Choose between `Get Area Img` and `Edit Configs`:
-  - `Get Area Img` exposes a single function: `get_dd_rect_img`. It allows to compose large map regions.
+  - `Get Area Img` exposes a single function: [`get_dd_rect_img`](usr_get_area_img.py). It allows to compose large map regions into image files (they are saved with coordinates in their name for reproducibility).
     - If you want to hault any GUI operation, quickly move your cursor to one of the screen corners.
   - `Edit Configs` allows to tailor the app to your needs. Mainly to different display sizes.
     - config titles with a magnifying glass can be clicked to view their hint images
@@ -21,7 +22,11 @@ In [`map_regions`](./map_regions) both map and sat view of Beynes France can be 
 
 *During active development, use `python -m tk_app_frames.debug` to check things out quickly.*
 
-## Disclaimers
+## Stats
+
+The largest region yet (REGION_2 in usr_get_area_img Config) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) less than 25 minutes to compose and about 1.4 Gigabytes of memory (800 Mb after being saved as png). It covers about 250 square kilometers, which seems like more than enough for research purposes. Please be mindful of how heavy the images are and how much time they require.
+
+## App use disclaimers
 
 DEFAULT VALUES WORK WITH A 1366x768 DISPLAY, BUT `Edit Configs` HAS GUIDELINES (and illustrations) TO CHANGE THEM
 
@@ -33,8 +38,6 @@ Consider that many buttons in the middle of the app (a frame with a grooved bord
 Minimize the app before pressing proceed keys at your own discretion. The app will minimize automatically if the button requires it internally.
 
 Consider that all entries operate on a json representation of the values they store. That is, the app exposes all pure values to the user through `json.dumps` and extracts pure values from the interface through `json.loads`. Inernally, get and set of a given entry is manually *jsonified* (`entry.set(json.dumps(value))` and, as inverse, `value = json.loads(entry.get())`). The only exception is [tk.StringVar](z_app_components/JsonStringVar.py), made for better UX.
-
-The largest region yet (REGION_2 in usr_get_area_img Config) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 1.4 Gigabytes of memory and about half an hour to compose. It covers about 250 square kilometers, which seems like more than enough for research purposes. But be mindful of how heavy the resulting images are and how much time they take.
 
 # Brief overview of functionality
 

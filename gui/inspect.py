@@ -105,10 +105,12 @@ def inspect_use_console(command: str):
     # wait until console is clear
     with wait_for_animation_end(region=None, interval=0.3):
         py_paste("clear()")
+        time.sleep(0.3)  # wait before enter
         pyautogui.press('enter')
     # execute command
     py_paste(command)
     with wait_for_screen_change(region=None, interval=0.3):
+        time.sleep(0.3)
         pyautogui.press('enter')
     time.sleep(0.1)
     # close console

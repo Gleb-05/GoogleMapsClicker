@@ -6,7 +6,7 @@ Part of the main app.
 import tkinter as tk
 from tk_app_frames.basic_frame import BasicFrame
 
-from usr_get_area_img import get_dd_rect_img
+from usr_get_area_img import get_dd_rect_img_tk
 from z_app_components.function_to_tk_entries import build_function_editor
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
@@ -36,7 +36,7 @@ class GetAreaImg(BasicFrame):
     def __init__(self, master: tk.Misc, controller):
         super().__init__(master, controller)
 
-        FUNCTIONS = [get_dd_rect_img]
+        FUNCTIONS = [get_dd_rect_img_tk]
         
         tk.Frame(self.body, width=controller.MAX_WIDTH-140).pack()  # crutch to standardize the width of different windows
 
