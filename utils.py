@@ -10,6 +10,8 @@ from pathlib import Path
 from constants import ATTENTION_HIGHLIGHT
 
 
+# region error handling
+
 class CustomError(Exception):
     """
     Re-raise this Error after catching broad exceptions, but with custom vars attached.
@@ -36,49 +38,31 @@ def print_err_trace(err: BaseException, message: str = "Expected error"):
         for line in trace.split('\n')[:-1]:
             print('  --' + line)
 
-def select_addressbar(hide_suggestions=True):
+def exception_to_none_decorator(func, exception_tuple):
     """
-    Move focus to the address bar of the browser, highlighting the entire webpage address. 
-    By default suggestions that drop down are hidden immediately. Pass `False` to override.
+    Wrap any function to return None on errors from `exception_tuple`.
+    For consistency it is highly recommended to do `if val = None: raise OriginalException` after wrapped function is used.
+    
+    Example: wrap `pyautogui.locateCenterOnScreen` and avoid try-catch nesting when doing search on multiple images.
     """
-    pyautogui.hotkey('alt', 'd')
-    if hide_suggestions:
-        time.sleep(0.01)
-        pyautogui.press('esc') # addressbar suggestions obstruct the page without it
-    time.sleep(0.3)
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exception_tuple:
+            return None
+    return wrapper
 
 
-def refocus_page():
-    """
-    Bring focus back to the page by focusing on the address bar.
-    Useful to bring hotkeys (like ctrl+f) into correct context.
-    """
-    select_addressbar()
-    time.sleep(0.01)
-    pyautogui.press('esc')  # address bar suggestions obstruct the page otherwise
-    time.sleep(0.1)
+py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen, (pyautogui.ImageNotFoundException,))
+"""
+Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`.
+For consistency, if the return value is still None after multiple calls, raise the `...Exception`
+"""
 
+# endregion
 
-def tab_new():
-    """Open new tab using a shortcut"""
-    pyautogui.shortcut('ctrl', 't')
-    time.sleep(0.1)
-
-
-def tab_switch(to_left=False):
-    """Switch to the nearest tab, the one to the right of the current one by default."""
-    if to_left:
-        pyautogui.hotkey('ctrl', 'shift', 'tab')
-    else:
-        pyautogui.hotkey('ctrl', 'tab')
-    time.sleep(0.3)
-
-
-def tab_close():
-    """Close current tab. If it's the rightmost tab, a tab to the left will open. Otherwise, a tab to the right will open."""
-    pyautogui.shortcut('ctrl', 'w')  # 
-    time.sleep(0.1)
-
+# region image processing
 
 def strict_no_change(img1, img2):
     """
@@ -116,21 +100,6 @@ def is_no_change(img1, img2, threshold = 0.05, save_diff_img = False):
 
     return mean_diff < threshold
 
-
-def py_reload(sleep_s: int = 5):
-    """Reload page via ctlr+f5 hotkey and wait for `sleep_s` seconds"""
-    pyautogui.hotkey('ctrl', 'f5')
-    time.sleep(sleep_s)
-
-
-def py_paste(text):
-    """Paste text instead of typing (typing may fail if current locale is different from target language)"""
-    pyperclip.copy(text)
-    time.sleep(0.01)
-    pyautogui.hotkey('ctrl', 'v')
-    time.sleep(0.3)
-
-
 def distance_to_white(left_x, left_y, from_down, threshold=250):
     """
     For a vertical area starting at `left_x, left_y`, return relative distance to the first pixel with all channels greater than `threshold`.
@@ -152,29 +121,70 @@ def distance_to_white(left_x, left_y, from_down, threshold=250):
         
     return None
 
+# endregion
 
-def exception_to_none_decorator(func, exception_tuple):
+# region hotkey-based functions
+
+def select_addressbar(hide_suggestions=True):
     """
-    Wrap any function to return None on errors from `exception_tuple`.
-    For consistency it is highly recommended to do `if val = None: raise OriginalException` after wrapped function is used.
-    
-    Example: wrap `pyautogui.locateCenterOnScreen` and avoid try-catch nesting when doing search on multiple images.
+    Move focus to the address bar of the browser, highlighting the entire webpage address. 
+    By default suggestions that drop down are hidden immediately. Pass `False` to override.
     """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except exception_tuple:
-            return None
-    return wrapper
+    pyautogui.hotkey('alt', 'd')
+    if hide_suggestions:
+        time.sleep(0.01)
+        pyautogui.press('esc') # addressbar suggestions obstruct the page without it
+    time.sleep(0.3)
 
 
-py_locateCenter = exception_to_none_decorator(pyautogui.locateCenterOnScreen, (pyautogui.ImageNotFoundException,))
-"""
-Works like `pyautogui.locateCenterOnScreen`, but returns None on `pyautogui.ImageNotFoundException`.
-For consistency, if the return value is still None after multiple calls, raise the `...Exception`
-"""
+def refocus_page():
+    """
+    Bring focus back to the page by focusing on the address bar.
+    Useful to bring hotkeys (like ctrl+f) into correct context.
+    """
+    select_addressbar()
+    time.sleep(0.01)
+    pyautogui.press('esc')  # address bar suggestions obstruct the page otherwise
+    time.sleep(0.1)
 
+
+def tab_new():
+    """Open new tab using a shortcut"""
+    pyautogui.hotkey('ctrl', 't')
+    time.sleep(0.1)
+
+
+def tab_switch(to_left=False):
+    """Switch to the nearest tab, the one to the right of the current one by default."""
+    if to_left:
+        pyautogui.hotkey('ctrl', 'shift', 'tab')
+    else:
+        pyautogui.hotkey('ctrl', 'tab')
+    time.sleep(0.3)
+
+
+def tab_close():
+    """Close current tab. If it's the rightmost tab, a tab to the left will open. Otherwise, a tab to the right will open."""
+    pyautogui.hotkey('ctrl', 'w')  # 
+    time.sleep(0.1)
+
+
+def py_reload(sleep_s: int = 5):
+    """Reload page via ctlr+f5 hotkey and wait for `sleep_s` seconds"""
+    pyautogui.hotkey('ctrl', 'f5')
+    time.sleep(sleep_s)
+
+
+def py_paste(text):
+    """Paste text instead of typing (typing may fail if current locale is different from target language)"""
+    pyperclip.copy(text)
+    time.sleep(0.01)
+    pyautogui.hotkey('ctrl', 'v')
+    time.sleep(0.3)
+
+# endregion
+
+# region misc
 
 def is_inside(path: str, directory: str) -> bool:
     '''Check if path is within the directory'''
@@ -245,3 +255,5 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
 
     # Wait until closed
     modal.wait_window()
+
+# endregion
