@@ -1,4 +1,5 @@
 import time
+import math
 import traceback
 import functools
 import pyautogui
@@ -140,6 +141,91 @@ def pad_bottom(main_arr: np.ndarray, pad_arr: np.ndarray):
     adjusted_pad = np.tile(pad_arr, (1, reps, 1))[:, :target_width]
 
     return np.concatenate((main_arr, adjusted_pad), axis=0)
+
+
+def slice_large_image(path: str):
+    '''
+    Create vertical slices under 100Mb for an image at `path` 
+    and save them into a new directory at `path`s stem.
+    
+    Note:
+        GitHub has a 100Mb filelimit and is the primary reason this function exists.
+        In retrospect, storing large files in releases is better - it doesnt make the git history heavy.
+        The number of slices is estimated from the original file size.
+    '''
+    MAX_SIZE = 80 * 1024 * 1024  # 20Mb margin in case png compressions plays out worse than on the whole image
+    image_path = Path(path)
+    if not image_path.exists():
+        raise FileNotFoundError(image_path)
+    if not image_path.is_file():
+        raise ValueError(f"{image_path} is not a file")
+
+    _MAX_IMAGE_PIXELS = Image.MAX_IMAGE_PIXELS
+    Image.MAX_IMAGE_PIXELS = 500_000_000
+    image = Image.open(image_path)
+    Image.MAX_IMAGE_PIXELS = _MAX_IMAGE_PIXELS
+
+    output_dir = image_path.parent / (image_path.stem + '_slices')
+    output_dir.mkdir(exist_ok=True)
+
+    width, height = image.size
+
+    file_size = image_path.stat().st_size + 1024  # margin for exact multiples of MAX_SIZE
+    num_slices = max(1, math.ceil(file_size / MAX_SIZE))
+
+    slice_width = math.ceil(width / num_slices)
+
+    for i in range(num_slices):
+        left = i * slice_width
+        right = min(width, (i + 1) * slice_width)
+
+        cropped = image.crop((left, 0, right, height))
+        cropped.save(output_dir / f"{i}.png")
+
+    image.close()
+
+
+def unslice_large_image(path: str):
+    '''
+    `path` should be a folder with vertical image slices from `slice_large_image`.
+    Concatenate them left-to-right and save the result as a sibling PNG named after the `path`.
+    '''
+    slice_dir = Path(path)
+
+    if not slice_dir.exists():
+        raise FileNotFoundError(slice_dir)
+    if not slice_dir.is_dir():
+        raise ValueError(f"{slice_dir} is not a directory")
+
+    slices = sorted(
+        slice_dir.glob("*.png"),
+        key=lambda p: int(p.stem)
+    )
+    if not slices:
+        raise ValueError(f"No PNG slices found in {slice_dir}")
+
+    images = [Image.open(p) for p in slices]
+
+    try:
+        height = max(img.height for img in images)
+        total_width = sum(img.width for img in images)
+
+        result = Image.new(
+            mode=images[0].mode,
+            size=(total_width, height)
+        )
+
+        x = 0
+        for img in images:
+            result.paste(img, (x, 0))
+            x += img.width
+
+        output_path = slice_dir.parent / f"{slice_dir.name}.png"
+        result.save(output_path)
+
+    finally:
+        for img in images:
+            img.close()
 
 # endregion
 

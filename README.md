@@ -21,6 +21,7 @@ See examples of using `get_dd_rect_img` (dd = decimal degrees).
 In [`map_regions`](./map_regions) both map and sat view of Beynes France can be found.
 
 *During active development, use `python -m tk_app_frames.debug` to check things out quickly.*
+*For large images, see `slice_large_image` and `unslice_large_image` in [`utils.py`](utils.py)*
 
 ## Stats
 
