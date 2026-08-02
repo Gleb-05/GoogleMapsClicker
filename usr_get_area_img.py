@@ -18,6 +18,7 @@ from PIL import Image
 import numpy as np
 
 from constants import ROOT_DIR
+from z_app_components.config_app import C_size
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 from gui.layers import map_toggle_sat_labels
@@ -143,7 +144,7 @@ WHAT WILL HAPPEN:
         )}
     )
     SCALE_RIGHTDOWN_XY: tuple[int,int] = field(
-        default=(1366,768),
+        default=(C_size.SCREEN_W, C_size.SCREEN_H),
         metadata={ConfigTkMeta.KEY: ConfigTkMeta(
             doc="A pixel-per-meter ruler ('XX m' label included) is in the right-down corner of a browser. " \
             "Place cursor in rightdown corner of a rectangle that would cover it fully "
@@ -164,8 +165,6 @@ C = Config()
 C.register()
 get_dd_rect_img_C_trim = [
     "AREA_WIDTH_AND_HEIGHT_DD",
-    "SCALE_LEFTUP_XY",
-    "SCALE_RIGHTDOWN_XY"
 ]
 
 

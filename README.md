@@ -8,7 +8,8 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
   - windows: `venv\Scripts\Activate.ps1`
   - linux: `source venv/bin/activate`
 - Install required dependencies inside venv: `pip install -r requirements.txt`
-- Open google maps in a new chrome window as the only tab.
+- Open google maps in a new chrome window as the only tab. 
+  Google maps should take up the entire screen.
 - Run `python run.py`.
 - Choose between `Get Area Img` and `Edit Configs`:
   - `Get Area Img` exposes a single function: [`get_dd_rect_img`](usr_get_area_img.py). It allows to compose large map regions into image files (they are saved with coordinates in their name for reproducibility).
