@@ -301,9 +301,27 @@ def is_inside(path: str, directory: str) -> bool:
         return False
 
 
+def timed_close(widget: tk.Misc, close_after: int):
+    """
+    Returns a `close` function, schedules `widget.destroy` in `close_after` seconds.
+
+    `close` is usually bound to a 'close' button or a 'WM_DELETE_WINDOW' protocol.
+    """
+    def timeout_close():
+        if widget.winfo_exists():
+            widget.destroy()
+    timer_id = widget.after(close_after * 1000, timeout_close)
+
+    def close():
+        widget.after_cancel(timer_id)
+        widget.destroy()
+    return close
+
+
 def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image", caption: str = ""):
     '''
     Spawns a modal window with a single image. Closes it in 30 seconds.
+    While modal is active, master cannot be interacted with.
 
     Args:
         master: makes windows overlay correctly, used in `modal = tk.Toplevel(master)` and `modal.transient(master)`
@@ -311,9 +329,9 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
         title: title of the modal window
         caption: optional caption put before the image
     '''
-    max_w, max_h = 400, 300
-
+    # TODO move to popups and achieve "modality" by placing canvas with a semi-transparent gray png over the master?
     modal = tk.Toplevel(master, background=ATTENTION_HIGHLIGHT)
+    modal.resizable(False, False)
     modal.title(title)
     modal.transient(master)
     modal.grab_set()  # Make modal
@@ -329,6 +347,7 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
     _caption.pack(fill="x")
 
     label = tk.Label(modal)
+    max_w, max_h = 400, 300
     try:
         image = Image.open(image_path)
         scale = min(max_w / image.width, max_h / image.height)
@@ -345,21 +364,7 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
 
     label.pack(padx=10, pady=10)
     
-    # safeguard agains indefinite waiting
-    
-    def timeout_close():
-        if modal.winfo_exists():
-            modal.destroy()
-
-    timer_id = modal.after(30_000, timeout_close)
-
-    def close():
-        modal.after_cancel(timer_id)
-        modal.destroy()
-
-    modal.protocol("WM_DELETE_WINDOW", close)
-
-    # Wait until closed
+    modal.protocol("WM_DELETE_WINDOW", timed_close(modal, 30))
     modal.wait_window()
 
 # endregion

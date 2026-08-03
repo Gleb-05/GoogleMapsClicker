@@ -7,3 +7,4 @@ IMG_DIR = os.path.join(ROOT_DIR, "img")
 NO_SEARCH_STR : dict[str,str] = {'eng': "Google Maps can't find"}
 
 ATTENTION_HIGHLIGHT : str = "#FEC8C8"
+SUCCESS_HIGHLIGHT   : str = "#C5FDB3"

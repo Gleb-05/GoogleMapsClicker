@@ -12,6 +12,7 @@ from tk_app_frames.switch_frame_controller import setup_switch_frame_controller,
 
 from constants import USR_CONFIGS_DIR
 from utils import CustomError
+from z_app_components.popups import popup_message
 from z_app_components.config_app import save_preferences
 from z_app_components.config_registry import ConfigRegistryMixin, dump_config, load_config_from_dict, load_config, _get_from_registry
 from z_app_components.config_to_tk_entries import get_tk_fields, build_field_editor
@@ -65,7 +66,7 @@ class EditConfigs(BasicFrame):
         tk.Button(
             master=preferences_fav[_pref_key].frame, 
             text="Save preferences", 
-            command=self._save_preferences
+            command=self.save_preferences
             ).pack(anchor="center", pady=(0,10))
 
         # Buttons to work with config files and the currently used config itself.
@@ -117,10 +118,11 @@ class EditConfigs(BasicFrame):
             message="New config values will overwrite values in use with no way to restore them")
         if not proceed:
             return
-        self._save_changes()
+        if self._save_changes():
+            popup_message(self.winfo_toplevel(), message="SAVE SUCCESSFUL")
 
 
-    def _save_changes(self, show_messagebox = True):
+    def _save_changes(self):
         '''Update config registry by iterating over tk variables. Return True on success'''
         bad_key = ""
         bad_field = ""
@@ -139,9 +141,7 @@ class EditConfigs(BasicFrame):
                     field_values[fieldname] = json.loads(tkvar.get())
                 config_dict[key] = field_values
 
-            load_config_from_dict(config_dict)
-            if show_messagebox: 
-                messagebox.showinfo(message="SAVE SUCCESSFUL")
+            load_config_from_dict(config_dict)              
             return True
         
         except (json.JSONDecodeError) as e:
@@ -153,7 +153,7 @@ class EditConfigs(BasicFrame):
             return False
 
 
-    def _save_preferences(self):
+    def save_preferences(self):
         '''
         Update preferences by iterating over tk variables. 
         Updating DEFAULT_CONFIG updates the config variables in this window.
@@ -183,7 +183,7 @@ class EditConfigs(BasicFrame):
                 load_preferences_from_dict(preferences)
                 save_preferences()
             
-            messagebox.showinfo(message="PREFERENCES SAVED")
+            popup_message(self.winfo_toplevel(), message="PREFERENCES SAVED")
 
         except (json.JSONDecodeError) as e:
             messagebox.showerror("VALUES INCOMPLETE OR MISSING", str(e))
@@ -206,7 +206,7 @@ class EditConfigs(BasicFrame):
 
     def save_to_file(self):
         '''Update config registry and save to file of choice'''
-        if self._save_changes(show_messagebox=False) is False:  # new config values were rejected
+        if self._save_changes() is False:  # new config values were rejected
             return
         
         path_to_config = self._get_config_name("Save config to json file", save=True)
@@ -215,7 +215,8 @@ class EditConfigs(BasicFrame):
         
         try:
             dump_config(path_to_config)
-            messagebox.showinfo(message="FILESAVE SUCCESSFUL")
+            
+            popup_message(self.winfo_toplevel(), message="FILESAVE SUCCESSFUL")
             self._last_used_path_to_config = path_to_config
 
         except CustomError as e:
@@ -238,7 +239,7 @@ class EditConfigs(BasicFrame):
             self._reload_variables()
             self._last_used_path_to_config = path_to_config
 
-            messagebox.showinfo(message="LOAD of config values from file SUCCESSFUL")
+            popup_message(self.winfo_toplevel(), message="LOAD of config values from file SUCCESSFUL")
 
         except CustomError as e:
             messagebox.showerror("ERROR ON CONFIG LOAD", str(e.original_e))
@@ -267,4 +268,4 @@ class EditConfigs(BasicFrame):
         if not proceed:
             return
         self._reload_variables()
-        messagebox.showinfo(message="Config values RESTORED")
+        popup_message(self.winfo_toplevel(), message="Config values RESTORED")
