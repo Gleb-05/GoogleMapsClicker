@@ -35,8 +35,8 @@
   },
   "addressbar": {
     "SET_MAPVIEW_ADDRESS": "https://www.google.com/maps/@?api=1&basemap=satellite",
-    "DD_MAP_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},17z",
-    "DD_SAT_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
+    "DD_MAP_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},17z?hl=en",
+    "DD_SAT_ADDRESS_TEMPLATE": "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1?hl=en"
   },
   "get_area_img": {
     "TAB_HOPPING": true,

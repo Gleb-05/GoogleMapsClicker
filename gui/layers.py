@@ -26,6 +26,13 @@ C.register()
 def map_toggle_sat_labels():
     """
     With satellite map selected, toggle displaying of roads and landmarks using the inspect console.
+
+    *Notice that labels in satellite view never stay off. New search - on. New tab - on. 
+    Without a way to escape turned on labels, current solution is `map_toggle_sat_labels` 
+    that invokes a .click() event on the 'labels' button through java script. 
+    One alternative is to manually define the 
+    "know where sidepanel is - click layers - scroll down - click labels button", 
+    but that is too much variability between devices.*
     """
     inspect_use_console(f"$('{C.LABELS_BUTTON_SELECTOR}').click()")
 

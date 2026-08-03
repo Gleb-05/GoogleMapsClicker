@@ -35,6 +35,11 @@ class Config(LoadFromJsonMixin, ConfigRecomputeMixin):
             recompute_causes=[]
         )}
     )
+    """
+    Careful. Changes to default config values in code no longer cascade into config object - 
+    config object initiated with values from DEFAULT_CONFIG.
+    Delete DEFAULT_CONFIG file in order to save config object with new default values.
+    """
     @property
     def CONFIG_PATH(self) -> str:
         '''USR_CONFIGS_DIR / DEFAULT_CONFIG'''
@@ -59,7 +64,7 @@ def load_preferences_once():
             data : dict = json.load(f)
             load_preferences_from_dict(data)
             load_config(C_app.CONFIG_PATH)  # important byproduct of preferences!
-        except (json.JSONDecodeError, CustomError) as e:
+        except (FileNotFoundError, json.JSONDecodeError, CustomError) as e:
             messagebox.showerror("ERROR ON LOADING PREFERENCES", f"default values for the preferences and configurations will be used\n\n{e}")
 
 def load_preferences_from_dict(config_dict: dict[str,dict]):
@@ -98,6 +103,9 @@ C_app.add_recompute(get_config_name)
 class SizeConfig(ConfigRegistryMixin):
     '''Register winfo width and height to contextualize the rest of the config'''
     # maybe revisit this piece of code. can't get rid of it for now
+    # TODO notice that pyautogui.size works just like C_size.
+    # How many times C_size is used? Maybe pyatuogui.size in its place will not be such an overhead?
+    # One thing though - screen dimensions still HAVE to go into the config that is being saved.
     REGISTER_KEY = "size"
     SCREEN_W : int = 1366
     SCREEN_H : int = 768

@@ -11,8 +11,8 @@ class Config(ConfigRegistryMixin):
     "addressbar.py config"
     REGISTER_KEY = "addressbar"
     SET_MAPVIEW_ADDRESS : str = "https://www.google.com/maps/@?api=1&basemap=satellite"
-    DD_MAP_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},17z"
-    DD_SAT_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1"
+    DD_MAP_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},17z?hl=en"
+    DD_SAT_ADDRESS_TEMPLATE : str = "https://www.google.com/maps/place//@{},542m/data=!3m2!1e3!4b1?hl=en"
 
 C = Config()
 C.register()
@@ -24,7 +24,7 @@ def open_url(url_address: str):
     time.sleep(0.3)
     py_paste(url_address)
     time.sleep(0.3)
-    with wait_for_screen_change(region=None):
+    with wait_for_screen_change(region=None, timeout=5):
         pyautogui.press('enter')
     with wait_for_animation_end(region=None, interval=1):
         time.sleep(0.3)

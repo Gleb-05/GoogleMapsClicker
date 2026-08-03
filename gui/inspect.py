@@ -12,7 +12,7 @@ INSPECT_ELEMENTS_TAB_XY=548,100
 # TODO
 """
 inspect_find and inspect_find_and_copy_first both work on a shrinked window and expect inspect window to be open.
-inspect_use_console if built for a fullscreen window workflow and manages the inspect window on its own.
+inspect_use_console is built for a fullscreen window workflow and manages the inspect window on its own.
 
 It's OK for now, because the workflows for shrinked and fullscreen window dont overlap.
 But the need to standardize constants and make app-wide states rises.
@@ -89,12 +89,7 @@ def inspect_use_console(command: str):
 
     By utilizing the console, many gui-specific actions can be successfully omitted, 
     and with that many constant become unnecessary to create! Which raises compatibility with different resolution devices.
-    """
-    # get rid of all the constants let's gooo
-    # _x = 504  # fullscreen_x_correction
-    # INSPECT_CLEAR_SUCCESS_REGION = (_x+482-5, 202-2, 70+10, 20+5)  # waiting for console clear on entire screen
-    # INSPECT_CONSOLE_OUTPUT_XY=_x+490,230  # waiting for output on entire screen
-    
+    """  
     # open console
     if not C_app.DEVPANEL_OPEN:
         # why interval=1? One console warning takes some sweet time to show up: The service worker navigation preload request was cancelled before 'preloadResponse' settled. If you intend to use 'preloadResponse', use waitUntil() or respondWith() to wait for the promise to settle.

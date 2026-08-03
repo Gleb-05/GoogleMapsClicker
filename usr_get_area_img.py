@@ -22,7 +22,7 @@ from z_app_components.config_app import C_size, C_app
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 from gui.layers import map_toggle_sat_labels
-from utils import tab_switch, tab_new, tab_close, pad_bottom
+from utils import tab_switch, tab_new, pad_bottom
 from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
