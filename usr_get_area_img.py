@@ -22,11 +22,11 @@ from z_app_components.config_app import C_size, C_app
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
 from gui.layers import map_toggle_sat_labels
-from utils import tab_switch, tab_new, pad_bottom
+from utils import drag_map_idempotent, tab_switch, tab_new, pad_bottom
 from gui.core_configs import C_sidepanel
 from gui.sidepanel import expand_sidepanel
 from gui.search import center_on_search_result
-from gui.map import drag_map, drag_map_idempotent, map_get_coords_at_cursor
+from gui.map import drag_map, map_get_coords_at_cursor
 from gui.addressbar import addressbar_center_at_dd
 
 @dataclass

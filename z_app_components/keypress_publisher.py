@@ -1,7 +1,7 @@
 import keyboard
 from typing import Any, TypeVar
 from collections.abc import Callable
-from utils import print_err_trace
+from utils import print_err_trace, drag_map_idempotent
 
 
 class KeypressPublisher():
@@ -151,6 +151,26 @@ class ButtonKeyboardManager():
             err = None
             msgbox_kwargs = {}
             try:
+                # pylint: disable=pointless-string-statement
+                """
+                The operation may fail and supress messagebox.showwarning. Steps to reproduce:
+                - python run.py
+                - open vs code
+                - copy REGION_2 into get_dd_rect_img entries
+                - minimize vs code
+                - press execute
+                - press proceed key
+
+                It seems the focus remains with the last minimized window
+                and doesn't automatically move to google maps.
+
+                Immediate solution:
+                Assume google maps will always be fullscreen. 
+                Assume all operations are for google maps.
+                Assume most operations leave google maps open.
+                Add `drag_map_idempotent` in `proceed` below.
+                Hope for the best.
+                """
                 operation()
             except pyautogui.FailSafeException as e:
                 err = e
@@ -164,13 +184,12 @@ class ButtonKeyboardManager():
                 raise
             finally:
                 if err is not None:
+                    # Sometimes either messagebox or toplevel did not appear. I rewrote this part multiple times.
+                    # Having both in `toplevel.after` seems to make one show and the other deiconify without conflict.
                     toplevel.after(0, lambda: (
                         messagebox.showwarning(**msgbox_kwargs),
                         toplevel.deiconify())
                     )
-                    # Sometimes either messagebox or toplevel did not appear.
-                    # I rewrote this part multiple times, trying to make one show and the other deiconify without conflict.
-                    # Now they are together in toplevel.after, but the error might still occur.
                     print_err_trace(err, "Error on operation wrapped in ButtonKeyboardManager.tk_after")
                 else:
                     toplevel.deiconify()  # in case of `hide_app_on_proceed is True`
@@ -226,8 +245,11 @@ class ButtonKeyboardManager():
             if hide_app_on_proceed:
                 toplevel.withdraw()
                 toplevel.update_idletasks()
+                time.sleep(0.1)
                 toplevel.iconify()  # needs .withdraw, else doesnt give up focus
                 toplevel.update()
+                time.sleep(0.1)
+                drag_map_idempotent()
             
             button.configure(bg=bg)
             _s = time.perf_counter()

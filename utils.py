@@ -329,7 +329,7 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
         title: title of the modal window
         caption: optional caption put before the image
     '''
-    # TODO move to popups and achieve "modality" by placing canvas with a semi-transparent gray png over the master?
+    # maybe move to popups and achieve "modality" by placing canvas with a semi-transparent gray png over the master?
     modal = tk.Toplevel(master, background=ATTENTION_HIGHLIGHT)
     modal.resizable(False, False)
     modal.title(title)
@@ -366,5 +366,21 @@ def show_image_modal(master: tk.Toplevel, image_path: str, title: str = "Image",
     
     modal.protocol("WM_DELETE_WINDOW", timed_close(modal, 30))
     modal.wait_window()
+
+
+def drag_map_idempotent():
+    '''
+    Goes to center of the screen and performs dragging that ends exactly where it started.
+    Brings focus back to google maps without triggering anything (much safer than clicking).
+    '''
+    w, h = pyautogui.size()
+    pyautogui.moveTo(w // 2, h // 2)
+    pyautogui.mouseDown()
+    pyautogui.moveRel(4, 0)
+    time.sleep(0.1)
+    pyautogui.moveRel(1, 0)
+    pyautogui.moveRel(-1, 0)
+    pyautogui.mouseUp()
+    time.sleep(0.3)
 
 # endregion
