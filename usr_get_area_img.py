@@ -22,6 +22,7 @@ from wait_contexts import wait_for_animation_end
 from z_app_components.config_app import C_size, C_app
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
+from z_app_components.function_to_tk_entries import DirPath
 from gui.layers import map_toggle_sat_labels
 from utils import drag_map_idempotent, tab_switch, tab_new, pad_bottom
 from gui.core_configs import C_sidepanel
@@ -192,7 +193,8 @@ def get_dd_rect_img(
         rightdown_yx_dd: str, 
         use_const_area_dims_dd : bool = False, 
         satellite : bool = True,
-        satellite_hide_labels : bool = True
+        satellite_hide_labels : bool = True,
+        save_dir : DirPath = ""
     ):
     """
     Return an image that shows a rectangular region of the map.
@@ -210,6 +212,8 @@ def get_dd_rect_img(
     
     Then, if `satellite_hide_labels` is True, devtools will open and take some time to address the button that removes labels (roads, places) from satellite imagery.
     If it's False, those labels (usually seen in regulat mapview) stay visible, obstructing some parts of satellite imagery.
+
+    With `save_dir`, you can choose where to save images. If left empty, images will be saved to the GoogleMapsClicker directory.
 
     If google maps often freezes, TAB_HOPPING should be set to True (default)
     On False, suspiciously stable errors emerge (see what functions are followed by `if C.TAB_HOPPING...` here)
@@ -230,6 +234,9 @@ def get_dd_rect_img(
     if not satellite:
         # megacrutch - save time on `addresslink hopping by pressing the 'Layers' button
         with wait_for_animation_end(region=None, interval=1):
+            pass  # wait for page load
+        with wait_for_animation_end(region=None, interval=1):
+            time.sleep(0.3) # wait for layers button to show
             pyautogui.click(C.LAYERS_RIGHTSIDE_XY[0] - 25, C.LAYERS_RIGHTSIDE_XY[1])
     elif satellite_hide_labels:
         map_toggle_sat_labels()  # usually causes freeze
@@ -258,7 +265,10 @@ def get_dd_rect_img(
         f"{'sat' if satellite else 'map'}_" +
         time.strftime(r'%d.%m.%Y_%H.%M.%S')
     )
-    img_path = os.path.join(ROOT_DIR, img_filename)
+    img_path = os.path.join(
+        ROOT_DIR if len(save_dir) == 0 else save_dir, 
+        img_filename
+    )
     pil_image = Image.fromarray(final_img.astype(dtype=np.uint8), mode="RGB")
     pil_image.save(img_path + ".png")
     if pil_image.width >= C.THUMBNAIL_ENABLED_AT or pil_image.height >= C.THUMBNAIL_ENABLED_AT:
@@ -335,6 +345,7 @@ def get_dd_rect_img_tk(
         leftup_yx_dd: str, 
         rightdown_yx_dd: str, 
         satellite : bool = True,
+        save_dir: DirPath = ""
     ):
     '''
     Return an image that shows a rectangular region of the map.
@@ -347,8 +358,10 @@ def get_dd_rect_img_tk(
     
     Satellite imagery (labels hidden) is used by default.
     Pass `satellite = False` to capture regular mapview.
+
+    With `save_dir`, you can choose where to save images. If left empty, images will be saved to the GoogleMapsClicker directory.
     '''
-    get_dd_rect_img(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=True)
+    get_dd_rect_img(leftup_yx_dd, rightdown_yx_dd, use_const_area_dims_dd=False, satellite=satellite, satellite_hide_labels=True, save_dir=save_dir)
 
 
 def get_area_img(area_query: str, r_width: int = 1, r_height: int = 1):

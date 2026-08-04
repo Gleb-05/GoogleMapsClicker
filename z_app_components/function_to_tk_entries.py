@@ -1,12 +1,18 @@
 import inspect
 import json
 import tkinter as tk
+from tkinter import filedialog
 from tkinter import messagebox
-from typing import Any
+from typing import Any, NewType
 from collections.abc import Callable
 
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager, TargetFunctionError
 from z_app_components.json_string_var import JsonStringVar
+
+FilePath = NewType("FilePath", str)
+'''Derived from str, used in `function_to_tk_entries` to add filedialog `askopenfilename` to argument's entry'''
+DirPath = NewType("DirPath", str)
+'''Derived from str, used in `function_to_tk_entries` to add filedialog `askdirectory` to argument's entry'''
 
 def build_function_editor(
         target_function: Callable[..., Any], 
@@ -37,7 +43,7 @@ def build_function_editor(
         entry_frame = tk.Frame(field_frame)
         entry_frame.pack(fill="x", expand=True, pady=(0,5))
 
-        if argvalue.annotation is str:
+        if argvalue.annotation in [str, DirPath, FilePath]:
             variable = JsonStringVar()
         else:
             variable = tk.StringVar()
@@ -45,7 +51,9 @@ def build_function_editor(
         variable.set(json.dumps(argvalue.default) if argvalue.default is not inspect.Parameter.empty else json.dumps(""))
         kwarg_stringvars[argname] = variable
 
-        if argvalue.annotation is bool:
+        if argvalue.annotation is DirPath:
+            _add_dir_entry(entry_frame, variable)
+        elif argvalue.annotation is bool:
             option_list = [json.dumps(False),json.dumps(True)]
             menu = tk.OptionMenu(entry_frame, variable, *option_list)
             menu.pack(side=tk.LEFT, anchor=tk.W)
@@ -60,6 +68,30 @@ def build_function_editor(
     _add_execute_kb_button(field_frame, kwarg_stringvars, target_function, button_kb_manager, set_feedback)
 
     return list(kwarg_stringvars.values())
+
+
+def _add_dir_entry(
+        entry_frame: tk.Frame, 
+        variable: JsonStringVar
+    ):
+    '''Builds non-editable entry for a field specifying a directory.'''
+
+    entry = tk.Entry(entry_frame, textvariable=variable, state="readonly")
+    entry.pack(side=tk.LEFT, anchor=tk.W)
+
+    btn_txt = "select dir"
+    btn = tk.Button(entry_frame, text = btn_txt)
+    btn.pack(side=tk.LEFT, anchor=tk.W, padx=5)
+
+    def _button_command():
+        _dir = filedialog.askdirectory(
+            title="Choose a folder",
+            initialdir=".",
+            mustexist=True
+        )
+        variable.set(json.dumps(_dir))
+
+    btn.configure(command=_button_command)   
 
 
 def _add_execute_kb_button(

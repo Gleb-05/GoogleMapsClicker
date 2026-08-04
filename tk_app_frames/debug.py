@@ -36,6 +36,7 @@ class DebugFrame:
 
         self.steps = {
             "show_xy": self.show_xy,
+            "slow_drag": slow_drag,
             "drag_map_idempotent": drag_map_idempotent,
             "center_at_dd": lambda: addressbar_center_at_dd("48,2"),
             "show_image_modal": lambda: show_image_modal(self.root, "img/place_linkbtn.png"),
@@ -56,14 +57,17 @@ class DebugFrame:
         self.steps_names = list(self.steps.keys())
         self.step_var = tk.StringVar(value="show_xy")
         tk.OptionMenu(root, self.step_var, *self.steps_names).pack(pady=10)
+
+        self.hault_var = tk.BooleanVar(root, value=True)
+        tk.Checkbutton(variable=self.hault_var, text="disable proceed on key").pack(padx=5)
         
-        instruction = "Press NumLk (or alt+f2) after moving your cursor to a suitable position."
+        instruction = "Press NumLk (or any Shift) after selecting a function, turning the disabling off, and moving your cursor to a suitable position."
         tk.Label(root, text=instruction, wraplength=300).pack(expand=True)
 
         var = JsonStringVar()
-        entry = tk.Entry(root, textvariable=var)
-        entry.pack()
-        tk.Button(root, text="print entry", command=lambda: print(var.get())).pack()
+        # entry = tk.Entry(root, textvariable=var)
+        # entry.pack()
+        # tk.Button(root, text="print entry", command=lambda: print(var.get())).pack()
         
         self.debug_text = tk.Text(root, width=300)
         self.debug_text.insert("1.0", "Debug text")
@@ -72,6 +76,9 @@ class DebugFrame:
         self.listen_hotkey()
 
     def execute_selected_step(self):
+        if self.hault_var.get() is True:
+            return
+        # self.hault_var.set(True)
         try:
             result = self.steps[self.step_var.get()]()
         except Exception as e:
@@ -87,6 +94,14 @@ class DebugFrame:
     def show_xy(self):
         x, y = pyautogui.position()
         return f"X: {x}, Y: {y}"
+
+
+def slow_drag():
+    # https://www.google.com/maps/place//@48.696793,3.13574304,8522m?hl=en
+    'Drag sat map without labels in fullscreen. For the presentation'
+    while True:
+        pyautogui.moveTo(C.AREA_LEFTUP_X, 1)
+        pyautogui.dragTo(C.AREA_RIGHTDOWN_X, 1, duration=21)
 
 
 if __name__ == "__main__":
