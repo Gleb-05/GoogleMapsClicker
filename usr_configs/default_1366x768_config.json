@@ -41,7 +41,10 @@
   "get_area_img": {
     "TAB_HOPPING": true,
     "AREA_EDGES": false,
-    "AREA_LEFTUP_X": 110,
+    "LAYERS_RIGHTSIDE_XY": [
+      100,
+      704
+    ],
     "AREA_LEFTUP_Y": 145,
     "AREA_RIGHTDOWN_X": 1314,
     "AREA_RIGHTDOWN_Y": 724,

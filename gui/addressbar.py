@@ -33,7 +33,7 @@ def open_url(url_address: str):
 def addressbar_center_at_dd(dd: str, satellite=False):
     """
     Pass `yx dd` string pair (example = '48.003034,1.984737') to display it on the map. Use default map, or satellite if `True` is passed.
-    The visible area is automatically centered on the `dd` coordinates provided.
+    Default map requires an additional link visit. The visible area is automatically centered on the `dd` coordinates provided.
     """
     template = C.DD_SAT_ADDRESS_TEMPLATE if satellite else C.DD_MAP_ADDRESS_TEMPLATE
     dd = dd.replace(" ", "")

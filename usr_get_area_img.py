@@ -18,6 +18,7 @@ from PIL import Image
 import numpy as np
 
 from constants import ROOT_DIR
+from wait_contexts import wait_for_animation_end
 from z_app_components.config_app import C_size, C_app
 from z_app_components.config_registry import ConfigRegistryMixin
 from z_app_components.config_to_tk_entries import ConfigTkMeta, ConfigRecomputeMeta, ConfigRecomputeMixin
@@ -37,7 +38,6 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     REGISTER_KEY = "get_area_img"
     RECOMPUTE_FUNCTIONS = {}
 
-    # TODO maybe prompt user for other regions in case the area is far from mainland France?
     REGION_1 = ("48.87295496938,1.88147722555", "48.86096261907,1.911476845556")
     """Beynes France leftup_yx_dd and rightdown_yx_dd"""
     REGION_2 = ("48.718953132520056,4.222028932471299", "48.56244154999089,4.425132061221543")
@@ -72,13 +72,18 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     # TODO consider integrating toggling the fullscreen into `get_dd_rect_image` to cover more area at a time?
     # 4 config values below would change then
 
-    AREA_LEFTUP_X : int = field(
-        default = 110,
+    # new dilemma - the x of 'Layers' button belongs to gui.layers, but for user's convenience, should also be exposed here
+    # TODO new meta to link fields across configs? megacrutch - specifying it here for now
+    LAYERS_RIGHTSIDE_XY : tuple[int,int] = field(
+        default = (110,0),
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select leftup x of area to be captured. From center, left until 10px to 'Layers' button.",
-            xy_read=ConfigTkMeta.READ_X
+            doc="When sidepanel is collapsed, select middle of the right side of the 'Layers' button. It's X will be used as leftup x of area to be captured.",
+            xy_read=ConfigTkMeta.READ_XY
         )}
     )
+    @property
+    def AREA_LEFTUP_X(self) -> int:
+        return self.LAYERS_RIGHTSIDE_XY[0] + 10
     AREA_LEFTUP_Y : int = field(
         default = 145,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
@@ -221,8 +226,12 @@ def get_dd_rect_img(
 
     w, h, cx, cy = _wh_and_center_xy_from_corners(leftup_yx_dd, rightdown_yx_dd)
 
-    addressbar_center_at_dd(f"{cy},{cx}", satellite=satellite)
-    if satellite and satellite_hide_labels:
+    addressbar_center_at_dd(f"{cy},{cx}", satellite=True)
+    if not satellite:
+        # megacrutch - save time on `addresslink hopping by pressing the 'Layers' button
+        with wait_for_animation_end(region=None, interval=1):
+            pyautogui.click(C.LAYERS_RIGHTSIDE_XY[0] - 25, C.LAYERS_RIGHTSIDE_XY[1])
+    elif satellite_hide_labels:
         map_toggle_sat_labels()  # usually causes freeze
         if C.TAB_HOPPING:
             tab_switch()

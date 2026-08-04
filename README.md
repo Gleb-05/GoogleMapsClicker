@@ -1,5 +1,7 @@
 The task is to get satellite imagery for path planning. Ideally, altitude and transit (map) data should also be obtained.
 
+Now, this applet allows to make large high-resolution images by autonomously interacting with google maps.
+
 # How to use
 
 - Choose a location on your computer and clone the repository there: `git clone https://github.com/Gleb-05/GoogleMapsClicker.git`
@@ -19,14 +21,13 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
     - configs can be saved to files, and you can choose which config to use by default in preferences.
 
 See examples of using `get_dd_rect_img` (dd = decimal degrees).
-In [`map_regions`](./map_regions) both map and sat view of Beynes France can be found.
+In [`map_regions`](./map_regions) both map and sat view of Beynes France AND Camp militaire de Mailly can be found.
 
 *During active development, use `python -m tk_app_frames.debug` to check things out quickly.*
-*For large images, see `slice_large_image` and `unslice_large_image` in [`utils.py`](utils.py)*
 
 ## Stats
 
-The largest region yet (REGION_2 in usr_get_area_img Config) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 20 minutes to compose and about 1.4 Gigabytes of memory (800 Mb after being saved as png). It covers about 250 square kilometers, which seems like more than enough for research purposes. Please be mindful of how heavy the images are and how much time they require.
+The largest region yet (Camp militaire de Mailly) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 20 minutes to compose and about 1.4 Gigabytes of memory (800 Mb after being saved as png). It covers about 250 square kilometers, which seems like more than enough for research purposes. Please be mindful of how heavy the images are and how much time they require.
 
 ## App use disclaimers
 
@@ -39,7 +40,7 @@ Consider that the app is intentionally top-level, meaning it won't disappear whe
 Consider that many buttons in the middle of the app (a frame with a grooved border) do not work immediately, because operations they execute require some preparation. After being clicked, buttons change color and wait for a key press. It is either cancel (esc) or proceed (shift or num lk) the User has to choose from. <br>
 Minimize the app before pressing proceed keys at your own discretion. The app will minimize automatically if the button requires it internally.
 
-Consider that all entries operate on a json representation of the values they store. That is, the app exposes all pure values to the user through `json.dumps` and extracts pure values from the interface through `json.loads`. Inernally, get and set of a given entry is manually *jsonified* (`entry.set(json.dumps(value))` and, as inverse, `value = json.loads(entry.get())`). The only exception is [tk.StringVar](z_app_components/JsonStringVar.py), made for better UX.
+Consider that all entries operate on a json representation of the values they store. That is, the app exposes all pure values to the user through `json.dumps` and extracts pure values from the interface through `json.loads`. Inernally, get and set of a given entry is manually *jsonified* (`entry.set(json.dumps(value))` and, as inverse, `value = json.loads(entry.get())`). The only exception is [tk.StringVar](z_app_components/json_string_var.py), made for better UX.
 
 # Brief overview of functionality
 
@@ -68,12 +69,14 @@ Interesting:
   - After the button is pressed, it begins to wait for a key press.
   - Many buttons can be configured to safely wait for the key press.
   - Only one operation will be executed if a "proceed" key is pressed, regardless of how many buttons were pressed.
+- Large images can be separated into smaller slices with `slice_large_image` and `unslice_large_image` in [`utils.py`](utils.py)*
 
 More can be found in docstrings and `.md` files
 
 # TODOs
 
 - Incremental coverage of large regions, with ability to choose starting areas using tqdm indexing and logging?
+- If the region is too large, instead of using `utils.slice_large_region`, calculate corners of smaller rectangle sub-regions and pass them to `get_dd_rect_img` to get multiple smaller files in a folder?
 - Read sets of region-defining decimal degree coordinates from a text file, estimate memory-time, begin execution after user confirmation?
 
 # Problem overview

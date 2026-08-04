@@ -11,25 +11,6 @@ from z_app_components.function_to_tk_entries import build_function_editor
 from z_app_components.keypress_publisher import KeypressPublisher, ButtonKeyboardManager
 
 
-# keep those functions close for expanding target_functions_list
-
-# def throw_error():
-#     "calibrate tkmanager-kbpub relationship"
-#     import time
-#     time.sleep(1)
-#     raise TimeoutError("whatever")
-
-# def throw_timeout():
-#     from wait_contexts import wait_for_screen_change
-#     with wait_for_screen_change((10,10,10,10), 3):
-#         pass
-
-# def long_func():
-#     "test pyautogui corner error"
-#     import pyautogui
-#     for _ in range(10):
-#         pyautogui.moveTo(20,20, duration=1)
-
 class GetAreaImg(BasicFrame):
     '''Work with the google map to make images'''
 
@@ -54,3 +35,23 @@ class GetAreaImg(BasicFrame):
 
         for target_function in FUNCTIONS:
             build_function_editor(target_function, self.body, self.button_manager, set_feedback)
+
+
+# keep those functions here to expand target_functions_list for testing
+
+# def throw_error():
+#     "calibrate tkmanager-kbpub relationship"
+#     import time
+#     time.sleep(1)
+#     raise TimeoutError("whatever")
+
+# def throw_timeout():
+#     from wait_contexts import wait_for_screen_change
+#     with wait_for_screen_change((10,10,10,10), 3):
+#         pass
+
+# def long_func():
+#     "test pyautogui corner error"
+#     import pyautogui
+#     for _ in range(10):
+#         pyautogui.moveTo(20,20, duration=1)
