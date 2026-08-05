@@ -58,14 +58,6 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
         )}
     )
 
-    # another "decision" config
-    AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
-        default = False,
-        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Draw edges for individual areas combined within a region?"
-        )}
-    )
-
     # The (visible) area should be safely (10px) beside interactive ui elements
     # TODO consider a function to define AREA_REGION
     # using .getBoundingClientRect() to get coordinates of page elements mentioned below through console
@@ -95,7 +87,7 @@ class Config(ConfigRegistryMixin, ConfigRecomputeMixin):
     AREA_RIGHTDOWN_X : int = field(
         default = 1314,
         metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
-            doc="Select rightdown x of area to be captured. From center, right until 10px to '+ -' buttons",
+            doc="Select rightdown x of area to be captured. Place your cursor very close to the left side of the '+ -' buttons, not touching the streetview rectangle",
             xy_read=ConfigTkMeta.READ_X
         )}
     )
@@ -171,6 +163,14 @@ WHAT WILL HAPPEN:
         SCALE_WIDTH = self.SCALE_RIGHTDOWN_XY[0] - self.SCALE_LEFTUP_XY[0]
         SCALE_HEIGHT = self.SCALE_RIGHTDOWN_XY[1] - self.SCALE_LEFTUP_XY[1]
         return (*self.SCALE_LEFTUP_XY, SCALE_WIDTH, SCALE_HEIGHT)
+
+    # another "decision" config
+    AREA_EDGES : bool = field(  # Debug purposes, affects `construct_region()`
+        default = False,
+        metadata = {ConfigTkMeta.KEY: ConfigTkMeta(
+            doc="Draw edges for individual areas combined within a region? Debug purposes"
+        )}
+    )
 
     # A 3x2 region (35 areas) was made in 85 seconds, which gives around 2.5 seconds for one area. Calculating ETA is now possible.
     AREA_TIME_SEC = 3.2  # TODO replace with dynamic time estimation??

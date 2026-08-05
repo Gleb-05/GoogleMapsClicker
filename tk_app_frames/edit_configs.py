@@ -71,7 +71,7 @@ class EditConfigs(BasicFrame):
 
         # Buttons to work with config files and the currently used config itself.
 
-        self._last_used_path_to_config = "default_1366x768_config.json"
+        self._last_used_path_to_config = "config.json"
 
         tk.Button(self.footer, text=" ? ", command=lambda:
             messagebox.showinfo(
