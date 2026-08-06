@@ -2,6 +2,8 @@ The task is to get satellite imagery for path planning. Ideally, altitude and tr
 
 Now, this applet allows to make large high-resolution images by autonomously interacting with google maps.
 
+**Check out the demo! https://youtu.be/325loPerdNs**
+
 # How to use
 
 - Choose a location on your computer and clone the repository there: `git clone https://github.com/Gleb-05/GoogleMapsClicker.git`
@@ -22,6 +24,7 @@ Now, this applet allows to make large high-resolution images by autonomously int
 
 See examples of using `get_dd_rect_img` (dd = decimal degrees).
 In [`map_regions`](./map_regions) both map and sat view of Beynes France AND Camp militaire de Mailly can be found.
+**To see full versions of those images, see this repo's Releases/FirstDemo files.**
 
 *During active development, use `python -m tk_app_frames.debug` to check things out quickly.*
 

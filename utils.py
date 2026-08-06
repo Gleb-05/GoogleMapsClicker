@@ -227,6 +227,23 @@ def unslice_large_image(path: str):
         for img in images:
             img.close()
 
+
+def make_white_transparent(image_path, output_path):
+    img = Image.open(image_path).convert("RGBA")
+    data = np.array(img)
+
+    # Separate channels
+    r, g, b, a = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
+
+    # Define what "white" is
+    white_areas = (r == 255) & (g == 255) & (b == 255)
+
+    # Set alpha to 0 where the pixel is white
+    data[..., 3] = np.where(white_areas, 0, a)
+
+    # Save back to image
+    Image.fromarray(data).save(output_path, "PNG")
+
 # endregion
 
 # region hotkey-based functions
