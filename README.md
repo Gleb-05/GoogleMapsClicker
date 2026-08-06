@@ -1,6 +1,6 @@
 The task is to get satellite imagery for path planning. Ideally, altitude and transit (map) data should also be obtained.
 
-Now, this applet allows to make large high-resolution images by autonomously interacting with google maps.
+This app allows to create large high-resolution images by autonomously interacting with google maps. 
 
 **Check out the demo! https://youtu.be/325loPerdNs**
 
@@ -30,7 +30,13 @@ In [`map_regions`](./map_regions) both map and sat view of Beynes France AND Cam
 
 ## Stats
 
-The largest region yet (Camp militaire de Mailly) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 20 minutes to compose and about 1.4 Gigabytes of memory (800 Mb after being saved as png). It covers about 250 square kilometers, which seems like more than enough for research purposes. Please be mindful of how heavy the images are and how much time they require.
+The largest region yet (Camp militaire de Mailly) takes 17x39 entire 1204x579 areas, which takes (thanks to explicit uint8 typing) about 20 minutes to compose and about 1.4 Gigabytes of memory (800 Mb after being saved as png). It covers about 250 square kilometers, which seems enough for research purposes. Please be mindful of how heavy the images are and how much time they require.
+
+## Attribution
+
+If you used this app to obtain images and they meaningfully contributed to your work, please consider crediting this project by including a link to this repository. Thanks!
+
+*For example, "Those images were obtained using the [GoogleMapsClicker](https://github.com/Gleb-05/GoogleMapsClicker)"*
 
 ## App use disclaimers
 
